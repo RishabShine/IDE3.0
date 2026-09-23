@@ -156,10 +156,14 @@ Topics to discuss include the following:
 
 \section{Use of AI and LLMs}
 
-\wss{This section is a continuation of the previous section.  The role of LLMs
-in your project as important enough to warrant their own section.  
-How will your team be using LLMs for code and documentation development?  
-What tools will you be using?  How will you verify the output of your LLMs?}
+% \wss{This section is a continuation of the previous section.  The role of LLMs
+% in your project as important enough to warrant their own section.  
+% How will your team be using LLMs for code and documentation development?  
+% What tools will you be using?  How will you verify the output of your LLMs?}
+
+For the project the model artifact that we hope to generate is based on the input provided by the user in natural-language to an AI Assistant. The AI would also be used to generate code based on the intent model, test cases, class and code structure descriptions, explanations, and relationships with the rest of the code, and comments on PRs ( if we get to one of our stretch goals). 
+We would use AI to help assist in code generation after we design and engineer our intent model. Lastly, LLMs would be used to help proof read, edit, and mock evaluate our documentation based on the rubric to catch details that might have been missed. 
+For verification there would need to be a human-in-the-loop, this means that anything that the LLM generates should be used or pushed to our codebase until a member of the team can explicitly explain its use, function, and implementation. 
 
 \section{Coding Standard}
 
