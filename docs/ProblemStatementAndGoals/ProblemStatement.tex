@@ -22,7 +22,7 @@
 \toprule
 \textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
 \midrule
-Date1 & Name(s) & Description of changes\\
+Sept 22, 26 & Qusay Qadir & problem statement, environments, goals\\
 Date2 & Name(s) & Description of changes\\
 ... & ... & ...\\
 \bottomrule
@@ -35,16 +35,25 @@ Date2 & Name(s) & Description of changes\\
 \href{https://smiths.github.io/capTemplate/Checklists/ProbState-Checklist.pdf}
 {problem statement checklist}}. 
 
-\wss{You can change the section headings, as long as you include the required
-information.}
+% \wss{You can change the section headings, as long as you include the required
+% information.}
 
 \subsection{Problem}
 
-\wss{What problem are you trying to solve?  Why is it important? Do not talk
-about how you will solve the problem, only what the problem is.  AI is rarely
-part of the problem.  The problem is ``what'' you want to do, not ``how'' you
-want to do it.  The problem statement should be written in a way that is
-understandable to a non-technical audience.}
+% \wss{What problem are you trying to solve?  Why is it important? Do not talk
+% about how you will solve the problem, only what the problem is.  AI is rarely
+% part of the problem.  The problem is ``what'' you want to do, not ``how'' you
+% want to do it.  The problem statement should be written in a way that is
+% understandable to a non-technical audience.}
+
+As code and software applications become cheaper to generate by AI assistants, 
+the engineering intent behind the system design, requirements, and quality expectations 
+that shape the application can become lost across prompt-and-answer conversations, 
+leaving development teams unable to clearly explain why the software is structured and built the way it is. 
+This creates concerns for the maintainability and scalability of the application, as well as the ability to 
+connect engineering decisions to the code and its test cases. There is a lack of traceability between engineering 
+intent, rationale, and design decisions, making it difficult for software engineers to remain in control of the 
+system's quality, acceptance criteria, and overall goals.
 
 \subsection{Inputs and Outputs}
 
@@ -55,15 +64,31 @@ Use abstraction so that you can avoid details.}
 
 \subsection{Environment}
 
-\wss{Hardware and Software Environment for the users.  The developer environment
-is summarized as part of the developer plan.}
+% \wss{Hardware and Software Environment for the users.  The developer environment
+% is summarized as part of the developer plan.}
+
+Environments is the engineering integrated development environment (IDE), where they choose to edit and write the code for their software applications.
+In the IDE the user must be interacting with an AI assistant, and the hardware environment should be the standard computer (desktop or laptop) that has an
+IDE installed, with AI assistant plugins.
 
 \section{Goals}
 
 \section{Stretch Goals}
 
-\wss{Goals you hope to get to, but not necessary.  They are also helpful if the
-scope of the original project needs to be expanded.}
+% \wss{Goals you hope to get to, but not necessary.  They are also helpful if the
+% scope of the original project needs to be expanded.}
+
+
+Having a UML diagram sync that is part of the intent model, with round-trip engineering where, based on criteria changes, 
+the UML diagrams evolve accordingly to provide the most accurate class relationships, as well as the structure and function of each class.
+We could go more granular and include method and their types, and function parmeters and their types. 
+\\\\
+Rationale reconstruction is a feature that allows the user to go back in time to a specific commit or pull request and understand what the requirements 
+or constraints were at that point in the development cycle. This can paint a picture of how requirements, goals, quality priorities, and design constraints have evolved, and it links 
+directly to the code and test cases.
+\\\\
+GitHub Actions integration: when new code is about to be merged into the main branch, an agent checks it against the intent model and comments on 
+which parts of the model the change touches and whether they are still valid. This would ease the PR approval phase, since reviewers would not need to know what each line of code does.
 
 \section{Custom Documents (CDs)}
 
