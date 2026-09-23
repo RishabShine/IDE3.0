@@ -60,6 +60,12 @@ system's quality, acceptance criteria, and overall goals.
 \wss{Characterize the problem in terms of ``high level'' inputs and outputs.  
 Use abstraction so that you can avoid details.}
 
+The primary input is the developer's natural-language expression of intent, including goals, requirements,  quality priorities, and constraints. 
+Secondary inputs are the AI coding assistant's session transcripts,  the changes it proposes or makes to the code.  These inputs are converted into a defined structure and processed by the system.
+
+The outputs are the intent model, a versioned artifact holding the software requirements, quality attributes,  constraints, and design decisions, together with trace links connecting these elements to code and tests.  
+The system also outputs verification results indicating whether AI-generated changes satisfy the intent model.
+
 \subsection{Stakeholders}
 
 \subsection{Environment}
