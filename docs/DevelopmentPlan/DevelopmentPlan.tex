@@ -111,9 +111,14 @@ for deadlines.}
 
 \section{Proof of Concept Demonstration Plan}
 
-What is the main risk, or risks, for the success of your project?  What will you
-demonstrate during your proof of concept demonstration to convince yourself that
-you will be able to overcome this risk?
+The primary risk to the success of our project is whether we are able to construct and maintain a model that accurately represents the relationships between a software system’s implementation and engineering intent.
+
+Our tool is dependent on understanding how files, classes, code, and other artifacts relate or map to requirements, constraints, and design decisions. We must be able to justify each of these relationships and update each of these relationships as code is added or updated, and new features are added. This functionality is required before we can focus on higher level, user facing functionality, such as constraint aware code generation, design rational tracking, etc.
+
+The main challenges in demonstrating this representation will be determining how these relationships can be identified accurately, how these relationships can be justified, and how the model can remain synchronized as the software project changes. A requirement, design decision, or new feature can affect multiple files, classes, and code, making these relationships difficult to identify and maintain. As the implementation evolves, previously established relationships may become outdated or invalid, requiring the model to detect and reflect these changes while preserving accurate traceability.
+
+Therefore, for our proof of concept, we will focus on demonstrating this underlying representation, rather than showcasing a subset of features that we aim to eventually have, as this piece of functionality is the foundation for any features we will add. Given a software project and a set of requirements, constraints, and design choices, the system will construct a model that maps these to implementations. For each of these relationships, the system should be able to provide a justification of how the connection was established.
+
 
 \section{Expected Technology}
 
