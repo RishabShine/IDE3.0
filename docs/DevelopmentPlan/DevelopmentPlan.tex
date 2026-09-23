@@ -22,7 +22,7 @@
 \toprule
 \textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
 \midrule
-Date1 & Name(s) & Description of changes\\
+September 23 & Tyler Yue & Added rough draft of workflow plan, communication plan and team meeting plan.\\
 Date2 & Name(s) & Description of changes\\
 ... & ... & ...\\
 \bottomrule
@@ -78,9 +78,18 @@ in-person.}
 \wss{How will the meetings be structured?  There should be a chair for all meetings.  
 There should be an agenda for all meetings.}
 
+The team will meet weekly during lecture time 
+The team will meet with the supervisor on a weekly basis on XXX at XXX for 30 minutes.
+Additional meetings will be held if required, closer to specific deliverable deadlines and will be virtual. 
+All meetings with the supervisor will be held virtually using zoom
+
+
 \section{Team Communication Plan}
 
 \wss{Issues on GitHub should be part of your communication plan.}
+
+All communication will take place through discord, zoom and in person team meetings. 
+To communicate deliverables we will utilize github projects to create a kanban board and create issues that are tracked on the github page. 
 
 \section{Team Member Roles}
 
@@ -96,6 +105,14 @@ likely change throughout the year.}
 	\item How will you be managing issues, including template issues, issue
 	classification, etc.?
   \item Use of CI/CD
+
+GitHub will be used to manage the project workflow, with GitHub Projects serving as the team’s Kanban board for tracking tasks, issues, and project progress.
+Each significant task, feature or bug will be represented by a GitHub issue. Each issue will  contain a description and the relevant acceptance criteria. Issues will be assigned to team members and moved through the project board as work progresses.
+Development will be done on a branch based workflow. A separate branch will be created for each issue. Changes will be committed regularly and pushed to the shared repository.
+Once an issue is complete, a pull request will be opened to merge to the main branch. Pull requests will explain the changes made, reference the related issue, and identify any testing or verification performed. At least one other team member will review the pull request before it is merged. Review feedback must be addressed before approval.
+We will employ github actions for various code quality and testing procedures including automated tests, linting, formatting, and other validation checks. Documentation will be updated within the same issue or pull request to keep the repository documentation up to date.
+The main branch will represent the current stable state of the project. Direct changes to the main branch will be avoided, with project work entering through reviewed pull requests. 
+
 \end{itemize}
 
 \section{Project Decomposition and Scheduling}
