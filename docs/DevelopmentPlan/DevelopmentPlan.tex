@@ -23,7 +23,7 @@
 \textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
 \midrule
 September 23 & Tyler Yue & Added rough draft of workflow plan, communication plan and team meeting plan.\\
-Date2 & Name(s) & Description of changes\\
+September 25 & Qusay Qadir & Use of AI, In Case of Emergency, Expected Technology. \\
 ... & ... & ...\\
 \bottomrule
 \end{tabularx}
@@ -128,54 +128,104 @@ for deadlines.}
 
 \section{Proof of Concept Demonstration Plan}
 
-What is the main risk, or risks, for the success of your project?  What will you
-demonstrate during your proof of concept demonstration to convince yourself that
-you will be able to overcome this risk?
+The primary risk to the success of our project is whether we are able to construct and maintain a model that accurately represents the relationships between a software system’s implementation and engineering intent.
+
+Our tool is dependent on understanding how files, classes, code, and other artifacts relate or map to requirements, constraints, and design decisions. We must be able to justify each of these relationships and update each of these relationships as code is added or updated, and new features are added. This functionality is required before we can focus on higher level, user facing functionality, such as constraint aware code generation, design rational tracking, etc.
+
+The main challenges in demonstrating this representation will be determining how these relationships can be identified accurately, how these relationships can be justified, and how the model can remain synchronized as the software project changes. A requirement, design decision, or new feature can affect multiple files, classes, and code, making these relationships difficult to identify and maintain. As the implementation evolves, previously established relationships may become outdated or invalid, requiring the model to detect and reflect these changes while preserving accurate traceability.
+
+Therefore, for our proof of concept, we will focus on demonstrating this underlying representation, rather than showcasing a subset of features that we aim to eventually have, as this piece of functionality is the foundation for any features we will add. Given a software project and a set of requirements, constraints, and design choices, the system will construct a model that maps these to implementations. For each of these relationships, the system should be able to provide a justification of how the connection was established.
+
 
 \section{Expected Technology}
 
-\wss{What programming language or languages do you expect to use?  What external
-libraries?  What frameworks?  What technologies.  Are there major components of
-the implementation that you expect you will implement, despite the existence of
-libraries that provide the required functionality.  For projects with machine
-learning, will you use pre-trained models, or be training your own model?  }
+% \wss{What programming language or languages do you expect to use?  What external
+% libraries?  What frameworks?  What technologies.  Are there major components of
+% the implementation that you expect you will implement, despite the existence of
+% libraries that provide the required functionality.  For projects with machine
+% learning, will you use pre-trained models, or be training your own model?  }
 
-\wss{The implementation decisions can, and likely will, change over the course
-of the project.  The initial documentation should be written in an abstract way;
-it should be agnostic of the implementation choices, unless the implementation
-choices are project constraints.  However, recording our initial thoughts on
-implementation helps understand the challenge level and feasibility of a
-project.  It may also help with early identification of areas where project
-members will need to augment their training.}
+% \wss{The implementation decisions can, and likely will, change over the course
+% of the project.  The initial documentation should be written in an abstract way;
+% it should be agnostic of the implementation choices, unless the implementation
+% choices are project constraints.  However, recording our initial thoughts on
+% implementation helps understand the challenge level and feasibility of a
+% project.  It may also help with early identification of areas where project
+% members will need to augment their training.}
 
-Topics to discuss include the following:
+\begin{table}[h]
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{|p{0.15\linewidth}|p{0.2\linewidth}|p{0.1\linewidth}|p{0.4\linewidth}|}
+  \hline
+  \textbf{Category} & \textbf{Technology} & \textbf{Version} & \textbf{Purpose} \\
+  \hline
+  Language & Python & 3.14 & Backend services, intent model processing, and code analysis \\
+  \hline
+  Language & TypeScript & 7.0 & VS Code extension and user interface \\
+  \hline
+  Runtime & Node.js & 24 LTS & Build tooling and extension development \\
+  \hline
+  Framework & VS Code Extension API & 1.139 & Integration with the editor, commands, panels, and file watching \\
+  \hline
+  Framework & React & 19.3 & Webview user interface and diagram rendering \\
+  \hline
+  Library & MCP Python SDK & 2.2 & Exposing the intent model to AI coding assistants \\
+  \hline
+  Framework & LangGraph & 1.2 & Agent orchestration with human-in-the-loop approval \\
+  \hline
+  Tool & LangSmith & 0.14 & Tracing and evaluating agent and LLM behaviour \\
+  \hline
+  Version control & Git & 2.55 & Source control and versioning of the intent model \\
+  \hline
+  Platform & GitHub and GitHub Actions & N/A & Repository hosting, continuous integration, and pull request checks \\
+  \hline
+
+\end{tabular}
+\caption{Initial implementation technologies}
+\label{tab:tech-stack}
+\end{table}
+
+\paragraph{Components implemented by the team.} Although libraries exist for parsing, 
+graph rendering, and LLM orchestration, the team expects to implement the core of the 
+system itself: the intent modelling language and its schema, the pipeline that extracts 
+proposed model changes from natural-language conversation, the traceability graph 
+linking intent to UML models, code, and tests, and the logic that compiles constraints 
+into executable checks. No existing tool provides these capabilities in the form the 
+project requires.
+
+
+\paragraph{Topics left to discuss:}
 
 \begin{itemize}
-\item Specific programming language
 \item Specific libraries
-\item Pre-trained models
+\item LLM Pre-trained models
 \item Specific linter tool (if appropriate)
 \item Specific unit testing framework
 \item Investigation of code coverage measuring tools
-\item Specific plans for Continuous Integration (CI), or an explanation that CI
-  is not being done
 \item Specific performance measuring tools (like Valgrind), if
-  appropriate
-\item Tools you will likely be using?
 \end{itemize}
 
-\wss{git, GitHub and GitHub projects should be part of your technology.}
+% \wss{git, GitHub and GitHub projects should be part of your technology.}
 
 \section{Use of AI and LLMs}
 
-\wss{This section is a continuation of the previous section.  The role of LLMs
-in your project as important enough to warrant their own section.  
-How will your team be using LLMs for code and documentation development?  
-What tools will you be using?  How will you verify the output of your LLMs?}
+% \wss{This section is a continuation of the previous section.  The role of LLMs
+% in your project as important enough to warrant their own section.  
+% How will your team be using LLMs for code and documentation development?  
+% What tools will you be using?  How will you verify the output of your LLMs?}
+
+For the project the model artifact that we hope to generate is based on the input provided by the user in natural-language to an AI Assistant. The AI would also be used to generate code based on the intent model, test cases, class and code structure descriptions, explanations, and relationships with the rest of the code, and comments on PRs ( if we get to one of our stretch goals). 
+We would use AI to help assist in code generation after we design and engineer our intent model. Lastly, LLMs would be used to help proof read, edit, and mock evaluate our documentation based on the rubric to catch details that might have been missed. 
+For verification there would need to be a human-in-the-loop, this means that anything that the LLM generates should be used or pushed to our codebase until a member of the team can explicitly explain its use, function, and implementation. 
 
 \section{Coding Standard}
 
-\wss{What coding standard will you adopt?}
+The project will adopt a consistent coding standard focused on readability, maintainability, and collaboration. Each language used will follow its established conventions for naming, formatting, type usage, and code organization, with automated linting and formatting tools used where appropriate.
+
+Functionality developed as part of the project will include accompanying documentation describing its purpose, behaviour, and usage. Documentation will be organized consistently and updated alongside the code as the project evolves.
+
 
 \newpage{}
 
@@ -263,9 +313,20 @@ What types of excuses will not be considered acceptable?}
 
 \subsubsection*{In Case of Emergency}
 
-\wss{What process will team members follow if they have an emergency and cannot
-attend a team meeting or complete their individual work promised for a team
-deliverable?}
+% \wss{What process will team members follow if they have an emergency and cannot
+% attend a team meeting or complete their individual work promised for a team
+% deliverable?}
+
+If a team member has an emergency, they will notify the team as soon as reasonably possible through the team's main communication channel. 
+Where possible, they will share the status of their current work, including what is complete, what remains, and where the work is located.
+
+A delegate will then be assigned to take over the absent member's action items for that week. If the absent member is unable to 
+arrange this themselves, the remaining team members will assign a delegate at the next meeting or through the team channel. 
+If the delegate is already overloaded, the team will hold a meeting to create a remediation plan and redistribute the work among available members. 
+
+To make transfers of responsibility seamless, all members should know what everyone else is working on through the weekly meetings, 
+even if not the implementation details. Because the team follows shared coding standards and keeps work in the shared repository, 
+any member should be able to understand, navigate, and pick up another member's work based on prior knowledge.
 
 \subsection*{Accountability and Teamwork}
 
@@ -300,11 +361,16 @@ their TA, or the instructor?  Are there incentives for reaching targets early?}
 
 \subsubsection*{Team Building}
 
-\wss{How will you build team cohesion (fun time, group rituals, etc.)? }
+Team cohesion will be built through regular meetings, frequent communication, and collaborative development practices. Each merge request will be reviewed by at least two other team members, ensuring that everyone remains aware of the work being completed across the project, frequent contact between team members, and that team members are not working in isolation.
+
+Higher-level design and project decisions will also be discussed as a group during team meetings.
+
+Outside of development work, the team may also organize informal activities, such as meeting for coffee or spending time together outside scheduled project meetings, to strengthen communication and working relationships which will help enhance team cohesion.
 
 \subsubsection*{Decision Making} 
 
-\wss{How will you make decisions in your group? Consensus?  Vote? How will you
-handle disagreements? }
+Smaller implementation level decisions will follow the coding standards, naming conventions, and design patterns established by the team beforehand. Within these guidelines, team members will have discretion over how they implement their assigned work. Any concerns with an individual member's implementation level decisions can be raised during merge request reviews and can be raised to a team discussion which can also set future precedence.
+
+Larger decisions that affect the overall project direction, architecture, or design will be discussed as a team during meetings prior to starting any of the implementation. The team will aim to reach a consensus, however, if not possible, the minimum expectation is that all members can understand and agree with the reasoning behind the final decision, even if their preferences differ.
 
 \end{document}
