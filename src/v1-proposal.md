@@ -5,37 +5,31 @@ sequenceDiagram
     participant Agent as Coding assistant
     participant MCP as IDE3 MCP server
     participant Graph as LangGraph flow
-    participant Store as .ide3/ files
+    participant Docs as IDE3 requirement docs (.ide3/)
     participant Panel as IDE3 panel (VS Code)
 
     User->>Agent: Request a feature
-    Agent->>MCP: capture_intent(user_query, agent_summary)
-    MCP->>Graph: Start thread (capture_id)
+    Agent->>MCP: capture_intent(user_query)
+    Note over Agent,MCP: The agent waits on this tool call.<br/>No code is generated until the user approves or rejects.
+    MCP->>Graph: Start capture thread
     Graph->>Graph: Extract functional requirements
-    Graph->>Store: Write drafts to intent/_drafts/
-    Graph-->>MCP: interrupt(), awaiting approval
-    MCP-->>Agent: Progress: waiting for approval in IDE3 panel
-    Store-->>Panel: File watcher detects new drafts
-    Panel->>User: Notification: review requirements
+    Graph->>Docs: Save requirements as drafts
+    Docs-->>Panel: Drafts appear for review
+    User->>Panel: Review drafts
 
-    alt User approves before timeout
-        User->>Panel: Approve / reject drafts
-        Panel->>Store: ide3 approve REQ-xxx (CLI)
-        MCP->>Graph: Resume thread with decision
-        Graph->>Store: Move approved drafts to intent/
-        MCP-->>Agent: Tool result: approved requirements
-    else Tool call times out
-        MCP-->>Agent: status pending (capture_id)
-        Agent-->>User: Approve in IDE3 panel, then say go
-        User->>Panel: Approve / reject drafts
-        Panel->>Store: ide3 approve REQ-xxx (CLI)
-        User->>Agent: go
-        Agent->>MCP: wait_for_approval(capture_id)
-        MCP->>Graph: Resume thread with decision
-        Graph->>Store: Move approved drafts to intent/
-        MCP-->>Agent: Approved requirements
+    alt Approve
+        Panel->>Graph: Resume thread: approved
+        Graph->>Docs: Mark requirements approved
+        Graph-->>MCP: Approved requirements
+        MCP-->>Agent: Tool result: approved requirements, implement them
+        Note over Agent,Docs: The docs are updated, so the agent is prompted<br/>to generate code from the approved requirements
+        Agent->>Agent: Generate code for approved requirements
+        Agent-->>User: Code ready
+    else Reject
+        Panel->>Graph: Resume thread: rejected
+        Graph->>Docs: Mark requirements rejected
+        Graph-->>MCP: Rejected
+        MCP-->>Agent: Tool result: rejected, do not implement
+        Agent-->>User: Ask how to revise the request
     end
-
-    Agent->>Agent: Write code tagged with REQ-xxx
-    Agent-->>User: Done
 ```
