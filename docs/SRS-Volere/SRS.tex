@@ -389,11 +389,48 @@ Not applicable. \progname{} operates entirely within the developer's local IDE
 and workspace and imposes no requirements arising from a wider physical, environment. 
 
 \subsection{Requirements for Interfacing with Adjacent Systems}
-\lips
+
+\medskip
+\noindent\textbf{IAS1.} The system shall interface with each supported host IDE
+through that IDE's official extension API, such as the VS Code Extension API. 
+
+\medskip
+\noindent\textbf{IAS2.} The system shall communicate with the AI coding
+assistant through the Model Context Protocol (MCP), so that any assistant tool that
+supports MCP can drive the intent-capture, code, and test workflow. 
+
+\medskip
+\noindent\textbf{IAS3.} The system shall interface with the project's version
+control system, such as Git, using standard Git operations to version the
+intent model.
+
 \subsection{Productization Requirements}
-\lips
+
+\medskip
+\noindent\textbf{PRD1.} The system shall be packaged as an installable IDE
+extension in the outlined format for each supported IDE, such as a VSIX package
+for VS Code, so that it can be installed by the user. 
+
+\medskip
+\noindent\textbf{PRD2.} The system shall satisfy the publishing and security
+requirements of the relevant extension marketplace, such as the Visual Studio
+Code Marketplace, before it is accepted to be discoverable and installable from the marketplace. 
+
+\medskip
+\noindent\textbf{PRD3.} The system shall bundle its runtime
+dependencies, so that installation does not require the user to set up those dependencies manually.
+
 \subsection{Release Requirements}
-\lips
+
+\medskip
+\noindent\textbf{REL1.} Each release shall be accompanied by release notes that
+describe the new features added and the bugs or errors patched since the previous
+version.
+
+\medskip
+\noindent\textbf{REL2.} The system shall preserve compatibility of the intent
+model format across releases, or provide a migration path, so that new releases
+do not introduce any breaking changes to existing intent models. 
 
 \section{Maintainability and Support Requirements}
 \subsection{Maintenance Requirements}
