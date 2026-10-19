@@ -245,7 +245,7 @@ b. UI makes approve too easy relative to review &
 a. Require explicit approve/reject action per proposal\newline
 b. Display structured requirements/constraints clearly before approve &
 a. SR1, SR15\newline
-b. FR4 to FR5\newline
+b. FR4 to FR5, EUR2\newline
 H2-1 \\
 \hline
 
@@ -469,7 +469,7 @@ proposal can update the intent model or authorize code generation.\\
 \textit{Rationale:} Incorrect extraction must not silently become approved
 intent.\\
 \textit{Associated hazards:} H1-1, H2-1\\
-\textit{Related SRS:} FR3 to FR6, SCR1, G1, G5
+\textit{Related SRS:} FR3 to FR6, SCR1, EUR2, G1, G5
 
 \medskip
 \noindent\textbf{SR2.} The system shall notify the developer when intent capture,
@@ -511,7 +511,7 @@ schema and retain recoverable prior versions of the intent model.\\
 \textit{Rationale:} Corruption or truncation of the intent model is a loss of
 mission for the tool.\\
 \textit{Associated hazards:} H4-1, H4-3\\
-\textit{Related SRS:} FR9, IR2, IR4, RFR2
+\textit{Related SRS:} FR9, IR2, IR4, RFR2, SCR3
 
 \medskip
 \noindent\textbf{SR7.} The system shall record provenance for approved intent-model
@@ -528,7 +528,7 @@ tests.\\
 \textit{Rationale:} Traceability is required for maintainability and for
 explaining AI-generated structure.\\
 \textit{Associated hazards:} H3-1, H5-1\\
-\textit{Related SRS:} FR9, FR11, G3
+\textit{Related SRS:} FR9, FR11, EUR3, G3
 
 \medskip
 \noindent\textbf{SR9.} The system shall verify AI-proposed or generated changes against the
