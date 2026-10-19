@@ -30,6 +30,17 @@
   modular design, which we need to structure the IDE extension, the LangGraph
   workflow, and the MCP server as separate components.
 
+  \textbf{Saumy Patel}
+
+  SFWRENG 3RA3, Software Requirements, helped me write the relevant facts,
+  business rules, and assumptions in this SRS, and separate facts about the
+  outside world from rules the product must follow. SFWRENG 2AA4, Introduction
+  to Software Design, covered object-oriented design and UML, which relate to
+  the module and interface specification stage of our refinement process and to
+  the UML tools we plan to build on. SFWRENG 2FA3, Discrete Mathematics with
+  Applications II, covered state machines, which I will use to model our
+  refinement process with its stages, approvals, and transitions.
+
   \item What knowledge and skills will the team collectively need to acquire to
   successfully complete this capstone project?  Examples of possible knowledge
   to acquire include domain specific knowledge from the domain of your
@@ -48,6 +59,14 @@
   and pauses it for developer approval. I will also need to learn VS Code
   extension development, since the review panel where developers approve or
   reject proposals is a VS Code extension.
+
+  \textbf{Saumy Patel}
+
+  I will need to learn how to model our refinement process as a state machine,
+  with its stages, approvals, and the transitions back to earlier stages. I will
+  also need to learn how to write formal contracts with preconditions and
+  postconditions, such as in JML, and how to develop VS Code extensions, since
+  the tool will run as one.
 
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
@@ -70,5 +89,18 @@
   I will use the official documentation for both. I learn best from
   documentation, and it matches the library versions we use, while video
   tutorials often cover older versions.
+
+  \textbf{Saumy Patel}
+
+  For each skill, I can use official documentation or course notes, or follow
+  video tutorials and online guides. For state machine modelling, I will start
+  with the notes from SFWRENG 2FA3, Discrete Mathematics with Applications II,
+  where I learned about state machines. For JML and VS Code extension
+  development, I will start with the official documentation, such as the JML
+  reference manual and the VS Code Extension API guides.
+
+  I will use the documentation or course notes first because they are the most
+  reliable sources. If they do not explain something clearly, I will look for
+  video tutorials, but only ones that match the library versions we use.
 
 \end{enumerate}
