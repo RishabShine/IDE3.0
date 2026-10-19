@@ -419,8 +419,7 @@ validation flow that constitutes Part~3 of the solution.
 \draw[fl] (d) -| node[lab, pos=0.25, above]{no}  (bad);
 \end{tikzpicture}
 \caption{Part~3 of the work, the validation (verification) arm. A generated
-change and its compiled contracts are checked by the OpenJML contract checks and
-the JVM test suite; the resulting report either records the change as satisfying
+change and its compiled contracts are checked by some code validator such as JVM, the resulting report either records the change as satisfying
 the intent model (FR9, FR10) or flags the violation and returns it to the
 developer for re-generation (FR8).}
 \label{fig:validation}
@@ -429,7 +428,7 @@ developer for re-generation (FR8).}
 \subsection{Specifying a Business Use Case (BUC)}
 
 \medskip
-\noindent\textbf{BUC name:} Capture and approve the requirements for a feature.
+\noindent\textbf{BUC name:} Capture and approve the requixrements for a feature.
 
 \medskip
 \noindent\textbf{Triggering event:} A developer submits a natural-language
@@ -813,8 +812,7 @@ does not generates code compared to an unsafe and unpredictable state.
 \noindent\textbf{IMR3.} The system shall keep its third-party dependencies up to date, and each dependency upgrade shall be accompanied by the software changes that reflect the reason for that upgrade.
 Version bump alone is not enough. 
 
-\section{Cultural Requirements}?
-\subsection{Cultural Requirements}
+\section{Cultural Requirements}
 \noindent\textbf{CR1.} The system shall communicate via Canadian English. 
 \medskip
 \noindent\textbf{CR2.} The system shall avoid offens ive language. If the system begins to accept image (e.g., for architectural review purposes), then no image pertaining to or related in any form to religion, political views, or minority groups will be accepted.
