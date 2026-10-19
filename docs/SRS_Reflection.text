@@ -41,6 +41,14 @@
   Applications II, covered state machines, which I will use to model our
   refinement process with its stages, approvals, and transitions.
 
+  \textbf{Tyler Yue}
+
+  A course I have taken that will help the team be successful with our
+  capstone project is COMPSCI 4NL3, Natural Language Processing. The course
+  taught fundamentals of parsing natural language, interacting with and fine
+  tuning large language models, and techniques for extracting semantics from
+  text, all of which will be applicable to this project.
+
   \item What knowledge and skills will the team collectively need to acquire to
   successfully complete this capstone project?  Examples of possible knowledge
   to acquire include domain specific knowledge from the domain of your
@@ -67,6 +75,13 @@
   also need to learn how to write formal contracts with preconditions and
   postconditions, such as in JML, and how to develop VS Code extensions, since
   the tool will run as one.
+
+  \textbf{Tyler Yue}
+
+  The team will need to acquire knowledge of how to integrate with the VS Code
+  Extension API and the Model Context Protocol in order to integrate our
+  project into developers' existing workflows.
+
 
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
@@ -102,5 +117,18 @@
   I will use the documentation or course notes first because they are the most
   reliable sources. If they do not explain something clearly, I will look for
   video tutorials, but only ones that match the library versions we use.
+
+  \textbf{Tyler Yue}
+
+  One approach is to read the official VS Code extension documentation and
+  samples, and the MCP specification, then build a minimal extension that
+  registers a command and a panel. A second approach is to build a small
+  end-to-end MCP tool server that implements changes only after approval and
+  connect it to a VS Code UI that records approve/reject.
+
+  I will pursue the second approach, supported by the first. A working spike
+  forces the real integration issues to show up early, which matters for our
+  Proof of Concept and for keeping the approval gate enforceable in the IDE.
+
 
 \end{enumerate}
