@@ -255,9 +255,112 @@ involved in the Project}
 
 \section{Business Data Model and Data Dictionary}
 \subsection{Business Data Model}
-\lips
+
+The business data model for \progname{} represents the engineering intent of a
+software project and the relationships between that intent and its implementation.
+
+The primary entities in the model are:
+
+\begin{itemize}
+    \item \textbf{Project:} Represents the software project being developed and
+    contains the engineering artifacts and traceability information maintained by
+    \progname{}.
+
+    \item \textbf{Developer Request:} Represents information provided by an
+    engineer describing a desired change, feature, constraint, or other engineering
+    intent. A request may result in the creation or refinement of multiple
+    engineering artifacts.
+
+    \item \textbf{Engineering Artifact:} Represents a piece of engineering intent
+    associated with the project. Engineering artifacts may include requirements,
+    constraints, design decisions, and implementation contracts.
+
+    \item \textbf{Artifact Relationship:} Represents a relationship between two
+    engineering artifacts, such as a dependency, refinement, constraint, or
+    conflict.
+
+    \item \textbf{Implementation Artifact:} Represents an element of the developed
+    software, such as a source file, class, method, or test.
+
+    \item \textbf{Traceability Link:} Connects an engineering artifact to an
+    implementation artifact and records the relationship between the engineering
+    intent and its implementation.
+\end{itemize}
+
+A project may contain many developer requests and engineering artifacts. A
+developer request may produce or refine multiple engineering artifacts, and an
+engineering artifact may be related to other artifacts through artifact
+relationships. Engineering artifacts may also be connected to one or more
+implementation artifacts through traceability links.
+
 \subsection{Data Dictionary}
-\lips
+\begin{table}[H]
+\centering
+\caption{Data Dictionary}
+\begin{tabular}{|p{4cm}|p{10cm}|}
+\hline
+\textbf{Data Item} & \textbf{Description} \\
+\hline
+
+Project &
+A software project managed by \progname{} containing engineering artifacts,
+their relationships, and traceability information. \\
+\hline
+
+Developer Request &
+Information provided by an engineer describing desired system behaviour,
+functionality, constraints, design intent, or changes to the project. \\
+\hline
+
+Engineering Artifact &
+A structured representation of engineering intent associated with a project.
+Engineering artifacts may include requirements, constraints, design decisions,
+and implementation contracts. \\
+\hline
+
+Requirement &
+A statement describing functionality, behaviour, or an expected property of the
+software system. \\
+\hline
+
+Constraint &
+A restriction or condition that limits the acceptable behaviour, design, or
+implementation of the software system. \\
+\hline
+
+Design Decision &
+A recorded engineering choice that influences the structure or implementation
+of the software system. \\
+\hline
+
+Implementation Contract &
+A precise specification used to constrain implementation, such as a
+precondition, postcondition, invariant, or other formally stated condition. \\
+\hline
+
+Artifact Relationship &
+A relationship between engineering artifacts, such as a dependency, refinement,
+constraint, or conflict. \\
+\hline
+
+Implementation Artifact &
+An element of the implemented software associated with engineering intent, such
+as a source file, class, method, function, or test. \\
+\hline
+
+Traceability Link &
+A recorded connection between an engineering artifact and an implementation
+artifact that identifies how engineering intent relates to the implemented
+software. \\
+\hline
+
+Rationale &
+Information describing the reasoning or justification behind an engineering
+artifact or decision. \\
+\hline
+
+\end{tabular}
+\end{table}
 
 \section{The Scope of the Product}
 \subsection{Product Boundary}
