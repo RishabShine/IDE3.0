@@ -42,6 +42,8 @@
 Oct 14, 2026 & Qusay Qadir & Initial draft and hazard definition\\
 Oct 18, 2026 & Tyler Yue & Drafted scope, components, assumptions, FMEA,
 safety requirements, and roadmap based on Volere SRS\\
+Oct 19, 2026 & Vedant Patel & Linked SRs to SRS requirements, added hazards
+H1-3, H1-4, H3-3, H4-3, H6-3, H8-3 and SR13 to SR16, added reflection\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -116,24 +118,25 @@ versioning of the intent model. The system is divided into the following
 major components for hazard brainstorming (not a full design):
 
 \begin{enumerate}
-  \item \textbf{Intent Capture / Requirement Extraction} --- accepts
+  \item \textbf{Intent Capture / Requirement Extraction}: accepts
   natural-language requests and extracts structured draft requirements,
-  quality constraints, and design constraints (SRS FR1--FR3).
-  \item \textbf{Requirement Review and Approval} --- presents proposals for
-  approve, edit, or reject before code generation (SRS FR4--FR6, G5).
-  \item \textbf{Code Generation Control} --- gates the AI coding assistant so
-  implementation proceeds only after an approved decision (SRS FR7--FR8).
-  \item \textbf{Intent Model Store} --- persists the versioned structured
+  quality constraints, and design constraints (SRS FR1 to FR3).
+  \item \textbf{Requirement Review and Approval}: presents proposals for
+  approve, edit, or reject before code generation (SRS FR4 to FR6, G5).
+  \item \textbf{Code Generation Control}: gates the AI coding assistant so
+  implementation proceeds only after an approved decision (SRS FR7 to FR8).
+  \item \textbf{Intent Model Store}: persists the versioned structured
   intent model (requirements, constraints, rationale) (SRS FR9, FR11, G2).
-  \item \textbf{Traceability} --- maintains justified links from intent
+  \item \textbf{Traceability}: maintains justified links from intent
   elements to code and tests (SRS FR9, G3).
-  \item \textbf{Change Verification} --- checks AI-proposed or generated
+  \item \textbf{Change Verification}: checks AI-proposed or generated
   changes against the intent model and reports results (SRS FR10, FR13, G4).
-  \item \textbf{IDE Extension / User Interface} --- VS Code / Cursor (and
+  \item \textbf{IDE Extension / User Interface}: VS Code / Cursor (and
   related) surfaces for review, status, and developer interaction.
-  \item \textbf{External LLM / Network Services} --- remote models or tracing
-  services used for extraction or evaluation.
-  \item \textbf{Version Control Integration} --- Git / GitHub versioning of the
+  \item \textbf{External LLM / Network Services}: the LLM service that the
+  LangGraph workflow calls for extraction and verification, and LangSmith
+  tracing (SRS Off-the-Shelf Software).
+  \item \textbf{Version Control Integration}: Git / GitHub versioning of the
   intent model alongside the project.
 \end{enumerate}
 
@@ -190,8 +193,9 @@ c. Schema mismatch &
 a. Present proposal for mandatory human review before approval\newline
 b. Allow edit/reject of individual items\newline
 c. Validate extracted content against the intent schema &
-a. SR1\newline
-b. FR3--FR6\newline
+a. SR1, SCR1\newline
+b. FR3 to FR6\newline
+c. FR2\newline
 H1-1 \\
 \hline
 
@@ -204,9 +208,32 @@ c. Malformed response &
 a. Notify the developer of extraction failure\newline
 b. Allow retry from the last request\newline
 c. Do not proceed to code generation while extraction is incomplete &
-a. SR2\newline
+a. SR2, IMR2\newline
 b. FR7\newline
 H1-2 \\
+\hline
+
+Intent Capture &
+Text in the workspace alters the extracted requirements &
+Harmful or unrequested requirements are proposed and may be approved &
+a. Prompt injection in code comments, documentation, or dependencies read by
+the LLM &
+a. Show the part of the developer's request that each extracted requirement
+came from\newline
+b. Flag requirements that have no source in the request &
+a. SR14\newline
+b. SR1, FR11\newline
+H1-3 \\
+\hline
+
+Intent Capture &
+Empty, oversized, or malformed request &
+Extraction hangs or exhausts memory; LLM cost spikes &
+a. Very large pasted input\newline
+b. Malformed tool call from the assistant &
+a. Reject empty, oversized, or malformed requests before extraction &
+a. IMR1\newline
+H1-4 \\
 \hline
 
 Review and Approval &
@@ -217,8 +244,8 @@ a. Developer rubber-stamps proposal\newline
 b. UI makes approve too easy relative to review &
 a. Require explicit approve/reject action per proposal\newline
 b. Display structured requirements/constraints clearly before approve &
-a. SR1\newline
-b. FR4--FR5\newline
+a. SR1, SR15\newline
+b. FR4 to FR5\newline
 H2-1 \\
 \hline
 
@@ -229,8 +256,8 @@ a. UI/extension crash\newline
 b. Corrupted draft proposal &
 a. Persist drafts locally and recover on restart\newline
 b. Allow discarding a draft and re-extracting &
-a. SR3\newline
-b. FR5--FR6\newline
+a. SR3, RFR1, RFR3\newline
+b. FR3, FR5 to FR6\newline
 H2-2 \\
 \hline
 
@@ -238,11 +265,15 @@ Code Generation Control &
 Code is generated before approval &
 AI implements unapproved intent; loss of human control (G5) &
 a. Gate not enforced by assistant integration\newline
-b. Developer bypasses tool &
+b. MCP tool call times out and the assistant continues\newline
+c. Developer bypasses tool &
 a. Block assistant implementation until approve/reject is recorded\newline
-b. Document that bypassing the gate is unsupported and breaks the safety case &
-a. SR4\newline
-b. FR7--FR8\newline
+b. Keep generation blocked on timeout or lost connection\newline
+c. Flag code changes with no linked approved requirement during
+verification &
+a. SR4, FR7\newline
+b. SR4\newline
+c. SR8, SR9\newline
 H3-1 \\
 \hline
 
@@ -253,9 +284,20 @@ a. Integration message drop\newline
 b. Partial write to store &
 a. Treat decision recording as atomic with the gate signal\newline
 b. Report failure if either side does not acknowledge &
-a. SR5\newline
+a. SR5, IR1\newline
 b. FR8\newline
 H3-2 \\
+\hline
+
+Code Generation Control &
+AI assistant records its own approval &
+Unreviewed intent is approved and implemented; loss of human control (G5) &
+a. Approval exposed as an MCP tool the assistant can call\newline
+b. Prompt injection instructs the assistant to approve &
+a. Accept approve, edit, and reject only from the IDE panel, never through
+MCP &
+a. SR13, ACR1\newline
+H3-3 \\
 \hline
 
 Intent Model Store &
@@ -266,8 +308,8 @@ b. Concurrent write\newline
 c. Invalid schema write &
 a. Validate on write against schema\newline
 b. Keep recoverable versions / backups of the intent model &
-a. SR6\newline
-b. FR9\newline
+a. SR6, IR2, IR3\newline
+b. FR9, IR4, RFR2\newline
 H4-1 \\
 \hline
 
@@ -278,9 +320,20 @@ a. Manual file edit\newline
 b. Bug writes approved state incorrectly &
 a. Record provenance for approved changes\newline
 b. Prefer append/versioned updates over silent overwrite &
-a. SR7\newline
-b. FR9, FR11\newline
+a. SR7, AUR1, AUR2\newline
+b. FR9, FR11, G2\newline
 H4-2 \\
+\hline
+
+Intent Model Store &
+New release cannot read an existing intent model &
+Developer loses access to past intent after an upgrade &
+a. Schema changed without a migration &
+a. Version the intent model schema and migrate on upgrade\newline
+b. Back up the intent model before migrating &
+a. REL2\newline
+b. SR6\newline
+H4-3 \\
 \hline
 
 Traceability &
@@ -304,8 +357,9 @@ c. Heuristic/LLM checker error &
 a. Compile approved constraints into executable checks where possible\newline
 b. Always verify against the latest approved intent model\newline
 c. Present verification evidence for developer review &
-a. SR9\newline
-b. FR10, FR13\newline
+a. SR9, FR13\newline
+b. FR10, SR9\newline
+c. SR9, AUR3\newline
 H6-1 \\
 \hline
 
@@ -316,9 +370,20 @@ a. Checker crash\newline
 b. Missing tests/checks &
 a. Fail visibly with an error status (do not silent-pass)\newline
 b. Allow limited proceed only with explicit developer acknowledgement &
-a. SR10\newline
-b. FR10\newline
+a. SR10, IMR2\newline
+b. SR10\newline
 H6-2 \\
+\hline
+
+Change Verification &
+Developer treats a pass as proof the change is correct &
+Insecure or wrong code is merged with false confidence &
+a. Verification only covers recorded requirements\newline
+b. Developer stops reviewing AI code (automation bias) &
+a. List which requirements were checked and state that other behaviour was not
+verified &
+a. SR15\newline
+H6-3 \\
 \hline
 
 IDE Extension / UI &
@@ -329,6 +394,7 @@ b. File-watcher failure &
 a. Surface a clear degraded-mode banner\newline
 b. Provide a command to reload/resync project state &
 a. SR2\newline
+b. SR2\newline
 H7-1 \\
 \hline
 
@@ -336,10 +402,16 @@ External LLM / Network &
 Project content leaked to external services &
 Confidential code/requirements exposed; reputational/legal loss &
 a. Full-file prompts to hosted LLM\newline
-b. Logging of prompts/responses &
-a. Minimize outbound context; prefer local processing where feasible\newline
-b. Document what leaves the machine; allow opt-out of external calls &
+b. Prompts and responses stored by LangSmith tracing or diagnostic logs\newline
+c. Secrets such as API keys in files sent to the LLM &
+a. Send only the request and the files needed for it, never the whole
+workspace\newline
+b. Document what is sent to the LLM provider and LangSmith; provide a setting
+to turn tracing off\newline
+c. Never send files ignored by Git or secret files such as \texttt{.env} &
 a. SR11\newline
+b. SR11, PRR1\newline
+c. SR11\newline
 H8-1 \\
 \hline
 
@@ -351,7 +423,20 @@ b. Firewall/proxy &
 a. Notify user of offline/degraded mode\newline
 b. Keep local intent model usable for review of already-captured intent &
 a. SR2\newline
+b. RFR1\newline
 H8-2 \\
+\hline
+
+External LLM / Network &
+Uncontrolled LLM usage &
+Unexpected API charges; the project has no budget &
+a. Automatic retry loop after failures\newline
+b. Very large requests &
+a. Limit automatic retries and report the failure\newline
+b. Reject oversized requests &
+a. SR16\newline
+b. IMR1\newline
+H8-3 \\
 \hline
 
 Version Control &
@@ -361,8 +446,8 @@ a. Intent model not committed\newline
 b. Merge conflict mishandled &
 a. Store intent model in-repo and document commit expectations\newline
 b. Detect uncommitted intent-model changes in the UI &
-a. SR12\newline
-b. FR9\newline
+a. SR12, IAS3\newline
+b. SR12\newline
 H9-1 \\
 \hline
 
@@ -373,10 +458,10 @@ H9-1 \\
 \section{Safety and Security Requirements}
 \label{sec:SR}
 
-The following requirements were identified through the FMEA. They should also be
-added to the SRS (for example under Safety-Critical, Robustness, Security, or
-Operational requirements). Existing functional requirements that already mitigate
-a hazard are cited in Table~\ref{TblFMEA}.
+The following requirements were identified through the FMEA. Where the SRS
+already has a matching requirement, it is listed under \textit{Related SRS}.
+SRS requirements that mitigate a hazard on their own are cited directly in
+Table~\ref{TblFMEA}.
 
 \noindent\textbf{SR1.} The system shall require explicit developer review and an
 approve, edit, or reject decision on every extracted proposal before the
@@ -384,30 +469,31 @@ proposal can update the intent model or authorize code generation.\\
 \textit{Rationale:} Incorrect extraction must not silently become approved
 intent.\\
 \textit{Associated hazards:} H1-1, H2-1\\
-\textit{Related SRS:} FR3--FR6, G1, G5
+\textit{Related SRS:} FR3 to FR6, SCR1, G1, G5
 
 \medskip
 \noindent\textbf{SR2.} The system shall notify the developer when intent capture,
 verification, or IDE sync fails or is unavailable, including network/LLM
 outages.\\
 \textit{Rationale:} Silent failure encourages unsafe bypass of the tool.\\
-\textit{Associated hazards:} H1-2, H7-1, H8-2
+\textit{Associated hazards:} H1-2, H7-1, H8-2\\
+\textit{Related SRS:} PR2, IMR2
 
 \medskip
 \noindent\textbf{SR3.} The system shall persist draft proposals locally so that an
 interrupted review can be resumed or safely discarded and re-run.\\
 \textit{Rationale:} Lost drafts push developers to skip the review workflow.\\
 \textit{Associated hazards:} H2-2\\
-\textit{Related SRS:} FR5--FR6
+\textit{Related SRS:} FR3, FR5 to FR6, RFR1, RFR3
 
 \medskip
-\noindent\textbf{SR4.} The system shall prevent the integrated AI coding assistant from
-implementing a request until the corresponding proposal has an explicit
-approve or reject decision recorded by the developer.\\
-\textit{Rationale:} Human-in-the-loop control is a primary project goal
-(G5).\\
+\noindent\textbf{SR4.} The system shall keep code generation blocked when the
+approval request times out, the connection to the AI coding assistant is lost,
+or the assistant cannot confirm it received the decision.\\
+\textit{Rationale:} FR7 blocks generation before a decision. This requirement
+covers the cases where the gate itself fails.\\
 \textit{Associated hazards:} H3-1\\
-\textit{Related SRS:} FR7--FR8
+\textit{Related SRS:} FR7 to FR8, IMR2
 
 \medskip
 \noindent\textbf{SR5.} The system shall treat recording of the developer's decision in the
@@ -417,15 +503,15 @@ complete.\\
 \textit{Rationale:} Partial updates desynchronize the gate and the source of
 truth.\\
 \textit{Associated hazards:} H3-2\\
-\textit{Related SRS:} FR8
+\textit{Related SRS:} FR8, IR1
 
 \medskip
 \noindent\textbf{SR6.} The system shall validate intent-model writes against the defined
 schema and retain recoverable prior versions of the intent model.\\
 \textit{Rationale:} Corruption or truncation of the intent model is a loss of
 mission for the tool.\\
-\textit{Associated hazards:} H4-1\\
-\textit{Related SRS:} FR9
+\textit{Associated hazards:} H4-1, H4-3\\
+\textit{Related SRS:} FR9, IR2, IR4, RFR2
 
 \medskip
 \noindent\textbf{SR7.} The system shall record provenance for approved intent-model
@@ -433,7 +519,7 @@ changes (who/what approved, and from which proposal/request) and shall not
 silently overwrite approved intent without a new recorded decision.\\
 \textit{Rationale:} Untracked edits break requirement lineage.\\
 \textit{Associated hazards:} H4-2\\
-\textit{Related SRS:} FR9, FR11
+\textit{Related SRS:} FR11, AUR1, AUR2, AUR4, G2
 
 \medskip
 \noindent\textbf{SR8.} The system shall detect and report missing, broken, or unjustified
@@ -441,7 +527,7 @@ traceability links between intent-model elements and associated code or
 tests.\\
 \textit{Rationale:} Traceability is required for maintainability and for
 explaining AI-generated structure.\\
-\textit{Associated hazards:} H5-1\\
+\textit{Associated hazards:} H3-1, H5-1\\
 \textit{Related SRS:} FR9, FR11, G3
 
 \medskip
@@ -450,8 +536,8 @@ latest approved intent model, prefer executable compiled checks where
 available, and present verification evidence to the developer rather than a
 bare pass/fail with no support.\\
 \textit{Rationale:} False passes create over-trust in unsafe changes.\\
-\textit{Associated hazards:} H6-1\\
-\textit{Related SRS:} FR10, FR13, G4
+\textit{Associated hazards:} H3-1, H6-1\\
+\textit{Related SRS:} FR10, FR13, AUR3, G4
 
 \medskip
 \noindent\textbf{SR10.} The system shall not treat a verification infrastructure failure as
@@ -459,16 +545,18 @@ a successful pass; verification errors shall be surfaced explicitly, and any
 continue-anyway path shall require explicit developer acknowledgement.\\
 \textit{Rationale:} Silent pass-on-error is an unacceptable hazard control
 failure.\\
-\textit{Associated hazards:} H6-2
+\textit{Associated hazards:} H6-2\\
+\textit{Related SRS:} FR10, IMR2
 
 \medskip
-\noindent\textbf{SR11.} The system shall minimize project content sent to external LLM or
-logging services, document what data may leave the machine, and provide a way
-to disable or avoid external calls when the developer requires local-only
-operation.\\
-\textit{Rationale:} Leakage of private code or requirements is a stakeholder
-loss.\\
-\textit{Associated hazards:} H8-1
+\noindent\textbf{SR11.} The system shall send an external LLM only the
+developer's request and the files needed for it, shall never send files ignored
+by Git or secret files such as \texttt{.env}, shall document what is sent to the
+LLM provider and to LangSmith, and shall let the developer turn tracing off.\\
+\textit{Rationale:} Leakage of private code, requirements, or secrets is a
+stakeholder loss.\\
+\textit{Associated hazards:} H8-1\\
+\textit{Related SRS:} PRR1
 
 \medskip
 \noindent\textbf{SR12.} The system shall keep the intent model as a versionable project
@@ -477,7 +565,42 @@ uncommitted relative to the workspace.\\
 \textit{Rationale:} Without versioning, past intent and rationale cannot be
 reconstructed.\\
 \textit{Associated hazards:} H9-1\\
-\textit{Related SRS:} FR9
+\textit{Related SRS:} FR9, IAS3, IR4
+
+\medskip
+\noindent\textbf{SR13.} The system shall accept approve, edit, and reject
+decisions only from the developer through the IDE panel, and shall not expose
+them as tools the AI coding assistant can call.\\
+\textit{Rationale:} If the assistant can approve its own proposals, the
+approval gate provides no human control.\\
+\textit{Associated hazards:} H3-3\\
+\textit{Related SRS:} ACR1, G5
+
+\medskip
+\noindent\textbf{SR14.} The system shall show, for each extracted requirement,
+the part of the developer's request it came from, and shall flag requirements
+that have no source in the request.\\
+\textit{Rationale:} Requirements injected by workspace content must be visible
+to the reviewer.\\
+\textit{Associated hazards:} H1-3\\
+\textit{Related SRS:} FR4, FR11
+
+\medskip
+\noindent\textbf{SR15.} Verification results shall list which requirements and
+constraints were checked and shall state that behaviour not covered by them was
+not verified.\\
+\textit{Rationale:} A bare pass encourages developers to stop reviewing AI
+code.\\
+\textit{Associated hazards:} H2-1, H6-3\\
+\textit{Related SRS:} FR10, G4
+
+\medskip
+\noindent\textbf{SR16.} The system shall limit automatic retries of a failed LLM
+call to a fixed number and then report the failure to the developer.\\
+\textit{Rationale:} Retry loops can create API charges the project has no
+budget for.\\
+\textit{Associated hazards:} H8-3\\
+\textit{Related SRS:} Budget Constraints, IMR1
 
 \section{Roadmap}
 
@@ -488,12 +611,13 @@ mapping between intent and implementation under human approval.
 
 \begin{itemize}
   \item \textbf{In scope for the capstone timeline (Rev~0 / PoC focus):}
-  SR1, SR4, SR5, SR6, SR9, and the related SRS requirements FR3--FR10 that
-  already encode capture, approval, gating, intent persistence, and
+  SR1, SR4, SR5, SR6, SR9, SR13, and the related SRS requirements FR3 to FR10
+  that already encode capture, approval, gating, intent persistence, and
   verification.
   \item \textbf{Targeted for later / stretch within the course:}
-  SR3, SR7, SR8, SR10, SR12 (stronger provenance, trace-break detection,
-  continue-anyway acknowledgement UX, and Git hygiene warnings).
+  SR3, SR7, SR8, SR10, SR12, SR14, SR15, SR16 (stronger provenance,
+  trace-break detection, continue-anyway acknowledgement, Git warnings,
+  request sources, verification coverage, and retry limits).
   \item \textbf{Likely future work beyond the course if not reached:}
   SR2 polish across all failure surfaces, and SR11 (local-only / privacy
   controls for external LLM traffic).
@@ -508,44 +632,117 @@ mapping between intent and implementation under human approval.
 \begin{itemize}
   \item Claude (Anthropic), Claude Sonnet 4.6
   \item Cursor Agent (Composer), used while drafting this document
+  \item Claude (Anthropic), Claude Opus 5.5, used through Claude Code
 \end{itemize}
 
 \subsection{How and Where Used}
 
 \begin{itemize}
-  \item Drafting and structuring Sections~1--7 of this hazard analysis from the
+  \item Drafting and structuring Sections~1 to 7 of this hazard analysis from the
   project SRS and a prior-year example (Sayyara), including the FMEA table and
-  SR1--SR12 wording.
+  SR1 to SR12 wording.
   \item Spelling, grammar, and clarity edits on drafted prose.
+  \item Claude Opus 5.5 was given the requirements, then used to generate a
+  starter draft. Vedant Patel reviewed and edited the content.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}
 
-All AI-assisted text was treated as a draft. Team members will review each
-FMEA row and safety requirement against the actual product goals and SRS before
-submission. Hazard identifiers, requirement IDs, and claims about intended
-behaviour were checked against \texttt{docs/SRS-Volere/SRS.tex}. The team remains
-responsible for the accuracy and completeness of this document.
+All AI-assisted text was treated as a draft. Each FMEA row and safety
+requirement was reviewed against the project goals and the SRS. Every FR,
+goal, and SRS requirement ID cited in this document was checked to exist in
+the SRS. The team remains responsible for the accuracy and completeness of this document.
 
 \newpage{}
 
 \section{Appendix --- Reflection}
 
-\wss{Not required for CAS 741}
-
 \input{../Reflection.text}
 
 \begin{enumerate}
     \item What went well while writing this deliverable?
+
+    Analyzing one component at a time made the FMEA systematic. For each
+    component we asked what happens if it fails, if its output is wrong, or if
+    a dependency is unavailable. Giving each hazard an ID and each mitigation
+    an SR number made traceability simple.
+
+    Several hazards were already covered by existing requirements. The
+    approval gate (FR4 to FR8) was written to keep the developer in control
+    (G5), and it is also the main mitigation for H1-1, H2-1, and H3-1.
+
     \item What pain points did you experience during this deliverable, and how
     did you resolve them?
+
+    The SRS and the hazard analysis were written at the same time on separate
+    branches. The first draft of the FMEA was written before the SRS security
+    and robustness sections existed, so it did not reference them. During
+    review we checked every cited ID against the SRS, linked each SR to the
+    matching SRS requirements, and added hazards the SRS pointed to, such as
+    the AI assistant approving its own proposal (ACR1).
+
+    It was not obvious what counts as a hazard for a tool with no risk of
+    physical harm. Using the STPA definition of a loss (Section~1) resolved
+    this. Losing engineering intent, losing control over AI changes, and
+    leaking private code are all losses.
+
+    Most of the writing happened in the two days before the deadline. For the
+    V\&V Plan, we will start earlier to leave time for review.
+
     \item Which of your listed risks had your team thought of before this
     deliverable, and which did you think of while doing this deliverable? For
     the latter ones (ones you thought of while doing the Hazard Analysis), how
     did they come about?
+
+    \textbf{Known before.} The Development Plan names our primary risk:
+    keeping an accurate, synchronized model of how code maps to intent. This
+    appears as H4-1, H5-1, and H6-1. The Problem Statement names AI code
+    drifting from its specification, which appears as H3-1.
+
+    \textbf{New during this deliverable.}
+    \begin{itemize}
+      \item \textit{AI self-approval and prompt injection (H1-3, H3-3).}
+      Reviewing the SRS access requirement ACR1 and the planned MCP design
+      showed that the assistant itself could approve a proposal, or be told to
+      by text in the workspace.
+      \item \textit{Rubber-stamp approvals (H2-1).} Treating the developer as
+      part of the system showed that an approval gate only works if the
+      developer actually reviews.
+      \item \textit{Partial decision recording (H3-2).} Asking what happens if
+      a decision reaches the intent model but not the AI assistant showed the
+      two can fall out of sync.
+      \item \textit{Silent pass on checker failure (H6-2).} Asking what the
+      checker reports when it crashes showed a crash could be read as a pass.
+      \item \textit{Code and secrets leaking to external services (H8-1).}
+      Listing what the system sends over the network showed that source code,
+      requirements, and API keys may reach the LLM provider or LangSmith.
+      \item \textit{LLM cost (H8-3).} The SRS budget constraint states the
+      project has no budget, so a retry loop against a paid API is a real
+      loss.
+      \item \textit{Offline operation and Git divergence (H1-2, H8-2, H9-1).}
+      These came from asking what happens when the network or version control
+      is unavailable.
+    \end{itemize}
+
     \item Other than the risk of physical harm (some projects may not have any
     appreciable risks of this form), list at least 2 other types of risk in
     software products. Why are they important to consider?
+
+    \begin{itemize}
+      \item \textbf{Security and privacy.} Data the software handles is
+      accessed or disclosed without permission. This matters because leaked
+      data cannot be recalled and can have legal consequences. For
+      \progname{}, this is code sent to external LLMs (H8-1).
+      \item \textbf{Data integrity.} Stored data becomes wrong or corrupted
+      without anyone noticing. This matters because later decisions build on
+      that data. For \progname{}, a corrupted intent model (H4-1) would make
+      every later verification unreliable.
+      \item \textbf{Over-reliance.} Users trust the software more than they
+      should. This matters because the harm occurs even when the software
+      works as designed. For \progname{}, a ``verified'' label could lead
+      developers to stop reviewing AI code (H6-3), which is why SR15 requires
+      stating what was not verified.
+    \end{itemize}
 \end{enumerate}
 
 \begin{thebibliography}{9}
