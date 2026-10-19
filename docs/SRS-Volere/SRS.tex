@@ -351,19 +351,46 @@ quality constraints into executable checks, such tests, that the AI-generated co
 
 \section{Performance Requirements}
 \subsection{Speed and Latency Requirements}
-\lips
+
+\noindent\textbf{PR1.} The system shall process developer requests and produce engineering artifact proposals within a reasonable amount of time relative to a typical AI coding assistant interaction, such that the additional IDE3 processing does not significantly disrupt the developer's workflow.
+
+\noindent\textbf{PR2.} The system shall provide immediate user feedback when a long running operation begins, so that the developer is aware that the request is being processed.
+
 \subsection{Safety-Critical Requirements}
-\lips
+
+\noindent\textbf{SCR1.} The system shall require explicit human approval of proposed engineering artifacts before they are used to guide code generation or modifications.
+
 \subsection{Precision or Accuracy Requirements}
-\lips
+
+\noindent\textbf{PAR1.} When a developer rejects or modifies a proposed engineering artifact, the system shall incorporate the provided feedback into subsequent revisions until an acceptable set of artifacts is produced or the workflow is terminated by the developer.
+
 \subsection{Robustness or Fault-Tolerance Requirements}
-\lips
+
+\noindent\textbf{RFR1.} The system shall preserve approved engineering artifacts and their relationships if an active workflow fails or is interrupted.
+
+\noindent\textbf{RFR2.} A failure in an external service, coding agent, or model interaction shall not corrupt previously persisted project data.
+
+\noindent\textbf{RFR3.} Where possible, the system shall allow a developer to resume an interrupted workflow without repeating previously completed and approved steps.
+
 \subsection{Capacity Requirements}
-\lips
+
+\noindent\textbf{CR1.} The system shall be capable of maintaining engineering artifacts, their relationships, and traceability information for software projects of a size representative of a medium sized development project.
+
+\noindent\textbf{CR2.} The system shall support processing development requests that produce multiple related engineering artifacts without requiring the user to manually divide the request into separate interactions.
+
 \subsection{Scalability or Extensibility Requirements}
-\lips
+
+\noindent\textbf{SER1.} The system shall maintain acceptable performance as the size of the project, number of engineering artifacts, and number of traceability relationships increase.
+
+\subsection{Scalability or Extensibility Requirements}
+
+\noindent\textbf{SER1.} The system shall maintain acceptable performance as the size of the project, number of engineering artifacts, and number of traceability relationships increase.
+
+\noindent\textbf{SER2.} The system shall be structured so that support for additional coding agents, engineering artifact types, and analysis methods can be added without significant restructuring of the core system.
+
 \subsection{Longevity Requirements}
-\lips
+
+\noindent\textbf{LR1.} The system shall be designed to remain adaptable as AI models, coding agents, engineering practices, and forms of engineering input evolve.
 
 \section{Operational and Environmental Requirements}
 \subsection{Expected Physical Environment}
