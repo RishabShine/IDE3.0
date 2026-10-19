@@ -1,11 +1,25 @@
 \begin{enumerate}
   \item What went well while writing this deliverable? 
+
+  Writing this deliverable helped us better define the scope of the project. We were able to separate what \progname{} is responsible for from what will be handled by external coding agents, and turn some of our higher-level ideas into more concrete requirements.
+
   \item What pain points did you experience during this deliverable, and how did
   you resolve them?
+
+  A main challenge was that our project direction was still changing while we were writing the SRS. Discussions with our supervisor helped us narrow the focus toward refining engineering intent into precise contracts, so we updated our requirements and product boundary to better match that direction.
+
   \item How many of your requirements were inspired by speaking to your
   client(s) or their proxies (e.g. your peers, stakeholders, potential users)?
+
+  A large portion of our core requirements were influenced by discussions with our supervisor, especially requirements related to refining engineering intent, generating contracts, maintaining traceability, and separating our system from the coding agent.
+
   \item Which of the courses you have taken, or are currently taking, will help
   your team to be successful with your capstone project.
+
+  \textbf{Rishab Shine}
+
+  SFWRENG 3S03, Software Testing, will be especially useful for this project. The course covers preconditions, postconditions, software contracts, and test-driven development, which are directly related to the contracts we plan to generate from engineering requirements.
+
   \item What knowledge and skills will the team collectively need to acquire to
   successfully complete this capstone project?  Examples of possible knowledge
   to acquire include domain specific knowledge from the domain of your
@@ -13,8 +27,20 @@
   computer science knowledge.  Skills may be related to technology, or writing,
   or presentation, or team management, etc.  You should look to identify at
   least one item for each team member.
+
+  \textbf{Rishab Shine}
+
+  I will need to build a stronger understanding of how engineering intent can be broken down into precise software contracts, including preconditions, postconditions, and other constraints. I will also need to learn more about VS Code extension development.
+
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
   mastering the skill?  Of the identified approaches, which will each team
   member pursue, and why did they make this choice?
+
+  \textbf{Rishab Shine}
+
+  For software contracts, I can review material from SFWRENG 3S03 or use additional technical resources and examples of contract based software development. I plan to start with the course material since it already covers many of the concepts relevant to our project, and then use outside resources where more detail is needed.
+
+  For VS Code extension and coding-agent integration, I can use official documentation and tutorials or build small prototypes to test individual parts of the integration. I plan to use the documentation alongside small prototypes so I can learn the technologies while also checking whether our planned approach is practical.
+
 \end{enumerate}
