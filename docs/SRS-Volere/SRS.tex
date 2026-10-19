@@ -430,10 +430,11 @@ requirements.
 
 \medskip
 \noindent\textbf{RF1.} Some AI coding assistants offer their own ways to carry
-context between sessions, such as memory files or project rules. This context
-is specific to each tool, unstructured, not versioned, and not reviewed. It does
-not record requirements, design decisions, or their rationale in a form that can
-be traced or reused by a different assistant.
+context between sessions, such as memory files or project rules. These files
+can be kept under version control, but they hold general context and
+instructions in a format specific to each tool. They do not record
+requirements, design decisions, or their rationale in a form that can be traced
+or reused by a different assistant.
 
 \medskip
 \noindent\textbf{RF2.} AI coding assistants can generate code directly from an
@@ -1380,11 +1381,90 @@ There are currently no open issues to be discussed.
 
 \section{Off-the-Shelf Solutions}
 \subsection{Ready-Made Products}
-\lips
+
+Several existing products cover parts of the problem, but none of them refines
+intent all the way to formal contracts while keeping a versioned, traceable
+record of every stage.
+
+\begin{itemize}
+  \item \textbf{GitHub Spec Kit.} An open-source toolkit for spec-driven
+  development with AI coding assistants. It guides the developer from a
+  specification to a technical plan, a task list, and then implementation. It
+  can produce interface contracts and supports some traceability between
+  specifications and tasks. It does not verify formal contracts against the
+  code, and it does not maintain fine-grained traceability from requirements to
+  source code.
+  \item \textbf{Kiro.} An AI development platform, available as an IDE, a
+  command-line tool, and a web interface, that turns a prompt into
+  requirements, a technical design, and a task list before generating code. It
+  can use property-based tests to check the generated code against properties
+  derived from the requirements. It does not include a formal contract stage,
+  such as JML, in its workflow.
+  \item \textbf{Built-in memory of AI coding assistants.} Features such as
+  Claude Code memory files and Cursor rules carry project context and
+  instructions between sessions, and the files can be kept under version
+  control. As described in RF1, they hold general context and instructions, not
+  a requirements workflow with approval states, refinement relationships, or
+  traceability between intent, requirements, architecture, and contracts.
+  \item \textbf{Requirements management tools.} Tools such as IBM DOORS and Jama
+  Connect version requirements, maintain traceability links, and offer
+  AI-assisted features and integrations with other development tools. They do
+  not provide a workflow that refines developer intent through architecture and
+  method-level contracts before handing the result to an AI coding assistant.
+\end{itemize}
+
+Since none of these products meets the goals in full, \progname{} will be built
+as a new product. Spec Kit and Kiro may be used as points of comparison during
+evaluation.
+
 \subsection{Reusable Components}
-\lips
+
+\progname{} will build on the following existing components instead of
+implementing them from scratch. Each component will be used according to its
+licence (see LR1).
+
+\begin{itemize}
+  \item \textbf{VS Code Extension API.} Provides the user interface, commands,
+  and workspace access for the tool inside the IDE.
+  \item \textbf{Model Context Protocol (MCP) SDKs.} Official libraries for
+  building the MCP server that the AI coding assistant communicates with.
+  \item \textbf{LangGraph.} Runs the refinement workflow as a graph and pauses
+  it for developer approval at each stage. Its saved checkpoints allow an
+  interrupted workflow to be resumed (RFR3).
+  \item \textbf{LangSmith.} Traces and evaluates the LLM calls made during
+  refinement.
+  \item \textbf{Contract languages and checkers.} JML and OpenJML for Java, and
+  libraries such as icontract or deal for Python, are used to write and check
+  formal contracts. \progname{} does not include its own verifier (AS2).
+  \item \textbf{UML modelling tools.} Existing VS Code UML extensions may be
+  used to display and edit architecture and interface models.
+  \item \textbf{Git.} Versions the intent model and records its history (IAS3).
+\end{itemize}
+
 \subsection{Products That Can Be Copied}
-\lips
+
+The following practices and formats can be copied or adapted, rather than
+designed from scratch.
+
+\begin{itemize}
+  \item \textbf{Staged workflow of Spec Kit and Kiro.} Both products move from
+  requirements to design to tasks with a review between stages. \progname{} can
+  adapt this structure and extend it with interface specification and contract
+  stages.
+  \item \textbf{EARS notation.} The Easy Approach to Requirements Syntax gives
+  requirements a fixed sentence structure. It can be used as the format for the
+  requirements stage.
+  \item \textbf{Architecture Decision Records (ADRs).} A lightweight format for
+  recording an architecture decision, its context, its status, and its
+  consequences. Several templates exist, and one can be chosen to record
+  decisions and rationale at the architecture stage.
+  \item \textbf{Volere requirement shell.} The template used in this document,
+  where each requirement has a description, rationale, and fit criterion. It
+  can be used as the structure for requirements in the intent model.
+  \item \textbf{Design by Contract.} The practice of specifying preconditions,
+  postconditions, and invariants for each method, introduced by Bertrand Meyer
+  with the Eiffel language. It defines what the contract stage must produce.
+\end{itemize}
 
 \section{New Problems}
 \subsection{Effects on the Current Environment}
