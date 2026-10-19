@@ -30,6 +30,14 @@
   modular design, which we need to structure the IDE extension, the LangGraph
   workflow, and the MCP server as separate components.
 
+  \textbf{Tyler Yue}
+
+  A course I have taken that will help the team be successful with our
+  capstone project is COMPSCI 4NL3, Natural Language Processing. The course
+  taught fundamentals of parsing natural language, interacting with and fine
+  tuning large language models, and techniques for extracting semantics from
+  text, all of which will be applicable to this project.
+
   \item What knowledge and skills will the team collectively need to acquire to
   successfully complete this capstone project?  Examples of possible knowledge
   to acquire include domain specific knowledge from the domain of your
@@ -48,6 +56,12 @@
   and pauses it for developer approval. I will also need to learn VS Code
   extension development, since the review panel where developers approve or
   reject proposals is a VS Code extension.
+
+  \textbf{Tyler Yue}
+
+  The team will need to acquire knowledge of how to integrate with the VS Code
+  Extension API and the Model Context Protocol in order to integrate our
+  project into developers' existing workflows.
 
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
@@ -70,5 +84,17 @@
   I will use the official documentation for both. I learn best from
   documentation, and it matches the library versions we use, while video
   tutorials often cover older versions.
+
+  \textbf{Tyler Yue}
+
+  One approach is to read the official VS Code extension documentation and
+  samples, and the MCP specification, then build a minimal extension that
+  registers a command and a panel. A second approach is to build a small
+  end-to-end MCP tool server that implements changes only after approval and
+  connect it to a VS Code UI that records approve/reject.
+
+  I will pursue the second approach, supported by the first. A working spike
+  forces the real integration issues to show up early, which matters for our
+  Proof of Concept and for keeping the approval gate enforceable in the IDE.
 
 \end{enumerate}
