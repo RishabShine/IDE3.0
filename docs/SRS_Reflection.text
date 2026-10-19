@@ -38,6 +38,15 @@
   tuning large language models, and techniques for extracting semantics from
   text, all of which will be applicable to this project.
 
+  \textbf{Qusay Qadir}
+
+  For me the SFWRENG 3DB3, Databases course, applies directly to the intent model at the centre of
+  \progname{}. It covered transactions, the ACID properties, and schema design,
+  which I drew on when writing the integrity requirements that keep every change
+  to the intent model atomic, consistent, isolated, and durable. SFWRENG 3RA3,
+  Software Requirements, also helped me write the scope, requirements, and
+  glossary sections of this SRS using requirements elicitation and fit criteria.
+
   \item What knowledge and skills will the team collectively need to acquire to
   successfully complete this capstone project?  Examples of possible knowledge
   to acquire include domain specific knowledge from the domain of your
@@ -62,6 +71,14 @@
   The team will need to acquire knowledge of how to integrate with the VS Code
   Extension API and the Model Context Protocol in order to integrate our
   project into developers' existing workflows.
+
+  \textbf{Qusay Qadir}
+
+  I will need to learn how engineering requirements can be expressed as
+  checkable contracts, and the verification techniques used to confirm whether
+  generated code satisfies them. This is the core of the validation stage I
+  specified for \progname{}, where generated code is checked against the intent
+  model and the contracts derived from it.
 
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
@@ -96,5 +113,20 @@
   I will pursue the second approach, supported by the first. A working spike
   forces the real integration issues to show up early, which matters for our
   Proof of Concept and for keeping the approval gate enforceable in the IDE.
+
+  \textbf{Qusay Qadir}
+
+  For turning requirements into checkable contracts, one approach is to work
+  through documentation and tutorials on contract-based specification and
+  verification, using small examples to learn how a requirement becomes a check
+  that code must satisfy. A second approach is to build a small prototype that
+  takes one sample requirement, turns it into a contract, and checks a sample
+  piece of code against that contract to see the full pass-or-fail flow from
+  start to finish.
+
+  I will pursue the second approach, supported by the first. Building this small
+  prototype early shows whether requirements can realistically be turned into
+  contracts that generated code must satisfy, which is the riskiest part of our
+  Proof of Concept.
 
 \end{enumerate}
