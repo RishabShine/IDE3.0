@@ -20,6 +20,16 @@
 
   SFWRENG 3S03, Software Testing, will be especially useful for this project. The course covers preconditions, postconditions, software contracts, and test-driven development, which are directly related to the contracts we plan to generate from engineering requirements.
 
+  \textbf{Vedant Patel}
+
+  SFWRENG 3RA3, Software Requirements, applies directly to this deliverable. It
+  covered requirements elicitation, stakeholder analysis, and writing
+  requirements with fit criteria, which I used when writing the stakeholder,
+  persona, and glossary sections of this SRS. SFWRENG 3A04, Software Design III,
+  will help with the design document. It covered software architecture and
+  modular design, which we need to structure the IDE extension, the LangGraph
+  workflow, and the MCP server as separate components.
+
   \item What knowledge and skills will the team collectively need to acquire to
   successfully complete this capstone project?  Examples of possible knowledge
   to acquire include domain specific knowledge from the domain of your
@@ -32,6 +42,13 @@
 
   I will need to build a stronger understanding of how engineering intent can be broken down into precise software contracts, including preconditions, postconditions, and other constraints. I will also need to learn more about VS Code extension development.
 
+  \textbf{Vedant Patel}
+
+  I will need to learn LangGraph, which runs our requirement extraction workflow
+  and pauses it for developer approval. I will also need to learn VS Code
+  extension development, since the review panel where developers approve or
+  reject proposals is a VS Code extension.
+
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
   mastering the skill?  Of the identified approaches, which will each team
@@ -42,5 +59,16 @@
   For software contracts, I can review material from SFWRENG 3S03 or use additional technical resources and examples of contract based software development. I plan to start with the course material since it already covers many of the concepts relevant to our project, and then use outside resources where more detail is needed.
 
   For VS Code extension and coding-agent integration, I can use official documentation and tutorials or build small prototypes to test individual parts of the integration. I plan to use the documentation alongside small prototypes so I can learn the technologies while also checking whether our planned approach is practical.
+
+  \textbf{Vedant Patel}
+
+  For LangGraph, I can read the official LangGraph documentation and its
+  human-in-the-loop guides, or follow video tutorials and online courses. For VS
+  Code extension development, I can read the official VS Code Extension API
+  documentation and its sample extensions, or follow video tutorials.
+
+  I will use the official documentation for both. I learn best from
+  documentation, and it matches the library versions we use, while video
+  tutorials often cover older versions.
 
 \end{enumerate}
