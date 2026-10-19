@@ -114,17 +114,151 @@ to keep engineering principles connected to the code and test cases that impleme
 \progname{} is intended to serve these teams by keeping that intent explicit, traceable, and under human control.
 
 \subsection{Other Stakeholders}
-\lips
+
+Table~\ref{TblOtherStakeholders} lists stakeholders who are not users of
+\progname{} but who influence or are affected by it.
+
+\begin{table}[h!]
+\centering
+\caption{Other Stakeholders}
+\label{TblOtherStakeholders}
+\begin{tabularx}{\textwidth}{p{4.2cm}X}
+\toprule
+\textbf{Stakeholder} & \textbf{Interest in \progname{}} \\
+\midrule
+Development team (Team 8) & Designs, builds, and tests the product. Owns the
+requirements and documentation. \\
+Course instructor and TAs & Evaluate the documentation, demonstrations, and
+final product against the course rubrics. \\
+AI coding assistant vendors & Provide the assistants \progname{} integrates
+with, such as Claude Code, Codex, and Cursor. Changes to their MCP support can
+break the integration. \\
+LLM and tracing service providers & Provide the LLM used for extraction and
+verification, and LangSmith for tracing. They receive project data sent by the
+product. \\
+IDE vendors and extension marketplaces & Define the extension APIs and
+publishing rules the product must follow, such as the VS Code Marketplace. \\
+Open-source license holders & Own the libraries the product uses. Their
+licenses must be respected. \\
+End users of software built with \progname{} & Indirectly affected. They rely
+on software whose quality depends on the intent captured by the product. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \subsection{Hands-On Users of the Project}
-\lips
+
+\progname{} has three categories of hands-on users.
+
+\begin{itemize}
+  \item \textbf{AI-assisted developer.} Writes code with an AI coding assistant
+  inside an IDE. Submits requests, reviews and approves proposed requirements,
+  and reads verification results.
+  \begin{itemize}
+    \item Subject matter experience: knows the software being built.
+    Familiar with requirements and design concepts, but may not write formal
+    requirements.
+    \item Technological experience: comfortable with an IDE, Git, and at least
+    one AI coding assistant.
+    \item Education: undergraduate degree in software engineering, computer
+    science, or equivalent experience.
+    \item Attitude toward technology: uses AI tools daily and wants to keep
+    their speed. Will avoid steps that feel slow or repetitive.
+  \end{itemize}
+
+  \item \textbf{Technical lead or reviewer.} Reviews changes made by other
+  developers. Uses the intent model, traceability links, and verification
+  results to judge whether a change meets its requirements.
+  \begin{itemize}
+    \item Subject matter experience: high. Understands the system design and
+    its quality priorities.
+    \item Technological experience: high. Uses Git, GitHub pull requests, and
+    code review tools.
+    \item Attitude toward technology: values traceability and control over
+    speed. Sceptical of AI-generated code.
+  \end{itemize}
+
+  \item \textbf{New team member.} Joins a project that already uses
+  \progname{}. Reads the intent model to learn why the code is structured the
+  way it is.
+  \begin{itemize}
+    \item Subject matter experience: low for the project being joined.
+    \item Technological experience: comfortable with an IDE and Git.
+    \item Attitude toward technology: relies on documentation and existing
+    artifacts to learn the codebase.
+  \end{itemize}
+\end{itemize}
+
 \subsection{Personas}
-\lips
+
+\textbf{Priya, AI-assisted developer.} Priya is a full-stack developer at a
+small software company. She uses Claude Code in VS Code for most new features.
+Her team has lost track of why parts of the code were written, because the
+reasoning only existed in old chat sessions. Priya wants her requirements
+recorded without slowing down. She will use \progname{} if reviewing a proposal
+takes less time than explaining the feature again later.
+
+\textbf{Daniel, technical lead.} Daniel reviews pull requests for a team of six
+developers who all use AI assistants. He cannot read every line of generated
+code, so he needs to know which requirements a change is meant to satisfy and
+whether it does. He uses the intent model and verification results during code
+review.
+
+\textbf{Sam, new team member.} Sam joined Daniel's team last month. When Sam
+finds code that looks unnecessary, Sam checks the intent model to find the
+requirement and rationale behind it before changing anything.
+
 \subsection{Priorities Assigned to Users}
-\lips
+
+\begin{itemize}
+  \item \textbf{Key users:} AI-assisted developers. The product cannot meet its
+  goals unless they capture and approve intent (G1, G5).
+  \item \textbf{Secondary users:} technical leads, reviewers, and new team
+  members. They read the intent model, traceability links, and verification
+  results, but do not create most of the content.
+  \item \textbf{Unimportant users:} non-technical stakeholders, such as product
+  managers, who may read the intent model. The product does not provide
+  features specifically for them.
+\end{itemize}
+
+When the needs of key and secondary users conflict, the needs of key users take
+priority.
+
 \subsection{User Participation}
-\lips
+
+\begin{itemize}
+  \item \textbf{Client.} Dr.~David meets with the team weekly to review
+  requirements and progress, and sets the acceptance criteria for the
+  prototype.
+  \item \textbf{Development team.} Team members are AI-assisted developers
+  themselves and represent the key user group when writing and reviewing
+  requirements.
+  \item \textbf{Representative users.} Developers outside the team will try
+  the review and approval workflow during validation. Details will be given in
+  the V\&V Plan.
+  \item \textbf{Demonstrations.} Feedback from the Proof of Concept and
+  Revision~0 demonstrations will be used to revise the requirements.
+\end{itemize}
+
 \subsection{Maintenance Users and Service Technicians}
-\lips
+
+\progname{} is software only, so there are no service technicians.
+
+During the course, the development team maintains the product. After the
+course, maintenance responsibility will be agreed with the client.
+
+Maintainers need:
+\begin{itemize}
+  \item documentation of each major component and interface
+  (Maintenance Requirements);
+  \item diagnostic logs for significant failures (Supportability
+  Requirements);
+  \item isolated integrations so new AI coding assistants can be added
+  (Adaptability Requirements).
+\end{itemize}
+
+Developers who use \progname{} update it through their IDE's extension
+marketplace and rely on release notes to learn what changed (REL1).
 
 \section{Mandated Constraints}
 \subsection{Solution Constraints}
@@ -232,7 +366,64 @@ requiring teams to adopt new infrastructure.
 \section{Naming Conventions and Terminology}
 \subsection{Glossary of All Terms, Including Acronyms, Used by Stakeholders
 involved in the Project}
-\lips
+
+\begin{description}
+  \item[AI coding assistant] An AI tool that writes or changes code from
+  natural-language requests, such as Claude Code, Codex, or Cursor AI.
+  \item[Agentic] Describes an AI system that carries out multi-step tasks,
+  such as editing files and running commands, with limited human input.
+  \item[Approval] The developer's decision to accept a proposal. Only approved
+  requirements enter the intent model and guide code generation.
+  \item[Design constraint] A restriction on how the software may be designed or
+  built, such as a required framework or architecture.
+  \item[Design rationale] The reason a requirement or design decision was made.
+  \item[Engineering artifact] Any item recorded by \progname{}, such as a
+  requirement, constraint, design decision, or traceability link.
+  \item[Engineering intent] What the developer wants the software to do and
+  why, including requirements, quality priorities, constraints, and rationale.
+  \item[Fit criterion] A measurable condition used to decide whether a
+  requirement has been met.
+  \item[Functional requirement] A behaviour the system must perform.
+  \item[Git] A version control system for tracking changes to files.
+  \item[GitHub] A hosting service for Git repositories.
+  \item[Host IDE] The IDE in which \progname{} runs, such as VS Code, Cursor,
+  or PyCharm.
+  \item[Human-in-the-loop] A workflow in which a person must review and approve
+  an AI result before it takes effect.
+  \item[IDE] Integrated Development Environment. An application for writing,
+  running, and debugging code.
+  \item[Intent model] The versioned, structured record of a project's approved
+  requirements, quality constraints, design rationale, and traceability links.
+  It is the source of truth for engineering intent.
+  \item[LangGraph] A framework for building LLM workflows. \progname{} uses it
+  to run extraction with human approval steps.
+  \item[LangSmith] A service for tracing and evaluating LLM workflows.
+  \item[LLM] Large Language Model. An AI model that generates text, used by
+  \progname{} to extract and verify requirements.
+  \item[MCP] Model Context Protocol. An open protocol that lets AI coding
+  assistants call external tools. \progname{} uses it to communicate with the
+  assistant.
+  \item[Non-functional requirement] A quality the system must have, such as
+  performance, security, or usability.
+  \item[Proposal] A set of requirements and constraints extracted from a
+  developer's request and awaiting approval, editing, or rejection. Also called
+  a draft proposal.
+  \item[Quality constraint] A required level of a quality attribute, such as
+  maximum response time.
+  \item[Requirement lineage] The recorded history of how a requirement was
+  created and changed.
+  \item[Schema] The defined structure that intent model data must follow.
+  \item[SE3.0] Software Engineering 3.0. A development approach in which
+  engineers define goals, constraints, and acceptance criteria, and AI agents
+  carry out the implementation.
+  \item[SRS] Software Requirements Specification. This document.
+  \item[Traceability link] A recorded, justified connection between an
+  element of the intent model and the code or tests that implement it.
+  \item[Verification] Checking a code change against the intent model to
+  decide whether it satisfies the recorded requirements and constraints.
+  \item[VSIX] The package format for VS Code extensions.
+  \item[Workspace] The project folder open in the developer's IDE.
+\end{description}
 
 \section{Relevant Facts And Assumptions}
 \subsection{Relevant Facts}
