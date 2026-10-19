@@ -379,11 +379,26 @@ quality constraints into executable checks, such tests, that the AI-generated co
 
 \section{Maintainability and Support Requirements}
 \subsection{Maintenance Requirements}
-\lips
+
+\noindent\textbf{MR1.} The system shall organize major functionality into modular components with clearly defined responsibilities and interfaces to ensure that changes to one component have minimal impact on unrelated components.
+
+\noindent\textbf{MR2.} Dependencies on external libraries, frameworks, models, and services shall be isolated where possible so that they can be upgraded or replaced without requiring major changes throughout the system.
+
+\noindent\textbf{MR3.} Integrations with external coding agents shall be separated from the core intent management and traceability functionality so that additional agents can be supported without significant restructuring of the system.
+
+\noindent\textbf{MR4.} Major components and interfaces shall have accompanying documentation describing their purpose, dependencies, and expected usage to support future maintenance and modification.
+
 \subsection{Supportability Requirements}
-\lips
+
+\noindent\textbf{SR1.} The system shall handle failures gracefully and provide clear error messages that describe the cause of the issue where it can be identified, such as failures involving external coding agents, model services, or other system components.
+
+\noindent\textbf{SR2.} The system shall record diagnostic logs for significant failures and system interactions so that recurring issues can be identified and investigated during development and maintenance.
+
 \subsection{Adaptability Requirements}
-\lips
+
+\noindent\textbf{AR1.} The system shall isolate integrations with external coding agents so that support for additional agents can be added without significant changes to the core intent management and traceability functionality.
+
+\noindent\textbf{AR2.} The system shall be designed so that additional forms of engineering input (e.g. Petri nets) can be incorporated without requiring significant changes to the core intent model or processing workflow.
 
 \section{Security Requirements}
 \subsection{Access Requirements}
@@ -397,7 +412,7 @@ quality constraints into executable checks, such tests, that the AI-generated co
 \subsection{Immunity Requirements}
 \lips
 
-\section{Cultural Requirements}
+\section{Cultural Requirements}?
 \subsection{Cultural Requirements}
 \lips
 
