@@ -260,11 +260,154 @@ involved in the Project}
 
 \section{The Scope of the Product}
 \subsection{Product Boundary}
-\lips
+
+\progname{} is a software engineering support tool that assists engineers in
+refining engineering intent into precise artifacts that can be used to guide
+AI headed implementation. The product accepts engineering information at
+varying levels of detail, ranging from broad natural language descriptions to
+more structured artifacts such as requirements, models, constraints, and formal
+Specifications (e.g. UML, JML, …).
+
+The product is responsible for interpreting this information, identifying
+ambiguity or missing detail, and interacting with the engineer to progressively
+refine the engineering intent. This process continues until sufficiently precise
+artifacts, such as implementation contracts, preconditions, postconditions, and
+other constraints can be produced. \progname{} also manages the persistence,
+relationships, rationale, and traceability of these engineering artifacts as the
+project evolves.
+
+The generation and modification of application code are outside the product
+boundary and are performed by an external coding agent using the engineering
+artifacts produced by \progname{}. The host IDE, external AI models, version
+control systems, and the software application being developed are also external
+systems that \progname{} may interact with but does not implement.
+
 \subsection{Product Use Case Table}
-\lips
+
+\begin{table}[H]
+\centering
+\caption{Product Use Cases}
+\begin{tabular}{|c|p{7cm}|p{4cm}|}
+\hline
+\textbf{PUC} & \textbf{Use Case} & \textbf{Primary Actor} \\
+\hline
+
+PUC1 & Provide Engineering Intent & Engineer \\
+\hline
+
+PUC2 & Refine Engineering Intent & Engineer \\
+\hline
+
+PUC3 & Review and Approve Engineering Artifacts & Engineer \\
+\hline
+
+PUC4 & Generate Implementation Contracts & Engineer \\
+\hline
+
+PUC5 & Resolve Conflicting or Ambiguous Engineering Intent & Engineer \\
+\hline
+
+PUC6 & Send Approved Engineering Context to Coding Agent & Coding Agent \\
+\hline
+
+PUC7 & Trace Engineering Intent to Implementation & Engineer \\
+\hline
+
+PUC8 & Trace Implementation to Engineering Intent & Engineer \\
+\hline
+
+\end{tabular}
+\end{table}
+
 \subsection{Individual Product Use Cases (PUC's)}
-\lips
+\subsection{Individual Product Use Cases (PUC's)}
+
+\noindent\textbf{PUC1: Provide Engineering Intent}\\
+\textbf{Trigger:} The engineer begins a new development request.\\
+\textbf{Pre-condition:} The engineer has a software project open in a supported development environment.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The engineer provides engineering intent to the system.
+    \item The input may range from broad natural language descriptions to structured engineering artifacts.
+    \item The system interprets the provided information and identifies candidate requirements, constraints, design decisions, or other engineering artifacts.
+\end{enumerate}
+
+\noindent\textbf{PUC2: Refine Engineering Intent}\\
+\textbf{Trigger:} The system determines that the provided engineering intent is ambiguous, incomplete, or insufficiently detailed.\\
+\textbf{Pre-condition:} Engineering intent has been provided to the system.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system identifies information that requires further clarification or specification.
+    \item The system requests additional information from the engineer.
+    \item The engineer provides further details.
+    \item The system updates and refines the corresponding engineering artifacts.
+    \item This interaction may continue until the system deems that sufficient detail has been provided.
+\end{enumerate}
+
+\noindent\textbf{PUC3: Review and Approve, Reject, or Revise Engineering Artifacts}\\
+\textbf{Trigger:} The system produces proposed engineering artifacts for review.\\
+\textbf{Pre-condition:} One or more proposed engineering artifacts have been derived or refined.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system presents the proposed engineering artifacts to the engineer.
+    \item The engineer reviews the proposed artifacts.
+    \item The engineer may approve, reject, or revise individual artifacts.
+    \item Approved artifacts are accepted into the project's engineering intent model.
+    \item Rejected or revised artifacts may return to the refinement process.
+\end{enumerate}
+
+\noindent\textbf{PUC4: Generate Implementation Contracts}\\
+\textbf{Trigger:} The engineering intent has been refined to a sufficient level of detail.\\
+\textbf{Pre-condition:} The relevant engineering artifacts have been reviewed and approved by the engineer.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system derives precise implementation contracts from the approved engineering artifacts.
+    \item Contracts may include preconditions, postconditions, invariants, or other implementation constraints.
+    \item The system associates the generated contracts with the engineering artifacts from which they were derived.
+    \item The engineer is able to review the resulting contracts before implementation.
+\end{enumerate}
+
+\noindent\textbf{PUC5: Resolve Conflicting or Ambiguous Engineering Intent}\\
+\textbf{Trigger:} The system identifies a potential conflict, inconsistency, or ambiguity between engineering artifacts.\\
+\textbf{Pre-condition:} Existing engineering artifacts are available in the project model.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system identifies the artifacts involved in the conflict or ambiguity.
+    \item The system presents the issue and relevant context to the engineer.
+    \item The engineer provides clarification or selects the intended interpretation.
+    \item The system updates the affected engineering artifacts and relationships.
+\end{enumerate}
+
+\noindent\textbf{PUC6: Send Approved Engineering Context to Coding Agent}\\
+\textbf{Trigger:} The engineer approves the engineering artifacts and implementation contracts for a development task.\\
+\textbf{Pre-condition:} Sufficient engineering intent and implementation contracts have been approved.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system collects the approved contracts and relevant engineering context.
+    \item The system provides this information to the external coding agent.
+    \item The coding agent uses the provided engineering context to perform the requested implementation.
+\end{enumerate}
+
+\noindent\textbf{PUC7: Trace Engineering Intent to Implementation}\\
+\textbf{Trigger:} The engineer selects an engineering artifact and requests its implementation traceability.\\
+\textbf{Pre-condition:} The selected engineering artifact has an established traceability relationship with implementation artifacts.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system retrieves the traceability relationships associated with the selected engineering artifact.
+    \item The system identifies the relevant source code, tests, or other implementation artifacts.
+    \item The system presents the relationships and available justification to the engineer.
+\end{enumerate}
+
+\noindent\textbf{PUC8: Trace Implementation to Engineering Intent}\\
+\textbf{Trigger:} The engineer selects an implementation artifact and requests information explaining its engineering intent.\\
+\textbf{Pre-condition:} The selected implementation artifact has an established traceability relationship with engineering artifacts.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system retrieves the engineering artifacts associated with the selected implementation artifact.
+    \item The system presents the related requirements, constraints, contracts, or design decisions.
+    \item The system presents available rationale or justification explaining why the implementation exists.
+\end{enumerate}
+
 
 \section{Functional Requirements}
 
