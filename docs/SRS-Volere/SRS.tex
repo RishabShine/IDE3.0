@@ -8,6 +8,11 @@
 
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, backgrounds, calc}
 \usepackage{hyperref}
 \hypersetup{
     bookmarks=true,         % show bookmarks bar?
@@ -33,9 +38,14 @@
 
 ~\newpage
 
-\pagenumbering{roman}
+\pagenumbering{arabic}
 
 \tableofcontents
+
+~\newpage
+
+\listoftables
+\listoffigures
 
 ~\newpage
 
@@ -244,13 +254,223 @@ involved in the Project}
 
 \section{The Scope of the Work}
 \subsection{The Current Situation}
-\lips
+The current situation of the system is that the codebase the developer develops
+comes out of a shallow, multi-turn conversation with the coding assistant, where
+the developer provides it with a large amount of context about what the system
+should be able to achieve and the coding assistant uses whatever knowledge it
+has and generates the code. This code is generated without any traceable intent,
+without the strict engineering principles that evolve and grow the idea, and
+without the code-based contracts that should be expected when handling large
+software systems. Figure~\ref{fig:current} summarises this workflow and the
+stages that are absent from it today.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >={Stealth[length=2.5mm]},
+  box/.style={draw, rounded corners, align=center, minimum height=1cm,
+    minimum width=2.6cm, font=\small},
+  gap/.style={draw, dashed, rounded corners, align=center,
+    font=\footnotesize\itshape, text width=12cm, inner sep=6pt},
+  flow/.style={->, thick}
+]
+\node[box] (dev) {Developer};
+\node[box, right=2.6cm of dev] (asst) {AI Coding\\Assistant};
+\node[box, right=2.6cm of asst] (code) {Codebase};
+\draw[flow] (dev) -- node[above, font=\scriptsize]{natural-language prompt} (asst);
+\draw[flow] (asst) -- node[above, font=\scriptsize]{generated code} (code);
+\node[gap, below=1.3cm of asst] (missing)
+  {Absent in the current situation: decomposition into reviewable
+   requirements, a human approval gate before generation, traceability from
+   code back to intent, and verification that the code satisfies that intent.};
+\end{tikzpicture}
+\caption{Current situation. The developer moves directly from an informal prompt
+to generated code, with no requirement capture, approval gate, traceability, or
+verification.}
+\label{fig:current}
+\end{figure}
+
 \subsection{The Context of the Work}
-\lips
+The work here is to follow the V-model in software-based application engineering
+(illustrated by the V-model in Figure~\ref{fig:vmodel}). The user uses the tool
+to be guided toward making decisions that are driven by stronger and
+well-established engineering principles. They are guided to take their
+high-level overview requirements or wants for the system and go through a
+journey of decomposition into more granular requirements in every domain that is
+identified (functional, non-functional, quality, design, and so on).
+The granular, feasible, executable requirements that are produced from the
+approval and rejection decisions of the human in the loop then direct the coding
+agent to generate contract-bound code. Contracts and interfaces are built so
+that the code cannot violate the requirements. Finally, a validation and
+verification phase checks the generated code against the user-developed and
+agent-assisted intent model and its contracts.
+
+Figure~\ref{fig:context} shows the context of the work as the named flows it
+exchanges with the adjacent systems it depends on.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{context-diagram.png}
+\caption{The context of the work. IDE3.0 (centre) exchanges named flows with the
+adjacent systems it depends on: the developer who sets objectives and makes
+review decisions, the AI coding assistant that proposes requirements and
+generates code, the validation toolchain that checks code against its contracts,
+and the intent model database that stores the approved requirements, rationale,
+and traceability links.}
+\label{fig:context}
+\end{figure}
+
+
 \subsection{Work Partitioning}
-\lips
+
+The work is partitioned using a business event list. Each business event is
+something an adjacent system does that the work must respond to, together with
+the input it consumes and the output it produces. Table~\ref{tab:events}
+catalogues the externally triggered events, each initiated by the developer or
+by the AI coding assistant. The events correspond to the three parts of the
+solution and to the arms of the V-model in Figure~\ref{fig:vmodel}: events~1
+and~2 drive the guided decomposition of objectives into granular requirements
+(the specification arm, Part~1), event~3 drives contract-bound code generation
+(the base of the V, Part~2), and event~4 drives validation of the generated code
+against the recorded intent (the verification arm, Part~3). Event~5 is the
+cross-cutting traceability query that the versioned intent model supports.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >={Stealth[length=2.5mm]},
+  stage/.style={draw, rounded corners, align=center, font=\footnotesize,
+    minimum height=0.95cm, text width=3.1cm, fill=gray!5},
+  trace/.style={dashed, gray, <->},
+  arm/.style={font=\scriptsize\itshape, gray, align=center}
+]
+\node[stage] (l1) at (-5.2, 3.4)  {Developer objective\\(high-level goal)};
+\node[stage] (l2) at (-3.9, 1.6)  {Granular, feasible\\requirements (FR1--FR3)};
+\node[stage] (l3) at (-2.6, -0.2) {Approved intent\\model (FR4--FR7)};
+\node[stage, fill=gray!14] (b) at (0, -2.0) {Contract-bound code\\generation (FR8, FR13)};
+\node[stage] (r3) at (2.6, -0.2)  {Contract validation:\\JML + JVM tests (FR10, FR13)};
+\node[stage] (r2) at (3.9, 1.6)   {Intent and traceability\\check (FR9, FR11)};
+\node[stage] (r1) at (5.2, 3.4)   {Objective satisfied\\and recorded};
+
+\draw[->] (l1) -- (l2); \draw[->] (l2) -- (l3); \draw[->] (l3) -- (b);
+\draw[->] (b) -- (r3); \draw[->] (r3) -- (r2); \draw[->] (r2) -- (r1);
+
+\draw[trace] (l1) -- (r1); \draw[trace] (l2) -- (r2); \draw[trace] (l3) -- (r3);
+
+\node[arm] at (-6.4, 0.8) {decomposition};
+\node[arm] at (6.4, 0.8)  {verification\\\& validation};
+\end{tikzpicture}%
+}
+\caption{The V-model that frames the work. The specification arm decomposes a
+developer objective into approved, granular requirements; the base generates
+contract-bound code from them; the verification arm validates the code against
+the contracts and the intent model. Dashed links show the traceability each
+level maintains with its counterpart.}
+\label{fig:vmodel}
+\end{figure}
+
+{\renewcommand{\arraystretch}{1.3}\setlength{\tabcolsep}{5pt}
+\begin{longtable}{|>{\centering\arraybackslash}p{2.1cm}|p{3.8cm}|>{\centering\arraybackslash}p{2.7cm}|>{\centering\arraybackslash}p{2.7cm}|}
+\caption{Work Partitioning Events}\label{tab:events}\\
+\hline
+\textbf{Event Number} & \textbf{Event Name} & \textbf{Input} & \textbf{Output}\\
+\hline
+\endfirsthead
+\multicolumn{4}{c}{\tablename\ \thetable\ -- Continued}\\
+\hline
+\textbf{Event Number} & \textbf{Event Name} & \textbf{Input} & \textbf{Output}\\
+\hline
+\endhead
+1 & Submit a feature request & Developer & Intent Database\\ \hline
+2 & Review and decide on a proposal & Developer & Intent Database\\ \hline
+3 & Return generated code & AI Assistant & Intent Database\\ \hline
+4 & Submit a change for verification & AI Assistant & Developer\\ \hline
+5 & Query rationale or traceability & Developer & Developer\\ \hline
+\end{longtable}}
+
+Figure~\ref{fig:validation} details the work's response to event~4, the
+validation flow that constitutes Part~3 of the solution.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  >={Stealth[length=2.2mm]},
+  node distance=1.1cm,
+  act/.style={draw, rounded corners=3pt, align=center, font=\small,
+    minimum width=4.2cm, minimum height=1.1cm, fill=gray!4},
+  dec/.style={draw, diamond, aspect=2, align=center, font=\small,
+    inner sep=1pt, fill=gray!4},
+  fl/.style={->, semithick},
+  lab/.style={font=\footnotesize}
+]
+\node[act] (in)  {Generated code and\\compiled contracts};
+\node[act] (jml) [below=of in]  {OpenJML contract checks\\(pre/post-conditions, invariants)};
+\node[act] (jvm) [below=of jml] {JVM test execution (FR13)};
+\node[act] (rep) [below=of jvm] {Validation report against\\the intent model (FR10)};
+\node[dec] (d)   [below=1.3cm of rep] {Requirements\\satisfied?};
+\node[act, text width=3.6cm] (ok)  [below right=1.1cm and 1.4cm of d] {Record change as satisfying intent (FR9)};
+\node[act, text width=3.6cm] (bad) [below left=1.1cm and 1.4cm of d]  {Flag violation; return to developer or re-generate (FR8)};
+\draw[fl] (in)  -- (jml);
+\draw[fl] (jml) -- (jvm);
+\draw[fl] (jvm) -- (rep);
+\draw[fl] (rep) -- (d);
+\draw[fl] (d) -| node[lab, pos=0.25, above]{yes} (ok);
+\draw[fl] (d) -| node[lab, pos=0.25, above]{no}  (bad);
+\end{tikzpicture}
+\caption{Part~3 of the work, the validation (verification) arm. A generated
+change and its compiled contracts are checked by the OpenJML contract checks and
+the JVM test suite; the resulting report either records the change as satisfying
+the intent model (FR9, FR10) or flags the violation and returns it to the
+developer for re-generation (FR8).}
+\label{fig:validation}
+\end{figure}
+
 \subsection{Specifying a Business Use Case (BUC)}
-\lips
+
+\medskip
+\noindent\textbf{BUC name:} Capture and approve the requirements for a feature.
+
+\medskip
+\noindent\textbf{Triggering event:} A developer submits a natural-language
+feature request to the AI coding assistant. 
+
+\medskip
+\noindent\textbf{Actors:} The developer initiates the request and makes the approval decision. The AI coding assistant
+extracts the candidate requirements. The intent model database stores the approved result.
+
+\medskip
+\noindent\textbf{Precondition:} The developer is working inside a supported IDE
+with \progname{} active. No proposal is currently pending for the same request.
+
+\medskip
+\noindent\textbf{Postcondition:} A versioned set of approved requirements and
+constraints is recorded in the intent model. Code generation for the request is
+unblocked for exactly those requirements.
+
+\medskip
+\noindent\textbf{Main scenario:}
+\begin{enumerate}
+  \item The developer describes the desired feature in natural language.
+  \item The work extracts a structured set of candidate functional,
+  non-functional, quality, and design requirements from the request. The work
+  saves them as a draft proposal.
+  \item The work presents the proposal to the developer for review. No code is
+  generated while the proposal is pending.
+  \item The developer edits, removes, or adds requirements until the proposal
+  reflects the intended behaviour.
+  \item The developer approves the proposal.
+  \item The work records the approved requirements, their rationale, and the
+  originating request in the versioned intent model. The work then signals the
+  AI coding assistant that generation may proceed for exactly those
+  requirements.
+\end{enumerate}
+
+\medskip
+\noindent\textbf{Alternative (rejection):} At step~5 the developer may reject
+the proposal instead of approving it. The work then discards the draft and keeps
+generation blocked. It asks the developer to revise the request and returns to
+step~1.
 
 \section{Business Data Model and Data Dictionary}
 \subsection{Business Data Model}
