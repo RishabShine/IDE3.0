@@ -438,11 +438,124 @@ involved in the Project}
 
 \section{Relevant Facts And Assumptions}
 \subsection{Relevant Facts}
-\lips
+
+The following facts are outside the control of the project but shape its
+requirements.
+
+\medskip
+\noindent\textbf{RF1.} Some AI coding assistants offer their own ways to carry
+context between sessions, such as memory files or project rules. This context
+is specific to each tool, unstructured, not versioned, and not reviewed. It does
+not record requirements, design decisions, or their rationale in a form that can
+be traced or reused by a different assistant.
+
+\medskip
+\noindent\textbf{RF2.} AI coding assistants can generate code directly from an
+informal natural-language prompt. Nothing in this workflow requires the
+developer to state requirements, architecture, or interfaces before code is
+generated.
+
+\medskip
+\noindent\textbf{RF3.} Established languages for writing formal contracts
+already exist. Examples include the Java Modeling Language (JML) for Java, and
+libraries such as icontract and deal for Python. Tools such as OpenJML can check
+JML contracts against Java code.
+
+\medskip
+\noindent\textbf{RF4.} VS Code provides a public extension API, and existing
+extensions already support UML modelling and visualization inside the IDE.
+
+\medskip
+\noindent\textbf{RF5.} LLM output is not deterministic. The same request can
+produce different requirements, designs, or code on different runs, so
+generated artifacts cannot be trusted without human review.
+
 \subsection{Business Rules}
-\lips
+
+The following rules describe how the intent refinement process must be carried
+out. They apply regardless of how the product is implemented.
+
+\medskip
+\noindent\textbf{BR1.} Intent is refined in ordered stages: high-level intent,
+epics and requirements, architecture, module and interface specifications,
+formal contracts, and code generation.
+
+\medskip
+\noindent\textbf{BR2.} The artifacts produced at each stage must be reviewed and
+approved by the developer before the process moves to the next stage. The
+developer may also edit or reject them.
+
+\medskip
+\noindent\textbf{BR3.} The developer may return to any earlier stage when
+requirements or designs change. Artifacts in later stages that depend on the
+changed artifacts must then be reviewed again.
+
+\medskip
+\noindent\textbf{BR4.} Code is generated only from approved specifications and
+contracts, never directly from the developer's initial request.
+
+\medskip
+\noindent\textbf{BR5.} Only a human developer can approve, edit, or reject an
+artifact. The AI may propose and refine artifacts but cannot approve them.
+
+\medskip
+\noindent\textbf{BR6.} An experienced developer may enter technical constraints,
+interfaces, or contracts directly at any stage instead of describing them in
+natural language.
+
+\medskip
+\noindent\textbf{BR7.} Every approved artifact must be traceable to the
+artifact in the previous stage that it refines, back to the original
+high-level intent.
+
 \subsection{Assumptions}
-\lips
+
+The following assumptions were made to keep the project feasible within the
+capstone timeline. If any of them turns out to be false, the affected
+requirements will need to be revised.
+
+\medskip
+\noindent\textbf{AS1.} The initial implementation focuses on intent capture and
+refinement (Feature Group A). Post-generation traceability, explanation, and
+verification (Feature Group B) are documented as requirements but are treated
+as future work.
+
+\medskip
+\noindent\textbf{AS2.} The product reuses existing contract languages and
+verification tools to enforce or check contracts. It does not include a custom
+system for proving that generated code meets its specifications.
+
+\medskip
+\noindent\textbf{AS3.} The refinement process is designed to be independent of
+programming language and coding agent. The stages from high-level intent to
+interface specifications do not depend on the language. Contract generation and
+checking are language-specific, so they will be supported for a limited set of
+languages chosen based on the case study. Support for additional languages can
+be added through separate contract and verification adapters.
+
+\medskip
+\noindent\textbf{AS4.} The product is used by a single developer working in a
+local workspace. Multi-user collaboration on the same intent model is not
+supported in the initial implementation.
+
+\medskip
+\noindent\textbf{AS5.} The developer has a supported IDE installed, such as VS
+Code, and has access to an LLM service and an AI coding assistant.
+
+\medskip
+\noindent\textbf{AS6.} The developer has enough software engineering knowledge
+to review requirements, architectural decisions, interface specifications, and
+contracts.
+
+\medskip
+\noindent\textbf{AS7.} The proof of concept will be demonstrated and evaluated
+on a single case study of manageable size, such as an existing academic or
+co-op project.
+
+\medskip
+\noindent\textbf{AS8.} The workflow may be simplified where necessary, for
+example by merging or skipping stages for small requests, provided that human
+approval is kept before code generation.
 
 \section{The Scope of the Work}
 \subsection{The Current Situation}
