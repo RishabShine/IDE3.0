@@ -147,7 +147,7 @@ major components for hazard brainstorming (not a full design):
   \item \textbf{Traceability}: maintains justified links from intent
   elements to code and tests (SRS FR9, G3, EUR3).
   \item \textbf{Change Verification}: checks AI-proposed or generated
-  changes against the intent model and reports the results (SRS FR10, FR13, G4,
+  changes against the intent model and reports the results (SRS FR10, FR12, G4,
   AUR3).
   \item \textbf{IDE Extension / User Interface}: VS Code / Cursor (and
   related) surfaces for review, status, and developer interaction
@@ -304,7 +304,7 @@ c. Bare pass with no coverage statement &
 a. Verify against the latest approved intent model and show evidence\newline
 b. Fail visibly; require acknowledgement to continue after errors\newline
 c. State which requirements were checked and what was not verified &
-a. SR11, FR10, FR13, AUR3\newline
+a. SR11, FR10, FR12, AUR3\newline
 b. SR11, IMR2\newline
 c. SR11, G4\newline
 H6-1 \\
@@ -450,7 +450,7 @@ never treat infrastructure failure as a pass, and state that behaviour outside
 the checked requirements was not verified.\\
 \textit{Rationale:} False passes and bare pass labels create over-trust.\\
 \textit{Associated hazards:} H6-1\\
-\textit{Related SRS:} FR10, FR13, AUR3, IMR2, G4
+\textit{Related SRS:} FR10, FR12, AUR3, IMR2, G4
 
 \medskip
 \noindent\textbf{SR12.} The system shall minimize project content sent to
