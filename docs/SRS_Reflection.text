@@ -30,6 +30,17 @@
   modular design, which we need to structure the IDE extension, the LangGraph
   workflow, and the MCP server as separate components.
 
+  \textbf{Saumy Patel}
+
+  SFWRENG 3RA3, Software Requirements, helped me write the relevant facts,
+  business rules, and assumptions in this SRS, and separate facts about the
+  outside world from rules the product must follow. SFWRENG 2AA4, Introduction
+  to Software Design, covered object-oriented design and UML, which relate to
+  the module and interface specification stage of our refinement process and to
+  the UML tools we plan to build on. SFWRENG 2FA3, Discrete Mathematics with
+  Applications II, covered state machines, which I will use to model our
+  refinement process with its stages, approvals, and transitions.
+
   \textbf{Tyler Yue}
 
   A course I have taken that will help the team be successful with our
@@ -66,6 +77,14 @@
   extension development, since the review panel where developers approve or
   reject proposals is a VS Code extension.
 
+  \textbf{Saumy Patel}
+
+  I will need to learn how to model our refinement process as a state machine,
+  with its stages, approvals, and the transitions back to earlier stages. I will
+  also need to learn how to write formal contracts with preconditions and
+  postconditions, such as in JML, and how to develop VS Code extensions, since
+  the tool will run as one.
+
   \textbf{Tyler Yue}
 
   The team will need to acquire knowledge of how to integrate with the VS Code
@@ -79,6 +98,7 @@
   generated code satisfies them. This is the core of the validation stage I
   specified for \progname{}, where generated code is checked against the intent
   model and the contracts derived from it.
+
 
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
@@ -101,6 +121,19 @@
   I will use the official documentation for both. I learn best from
   documentation, and it matches the library versions we use, while video
   tutorials often cover older versions.
+
+  \textbf{Saumy Patel}
+
+  For each skill, I can use official documentation or course notes, or follow
+  video tutorials and online guides. For state machine modelling, I will start
+  with the notes from SFWRENG 2FA3, Discrete Mathematics with Applications II,
+  where I learned about state machines. For JML and VS Code extension
+  development, I will start with the official documentation, such as the JML
+  reference manual and the VS Code Extension API guides.
+
+  I will use the documentation or course notes first because they are the most
+  reliable sources. If they do not explain something clearly, I will look for
+  video tutorials, but only ones that match the library versions we use.
 
   \textbf{Tyler Yue}
 
@@ -128,5 +161,6 @@
   prototype early shows whether requirements can realistically be turned into
   contracts that generated code must satisfy, which is the riskiest part of our
   Proof of Concept.
+
 
 \end{enumerate}
