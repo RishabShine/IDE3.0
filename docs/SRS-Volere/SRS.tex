@@ -1468,16 +1468,95 @@ designed from scratch.
 
 \section{New Problems}
 \subsection{Effects on the Current Environment}
-\lips
+
+Introducing \progname{} changes how developers work with AI coding assistants.
+
+\begin{itemize}
+  \item \textbf{More steps before code is generated.} Developers must review
+  and approve artifacts at each stage instead of going straight from a prompt
+  to code. Small features may take longer at first.
+  \item \textbf{A shift in what developers review.} Developers spend more time
+  reviewing requirements, architecture, interfaces, and contracts, and less
+  time reading generated code line by line.
+  \item \textbf{Changes to code review.} Reviewers may need to look at changes
+  to the intent model alongside code changes in pull requests.
+  \item \textbf{New files in the repository.} The intent model is stored in the
+  workspace and versioned with Git, so it adds files and history to the
+  project.
+\end{itemize}
+
 \subsection{Effects on the Installed Systems}
-\lips
+
+\begin{itemize}
+  \item \textbf{Host IDE.} The extension adds views and commands to the IDE and
+  uses some of its memory and processing time.
+  \item \textbf{AI coding assistant.} The assistant must be configured to
+  connect to the \progname{} MCP server. This may interact with other MCP
+  servers or extensions the developer already uses.
+  \item \textbf{Local tooling.} Contract checkers may require extra software,
+  such as a Java runtime for OpenJML.
+  \item \textbf{External LLM services.} Each refinement stage sends requests to
+  an LLM service, which increases the developer's usage and possible cost for
+  that service.
+\end{itemize}
+
 \subsection{Potential User Problems}
-\lips
+
+\begin{itemize}
+  \item \textbf{Approval fatigue.} Developers who are asked to approve many
+  artifacts may approve them without reading them carefully, which weakens the
+  human review the process depends on.
+  \item \textbf{Bypassing the tool.} Developers under time pressure may prompt
+  the AI coding assistant directly and skip the refinement process, so the
+  intent model no longer matches the code.
+  \item \textbf{Plausible but wrong artifacts.} Since LLM output is not
+  deterministic (RF5), generated requirements, designs, or contracts may look
+  correct but contain mistakes that the developer does not notice.
+  \item \textbf{Difficulty reviewing formal contracts.} Developers who are not
+  familiar with preconditions and postconditions may find contracts hard to
+  review (AS6).
+  \item \textbf{Repeated reviews after a change.} Going back to an earlier stage
+  requires the dependent artifacts in later stages to be reviewed again (BR3),
+  which may frustrate developers when changes are frequent.
+\end{itemize}
+
 \subsection{Limitations in the Anticipated Implementation Environment That May
 Inhibit the New Product}
-\lips
+
+\begin{itemize}
+  \item \textbf{Limited control over the AI coding assistant.} \progname{} can
+  only guide the assistant through MCP. It cannot stop a developer from using
+  the assistant outside the tool to generate code.
+  \item \textbf{Changing external APIs.} The VS Code Extension API, the MCP
+  specification, and the AI coding assistants are updated often. Changes to
+  them may break the integration.
+  \item \textbf{LLM service limits.} Rate limits, response times, outages, and
+  usage costs of the LLM service may slow down or interrupt refinement.
+  \item \textbf{LLM context size.} Large projects may have more requirements and
+  code than an LLM can process in a single request.
+  \item \textbf{Language-specific contract tools.} Contract languages and
+  checkers only exist for certain programming languages, which limits where the
+  contract stage can be used (AS3).
+\end{itemize}
+
 \subsection{Follow-Up Problems}
-\lips
+
+\begin{itemize}
+  \item \textbf{Keeping the intent model in sync with the code.} Once code is
+  edited outside the refinement process, the intent model can become outdated.
+  Detecting this requires the post-generation verification features of Feature
+  Group B.
+  \item \textbf{Team use.} If several developers use \progname{} on the same
+  project, their changes to the intent model may conflict (AS4).
+  \item \textbf{Intent model format changes.} New releases may change the intent
+  model format, so existing intent models will need to be migrated (REL2).
+  \item \textbf{Supporting more languages and assistants.} Each new programming
+  language needs its own contract adapter, and each new AI coding assistant
+  needs its own integration to be built and maintained.
+  \item \textbf{Sharing project data with LLM services.} Developers working on
+  private code may not be allowed to send it to an external LLM service, which
+  may require support for locally hosted models (PRR1).
+\end{itemize}
 
 \section{Tasks}
 \subsection{Project Planning}
