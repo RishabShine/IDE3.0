@@ -90,12 +90,12 @@ overarching goal is refined into the following supporting goals:
 
 \begin{itemize}
   \item[\textbf{G1}:] Enable a developer to capture the engineering intent
-  behind a change from natural-language interaction with an AI coding assistant,
+  behind a change from interaction with an \progname{},
   and require explicit developer approval of that intent before any code is
   generated.
   \item[\textbf{G2}:] Maintain a versioned intent model which consists of the following: the software's
   requirements, quality constraints, and design rationale. This will be a durable artifact that may be in a read-only 
-  setting for the user so requirement linage is not tampered with and it serves as a source of truth for the software application journey and evolution. 
+  setting for the user so requirement lineage is not tampered with and it serves as a source of truth for the software application journey and evolution. 
   \item[\textbf{G3}:] Maintain traceability links from each element of the
   intent model to the code and tests that implement it, each with a recorded
   justification.
@@ -503,10 +503,11 @@ capstone timeline. If any of them turns out to be false, the affected
 requirements will need to be revised.
 
 \medskip
-\noindent\textbf{AS1.} The initial implementation focuses on intent capture and
-refinement (Feature Group A). Post-generation traceability, explanation, and
-verification (Feature Group B) are documented as requirements but are treated
-as future work.
+\noindent\textbf{AS1.} The initial implementation focuses primarily on intent
+capture, refinement, contract generation, and maintaining traceability between
+engineering artifacts and their resulting implementation. More advanced
+post-generation explanation and verification capabilities may be treated as
+future work if required by the project schedule.
 
 \medskip
 \noindent\textbf{AS2.} The product reuses existing contract languages and
@@ -914,7 +915,7 @@ PUC1 & Provide Engineering Intent & Engineer \\
 PUC2 & Refine Engineering Intent & Engineer \\
 \hline
 
-PUC3 & Review and Approve Engineering Artifacts & Engineer \\
+PUC3 & Review and Approve, Reject, or Revise Engineering Artifacts & Engineer \\
 \hline
 
 PUC4 & Generate Implementation Contracts & Engineer \\
@@ -923,7 +924,7 @@ PUC4 & Generate Implementation Contracts & Engineer \\
 PUC5 & Resolve Conflicting or Ambiguous Engineering Intent & Engineer \\
 \hline
 
-PUC6 & Send Approved Engineering Context to Coding Agent & Coding Agent \\
+PUC6 & Send Approved Engineering Context to Coding Agent & Engineer \\
 \hline
 
 PUC7 & Trace Engineering Intent to Implementation & Engineer \\
@@ -1034,11 +1035,12 @@ meet the goals of the project.
 
 \medskip
 \noindent\textbf{FR1.} The system shall accept a developer's natural-language
-feature request that is submitted through the AI coding assistant that is running anywhere in there IDE. 
+feature request that is submitted through the \progname{} extension interface. 
 
 \medskip
 \noindent\textbf{FR2.} The system shall extract a schema specified structured set of proposed
-functional requirements, non-functional requirement, quality constraints, and design constraints from the developer's request.
+functional requirements, non-functional requirement, quality constraints, and design constraints from the developer's 
+request and an iterative interaction with the user to refune these artifacts into more detailed contracts.
 
 \medskip
 \noindent\textbf{FR3.} The system shall save the extracted requirements and
@@ -1048,13 +1050,11 @@ developer to review and then accept, reject, or follow up/edit.
 \subsection{Requirement Review and Approval}
 
 \medskip
-\noindent\textbf{FR4.} The system shall present the extracted functional
-requirements and quality constraints to the developer for review before any
-corresponding code is generated.
+\noindent\textbf{FR4.} The system shall present the extracted requirements / contracts, and quality constraints 
+to the developer for review before any corresponding code is generated.
 
 \medskip
-\noindent\textbf{FR5.} The system shall allow the developer to approve, edit, or reject
-a proposal.
+\noindent\textbf{FR5.} The system shall allow the developer to approve, edit, or reject a proposal.
 
 \medskip
 \noindent\textbf{FR6.} The system shall allow the developer to remove or amend
@@ -1065,8 +1065,7 @@ still pending.
 
 \medskip
 \noindent\textbf{FR7.} The system shall prevent the AI coding assistant from
-generating code for a request until the developer has approved or rejected the
-corresponding proposal.
+generating code for a request until the required engineering artifacts and contracts have been approved.
 
 \medskip
 \noindent\textbf{FR8.} The system shall communicate the developer's decision
@@ -1099,7 +1098,7 @@ request that led to it, so that it is clear why a certain requirement exists.
 \subsection{Constrained Generation}
 
 \medskip
-\noindent\textbf{FR13.} The system shall compile the approved requirements and
+\noindent\textbf{FR12.} The system shall compile the approved requirements and
 quality constraints into executable test, that the AI-generated code assist must satisfy.
 
 \section{Look and Feel Requirements}
@@ -1142,9 +1141,9 @@ quality constraints into executable test, that the AI-generated code assist must
 
 \subsection{Accessibility Requirements}
 
-\noindent\textbf{AR1.} The system shall operate within the host IDE and shall not require users to learn or operate a separate standalone interface.
+\noindent\textbf{ACCR1.} The system shall operate within the host IDE and shall not require users to learn or operate a separate standalone interface.
 
-\noindent\textbf{AR2.} The system shall use standard IDE interaction patterns and controls where possible so that existing accessibility features provided by the host IDE can continue to be used.
+\noindent\textbf{ACCR2.} The system shall use standard IDE interaction patterns and controls where possible so that existing accessibility features provided by the host IDE can continue to be used.
 
 \section{Performance Requirements}
 \subsection{Speed and Latency Requirements}
@@ -1179,15 +1178,11 @@ quality constraints into executable test, that the AI-generated code assist must
 
 \noindent\textbf{SER1.} The system shall maintain acceptable performance as the size of the project, number of engineering artifacts, and number of traceability relationships increase.
 
-\subsection{Scalability or Extensibility Requirements}
-
-\noindent\textbf{SER1.} The system shall maintain acceptable performance as the size of the project, number of engineering artifacts, and number of traceability relationships increase.
-
 \noindent\textbf{SER2.} The system shall be structured so that support for additional coding agents, engineering artifact types, and analysis methods can be added without significant restructuring of the core system.
 
 \subsection{Longevity Requirements}
 
-\noindent\textbf{LR1.} The system shall be designed to remain adaptable as AI models, coding agents, engineering practices, and forms of engineering input evolve.
+\noindent\textbf{LGR1.} The system shall be designed to remain adaptable as AI models, coding agents, engineering practices, and forms of engineering input evolve.
 
 \section{Operational and Environmental Requirements}
 \subsection{Expected Physical Environment}
@@ -1197,7 +1192,7 @@ Not applicable.
 \subsection{Wider Environment Requirements}
 
 Not applicable. \progname{} operates entirely within the developer's local IDE
-and workspace and imposes no requirements arising from a wider physical, environment. 
+and workspace and imposes no requirements arising from a wider physical environment. 
 
 \subsection{Requirements for Interfacing with Adjacent Systems}
 
@@ -1256,15 +1251,15 @@ do not introduce any breaking changes to existing intent models.
 
 \subsection{Supportability Requirements}
 
-\noindent\textbf{SR1.} The system shall handle failures gracefully and provide clear error messages that describe the cause of the issue where it can be identified, such as failures involving external coding agents, model services, or other system components.
+\noindent\textbf{SUPR1.} The system shall handle failures gracefully and provide clear error messages that describe the cause of the issue where it can be identified, such as failures involving external coding agents, model services, or other system components.
 
-\noindent\textbf{SR2.} The system shall record diagnostic logs for significant failures and system interactions so that recurring issues can be identified and investigated during development and maintenance.
+\noindent\textbf{SUPR2.} The system shall record diagnostic logs for significant failures and system interactions so that recurring issues can be identified and investigated during development and maintenance.
 
 \subsection{Adaptability Requirements}
 
-\noindent\textbf{AR1.} The system shall isolate integrations with external coding agents so that support for additional agents can be added without significant changes to the core intent management and traceability functionality.
+\noindent\textbf{ADR1.} The system shall isolate integrations with external coding agents so that support for additional agents can be added without significant changes to the core intent management and traceability functionality.
 
-\noindent\textbf{AR2.} The system shall be designed so that additional forms of engineering input (e.g. Petri nets) can be incorporated without requiring significant changes to the core intent model or processing workflow.
+\noindent\textbf{ADR2.} The system shall be designed so that additional forms of engineering input (e.g. Petri nets) can be incorporated without requiring significant changes to the core intent model or processing workflow.
 
 \section{Security Requirements}
 
@@ -1352,32 +1347,30 @@ does not generates code compared to an unsafe and unpredictable state.
 Version bump alone is not enough. 
 
 \section{Cultural Requirements}
-\noindent\textbf{CR1.} The system shall communicate via Canadian English. 
+\noindent\textbf{CULR1.} The system shall communicate via Canadian English. 
 \medskip
-\noindent\textbf{CR2.} The system shall avoid offens ive language. If the system begins to accept image (e.g., for architectural review purposes), then no image pertaining to or related in any form to religion, political views, or minority groups will be accepted.
-\lips
+\noindent\textbf{CULR2.} The system shall use culturally neutral and professional language when interacting with users.
 
 \section{Compliance Requirements}
 \subsection{Legal Requirements}
 \medskip
-\noindent\textbf{LR1.} The system shall not infringe any copyright or license through the utilization of assets such as public code, system architectures, or open-source tools.
+\noindent\textbf{LEGR1.} The system shall not infringe any copyright or license through the utilization of assets such as public code, system architectures, or open-source tools.
 If any open-source or third-party resources are used, then the system shall explicitly cite those resources, comply with the terms and conditions of each resource's license, and request permission for any license that requires it before the system is distributed publicly.
 \subsection{Standards Compliance Requirements}
 \medskip
-\noindent\textbf{SCR1.} The system shall conform to the Model Context Protocol (MCP) specification for any AI tool it integrates with.
+\noindent\textbf{STDR1.} The system shall conform to the Model Context Protocol (MCP) specification for any AI tool it integrates with.
 
 \medskip
-\noindent\textbf{SCR2.} The system shall comply with the VS Code Extension API guidelines and their equivalents for the other supported IDEs, such as Cursor and PyCharm.
+\noindent\textbf{STDR2.} The system shall comply with the VS Code Extension API guidelines and their equivalents for the other supported IDEs, such as Cursor and PyCharm.
 
 \medskip
-\noindent\textbf{SCR3.} The system shall persist the intent model using its defined schema, in a documented standard format, such as JSON or MD or any other developed model language, that is consistent across all instances of the tool.
+\noindent\textbf{STDR3.} The system shall persist the intent model using its defined schema, in a documented standard format, such as JSON or MD or any other developed model language, that is consistent across all instances of the tool.
 
 \medskip
-\noindent\textbf{SCR4.} The system shall conform to the host IDE's accessibility guidelines for any interface exposed to the user.
+\noindent\textbf{STDR4.} The system shall conform to the host IDE's accessibility guidelines for any interface exposed to the user.
 
 \section{Open Issues}
 There are currently no open issues to be discussed. 
-\lips
 
 \section{Off-the-Shelf Solutions}
 \subsection{Ready-Made Products}
@@ -1745,9 +1738,9 @@ The following ideas are not planned for the current project, but may be
 considered in future versions.
 
 \begin{itemize}
-  \item \textbf{Feature Group B.} Post-generation traceability, explanation of
-  generated code, verification of code against contracts, and support for
-  incremental changes to existing code (AS1).
+  \item \textbf{Feature Group B.} More advanced explanation of
+  generated code, automated verification against contracts, and support for
+  incremental changes to existing code. (AS1).
   \item \textbf{UML round-trip engineering.} Keep UML diagrams in sync with the
   intent model, so that changes to the requirements update the class
   relationships, methods, and types shown in the diagrams.
@@ -1806,7 +1799,7 @@ requirements, and will be decided in the Design Document.
 
 \subsection{How and Where Used}
 
-The AI tools were useed to review the document for grammar,
+The AI tools were used to review the document for grammar,
 spelling, and formatting issues, which affected the written style throughout the
 document. The claude tools were used to draw and generate diagrams from detailed
 natural-language descriptions and information provided for the Scope of Work Section, more specifically the
