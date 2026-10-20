@@ -430,10 +430,11 @@ requirements.
 
 \medskip
 \noindent\textbf{RF1.} Some AI coding assistants offer their own ways to carry
-context between sessions, such as memory files or project rules. This context
-is specific to each tool, unstructured, not versioned, and not reviewed. It does
-not record requirements, design decisions, or their rationale in a form that can
-be traced or reused by a different assistant.
+context between sessions, such as memory files or project rules. These files
+can be kept under version control, but they hold general context and
+instructions in a format specific to each tool. They do not record
+requirements, design decisions, or their rationale in a form that can be traced
+or reused by a different assistant.
 
 \medskip
 \noindent\textbf{RF2.} AI coding assistants can generate code directly from an
@@ -1380,50 +1381,418 @@ There are currently no open issues to be discussed.
 
 \section{Off-the-Shelf Solutions}
 \subsection{Ready-Made Products}
-\lips
+
+Several existing products cover parts of the problem, but none of them refines
+intent all the way to formal contracts while keeping a versioned, traceable
+record of every stage.
+
+\begin{itemize}
+  \item \textbf{GitHub Spec Kit.} An open-source toolkit for spec-driven
+  development with AI coding assistants. It guides the developer from a
+  specification to a technical plan, a task list, and then implementation. It
+  can produce interface contracts and supports some traceability between
+  specifications and tasks. It does not verify formal contracts against the
+  code, and it does not maintain fine-grained traceability from requirements to
+  source code.
+  \item \textbf{Kiro.} An AI development platform, available as an IDE, a
+  command-line tool, and a web interface, that turns a prompt into
+  requirements, a technical design, and a task list before generating code. It
+  can use property-based tests to check the generated code against properties
+  derived from the requirements. It does not include a formal contract stage,
+  such as JML, in its workflow.
+  \item \textbf{Built-in memory of AI coding assistants.} Features such as
+  Claude Code memory files and Cursor rules carry project context and
+  instructions between sessions, and the files can be kept under version
+  control. As described in RF1, they hold general context and instructions, not
+  a requirements workflow with approval states, refinement relationships, or
+  traceability between intent, requirements, architecture, and contracts.
+  \item \textbf{Requirements management tools.} Tools such as IBM DOORS and Jama
+  Connect version requirements, maintain traceability links, and offer
+  AI-assisted features and integrations with other development tools. They do
+  not provide a workflow that refines developer intent through architecture and
+  method-level contracts before handing the result to an AI coding assistant.
+\end{itemize}
+
+Since none of these products meets the goals in full, \progname{} will be built
+as a new product. Spec Kit and Kiro may be used as points of comparison during
+evaluation.
+
 \subsection{Reusable Components}
-\lips
+
+\progname{} will build on the following existing components instead of
+implementing them from scratch. Each component will be used according to its
+licence (see LR1).
+
+\begin{itemize}
+  \item \textbf{VS Code Extension API.} Provides the user interface, commands,
+  and workspace access for the tool inside the IDE.
+  \item \textbf{Model Context Protocol (MCP) SDKs.} Official libraries for
+  building the MCP server that the AI coding assistant communicates with.
+  \item \textbf{LangGraph.} Runs the refinement workflow as a graph and pauses
+  it for developer approval at each stage. Its saved checkpoints allow an
+  interrupted workflow to be resumed (RFR3).
+  \item \textbf{LangSmith.} Traces and evaluates the LLM calls made during
+  refinement.
+  \item \textbf{Contract languages and checkers.} JML and OpenJML for Java, and
+  libraries such as icontract or deal for Python, are used to write and check
+  formal contracts. \progname{} does not include its own verifier (AS2).
+  \item \textbf{UML modelling tools.} Existing VS Code UML extensions may be
+  used to display and edit architecture and interface models.
+  \item \textbf{Git.} Versions the intent model and records its history (IAS3).
+\end{itemize}
+
 \subsection{Products That Can Be Copied}
-\lips
+
+The following practices and formats can be copied or adapted, rather than
+designed from scratch.
+
+\begin{itemize}
+  \item \textbf{Staged workflow of Spec Kit and Kiro.} Both products move from
+  requirements to design to tasks with a review between stages. \progname{} can
+  adapt this structure and extend it with interface specification and contract
+  stages.
+  \item \textbf{EARS notation.} The Easy Approach to Requirements Syntax gives
+  requirements a fixed sentence structure. It can be used as the format for the
+  requirements stage.
+  \item \textbf{Architecture Decision Records (ADRs).} A lightweight format for
+  recording an architecture decision, its context, its status, and its
+  consequences. Several templates exist, and one can be chosen to record
+  decisions and rationale at the architecture stage.
+  \item \textbf{Volere requirement shell.} The template used in this document,
+  where each requirement has a description, rationale, and fit criterion. It
+  can be used as the structure for requirements in the intent model.
+  \item \textbf{Design by Contract.} The practice of specifying preconditions,
+  postconditions, and invariants for each method, introduced by Bertrand Meyer
+  with the Eiffel language. It defines what the contract stage must produce.
+\end{itemize}
 
 \section{New Problems}
 \subsection{Effects on the Current Environment}
-\lips
+
+Introducing \progname{} changes how developers work with AI coding assistants.
+
+\begin{itemize}
+  \item \textbf{More steps before code is generated.} Developers must review
+  and approve artifacts at each stage instead of going straight from a prompt
+  to code. Small features may take longer at first.
+  \item \textbf{A shift in what developers review.} Developers spend more time
+  reviewing requirements, architecture, interfaces, and contracts, and less
+  time reading generated code line by line.
+  \item \textbf{Changes to code review.} Reviewers may need to look at changes
+  to the intent model alongside code changes in pull requests.
+  \item \textbf{New files in the repository.} The intent model is stored in the
+  workspace and versioned with Git, so it adds files and history to the
+  project.
+\end{itemize}
+
 \subsection{Effects on the Installed Systems}
-\lips
+
+\begin{itemize}
+  \item \textbf{Host IDE.} The extension adds views and commands to the IDE and
+  uses some of its memory and processing time.
+  \item \textbf{AI coding assistant.} The assistant must be configured to
+  connect to the \progname{} MCP server. This may interact with other MCP
+  servers or extensions the developer already uses.
+  \item \textbf{Local tooling.} Contract checkers may require extra software,
+  such as a Java runtime for OpenJML.
+  \item \textbf{External LLM services.} Each refinement stage sends requests to
+  an LLM service, which increases the developer's usage and possible cost for
+  that service.
+\end{itemize}
+
 \subsection{Potential User Problems}
-\lips
+
+\begin{itemize}
+  \item \textbf{Approval fatigue.} Developers who are asked to approve many
+  artifacts may approve them without reading them carefully, which weakens the
+  human review the process depends on.
+  \item \textbf{Bypassing the tool.} Developers under time pressure may prompt
+  the AI coding assistant directly and skip the refinement process, so the
+  intent model no longer matches the code.
+  \item \textbf{Plausible but wrong artifacts.} Since LLM output is not
+  deterministic (RF5), generated requirements, designs, or contracts may look
+  correct but contain mistakes that the developer does not notice.
+  \item \textbf{Difficulty reviewing formal contracts.} Developers who are not
+  familiar with preconditions and postconditions may find contracts hard to
+  review (AS6).
+  \item \textbf{Repeated reviews after a change.} Going back to an earlier stage
+  requires the dependent artifacts in later stages to be reviewed again (BR3),
+  which may frustrate developers when changes are frequent.
+\end{itemize}
+
 \subsection{Limitations in the Anticipated Implementation Environment That May
 Inhibit the New Product}
-\lips
+
+\begin{itemize}
+  \item \textbf{Limited control over the AI coding assistant.} \progname{} can
+  only guide the assistant through MCP. It cannot stop a developer from using
+  the assistant outside the tool to generate code.
+  \item \textbf{Changing external APIs.} The VS Code Extension API, the MCP
+  specification, and the AI coding assistants are updated often. Changes to
+  them may break the integration.
+  \item \textbf{LLM service limits.} Rate limits, response times, outages, and
+  usage costs of the LLM service may slow down or interrupt refinement.
+  \item \textbf{LLM context size.} Large projects may have more requirements and
+  code than an LLM can process in a single request.
+  \item \textbf{Language-specific contract tools.} Contract languages and
+  checkers only exist for certain programming languages, which limits where the
+  contract stage can be used (AS3).
+\end{itemize}
+
 \subsection{Follow-Up Problems}
-\lips
+
+\begin{itemize}
+  \item \textbf{Keeping the intent model in sync with the code.} Once code is
+  edited outside the refinement process, the intent model can become outdated.
+  Detecting this requires the post-generation verification features of Feature
+  Group B.
+  \item \textbf{Team use.} If several developers use \progname{} on the same
+  project, their changes to the intent model may conflict (AS4).
+  \item \textbf{Intent model format changes.} New releases may change the intent
+  model format, so existing intent models will need to be migrated (REL2).
+  \item \textbf{Supporting more languages and assistants.} Each new programming
+  language needs its own contract adapter, and each new AI coding assistant
+  needs its own integration to be built and maintained.
+  \item \textbf{Sharing project data with LLM services.} Developers working on
+  private code may not be allowed to send it to an external LLM service, which
+  may require support for locally hosted models (PRR1).
+\end{itemize}
 
 \section{Tasks}
 \subsection{Project Planning}
-\lips
+
+The project is planned around the course deliverables listed in
+Table~\ref{TblSchedule}. Details on how work is decomposed and tracked are given
+in the Development Plan. In summary:
+
+\begin{itemize}
+  \item Each deliverable is broken down into GitHub issues, which are tracked
+  on the team's GitHub Projects board and assigned to team members.
+  \item Each issue is completed on its own branch and merged into the main
+  branch through a pull request reviewed by at least two other team members.
+  \item The team meets with the supervisor regularly to review progress and
+  requirements, and shares diagrams and short documents for feedback between
+  meetings.
+\end{itemize}
+
+Before implementation begins, the team will complete the following planning
+tasks:
+
+\begin{itemize}
+  \item Define the final level of detail the refinement process must produce,
+  including what makes a contract complete.
+  \item Model the refinement process as a state machine, showing its stages,
+  approvals, and transitions back to earlier stages.
+  \item Decide which stages the proof of concept will support (AS1, AS8).
+  \item Select a representative case study (AS7).
+  \item Research existing contract languages and checkers, VS Code extension
+  development, and existing UML tools.
+  \item Define the evaluation criteria, including a comparison against direct
+  AI code generation.
+\end{itemize}
+
 \subsection{Planning of the Development Phases}
-\lips
+
+Table~\ref{TblPhases} shows the planned development phases. Each phase ends
+with a course deliverable.
+
+\begin{table}[h!]
+\centering
+\caption{Development Phases}
+\label{TblPhases}
+\begin{tabularx}{\textwidth}{p{3.4cm}p{2.6cm}X}
+\toprule
+\textbf{Phase} & \textbf{Ends with} & \textbf{Main work} \\
+\midrule
+1. Requirements and process modelling & SRS, Hazard Analysis, V\&V Plan &
+Write the requirements, model the refinement process, select the case study,
+and define the evaluation criteria. \\
+2. Proof of concept & Proof of Concept Demonstration & Demonstrate a subset of
+the refinement stages on the case study, with developer approval at each stage
+and the ability to return to an earlier stage. \\
+3. Design & Design Document & Design the modules and interfaces of the VS Code
+extension, MCP server, refinement workflow, and intent model. \\
+4. Full refinement workflow & Revision~0 Demonstration & Implement the
+refinement process from high-level intent to formal contracts, and hand the
+approved contracts to the AI coding assistant. \\
+5. Evaluation and refinement & V\&V Report, Final Demonstration & Run the
+evaluation on the case study, fix the problems it finds, and improve
+usability. \\
+6. Final documentation & Final Documentation, EXPO & Complete the
+documentation and present the product. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Feature Group B (post-generation traceability, explanation, and verification)
+is not part of these phases and is treated as future work (AS1).
 
 \section{Migration to the New Product}
 \subsection{Requirements for Migration to the New Product}
-\lips
+
+There is no existing system that \progname{} replaces. Developers currently go
+straight from prompts to generated code, as described in The Current Situation.
+Adopting \progname{} is therefore a change in workflow, not a migration from
+another tool. The following requirements apply when a developer starts using
+\progname{} on a project.
+
+\medskip
+\noindent\textbf{MIG1.} The developer shall be able to start using \progname{}
+on an existing project without changing the project's existing code.
+
+\medskip
+\noindent\textbf{MIG2.} The developer shall be able to apply the refinement
+process to new features only, without first recording intent for the existing
+code.
+
+\medskip
+\noindent\textbf{MIG3.} Setting up \progname{} shall not require changes to the
+developer's existing AI coding assistant configuration, other than adding the
+\progname{} MCP server.
+
+\medskip
+\noindent\textbf{MIG4.} Removing \progname{} from a project shall leave the
+project's code and build working as before.
+
 \subsection{Data That Has to be Modified or Translated for the New System}
-\lips
+
+No existing data has to be converted for \progname{} to work. The intent model
+of a project starts empty and is filled as the developer uses the refinement
+process.
+
+Existing project information may optionally be used as a starting point for
+the intent model, such as:
+
+\begin{itemize}
+  \item requirements documents or README files;
+  \item AI assistant memory files and project rules, such as Claude Code memory
+  files or Cursor rules;
+  \item issues and feature requests in the project's issue tracker.
+\end{itemize}
+
+Any content brought in this way is treated as a proposal and must be reviewed
+and approved by the developer before it enters the intent model (BR2).
+Recovering intent from existing code is part of Feature Group B and is treated
+as future work.
+
+Within \progname{} itself, new releases may change the intent model format.
+Existing intent models must then be migrated to the new format (REL2).
 
 \section{Costs}
-\lips
+
+As stated in the Budget Constraints, the project has no monetary budget. Its
+costs are mainly the time of the team and of the people who use the product.
+
+\begin{itemize}
+  \item \textbf{Development effort.} The main cost is the time the team spends
+  on requirements, design, implementation, evaluation, and documentation over
+  the phases in Table~\ref{TblPhases}. Effort is tracked through GitHub issues.
+  \item \textbf{Software and services.} The product is built with free and
+  open-source tools. Optional paid services, such as a LangSmith subscription,
+  would only be purchased with the supervisor's approval.
+  \item \textbf{LLM usage.} Each refinement stage sends requests to an LLM
+  service. During development and evaluation, this usage may cost money
+  depending on the service and its free limits. Users of the product pay for
+  their own LLM usage.
+  \item \textbf{User time.} Developers spend time reviewing and approving
+  artifacts at each stage. This cost is expected to be offset by fewer defects
+  and less repeated explanation of intent, which the evaluation will measure.
+\end{itemize}
+
 \section{User Documentation and Training}
 \subsection{User Documentation Requirements}
-\lips
+
+\medskip
+\noindent\textbf{UDR1.} The product shall include an installation guide that
+explains how to install the extension, connect the AI coding assistant through
+MCP, and set up the LLM service.
+
+\medskip
+\noindent\textbf{UDR2.} The product shall include a user guide that explains
+each refinement stage, what the developer is expected to review at that stage,
+and how to approve, edit, reject, or return to an earlier stage.
+
+\medskip
+\noindent\textbf{UDR3.} The user guide shall explain the format of the formal
+contracts the product produces, with examples, so that developers can review
+them.
+
+\medskip
+\noindent\textbf{UDR4.} Each release shall be accompanied by release notes
+(REL1).
+
+\medskip
+\noindent\textbf{UDR5.} Maintainer documentation shall describe each major
+component and interface (MR4).
+
 \subsection{Training Requirements}
-\lips
+
+No formal training course is required. The product shall be learnable through
+its documentation and its interface (LR2).
+
+\medskip
+\noindent\textbf{TRR1.} The product shall include a sample project that guides
+a new user through a full refinement, from high-level intent to formal
+contracts.
+
+\medskip
+\noindent\textbf{TRR2.} Each stage of the refinement workflow shall show a short
+description of what the developer should check before approving.
 
 \section{Waiting Room}
-\lips
+
+The following ideas are not planned for the current project, but may be
+considered in future versions.
+
+\begin{itemize}
+  \item \textbf{Feature Group B.} Post-generation traceability, explanation of
+  generated code, verification of code against contracts, and support for
+  incremental changes to existing code (AS1).
+  \item \textbf{UML round-trip engineering.} Keep UML diagrams in sync with the
+  intent model, so that changes to the requirements update the class
+  relationships, methods, and types shown in the diagrams.
+  \item \textbf{Rationale reconstruction.} Let the developer go back to a past
+  commit or pull request and see the requirements and constraints that applied
+  at that point.
+  \item \textbf{GitHub Actions integration.} Check pull requests against the
+  intent model before they are merged, and comment on which parts of the model
+  each change affects.
+  \item \textbf{Team use.} Support several developers working on the same intent
+  model (AS4).
+  \item \textbf{More IDEs, languages, and assistants.} Support PyCharm,
+  additional programming languages for the contract stage, and additional AI
+  coding assistants.
+  \item \textbf{Other forms of input.} Accept engineering input other than
+  natural language, such as Petri nets (AR2).
+  \item \textbf{Locally hosted models.} Run refinement with an LLM hosted on the
+  developer's machine, for projects whose code cannot be sent to an external
+  service.
+\end{itemize}
 
 \section{Ideas for Solution}
-\lips
+
+The following ideas may be used to implement the product. They are not
+requirements, and will be decided in the Design Document.
+
+\begin{itemize}
+  \item \textbf{Workflow as a LangGraph graph.} Each refinement stage is a node,
+  and approvals and returns to earlier stages are edges, matching the state
+  machine model of the process.
+  \item \textbf{Intent model as files in the workspace.} Store each artifact as a
+  structured file, such as JSON or Markdown (SCR3), so that it can be versioned
+  and reviewed with Git.
+  \item \textbf{Dependency links between artifacts.} Record which artifact each
+  artifact refines (BR7), so the product can find the later artifacts that need
+  to be reviewed again after a change (BR3).
+  \item \textbf{Contracts written into the code.} Write contracts as JML
+  comments in Java or as icontract decorators in Python, so that existing tools
+  can check them.
+  \item \textbf{MCP tools for the coding assistant.} Expose the approved
+  contracts to the AI coding assistant through MCP tools, so it generates code
+  from them.
+  \item \textbf{Templates for each stage.} Use EARS for requirements and
+  Architecture Decision Records for architecture decisions.
+\end{itemize}
 
 \newpage{}
 \section{Appendix --- Generative AI Use Disclosure}
