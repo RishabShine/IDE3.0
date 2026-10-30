@@ -89,27 +89,84 @@ This document ... \wss{provide an introductory blurb and roadmap of the
 
 \subsection{Summary}
 
-\wss{Say what software is being tested.  Give its name and a brief overview of
-  its general functions.}
+% \wss{Say what software is being tested.  Give its name and a brief overview of
+%   its general functions.}
+
+The software under test is IDE3.0, a VS Code extension that assists developers
+in turning a high-level goal into explicit, reviewable requirements, and keeps
+those requirements binding on any AI coding assistant that can implement them.
+Without such a tool, the developer struggles with the traceability and
+maintainability of goals and constraints since, during development, those
+details live only in the chat and prompt phase and are lost when the session
+is completed. IDE3.0 instead takes a new spec-driven development approach in
+which the important details are treated as artifacts that are versioned in an
+intent model, with elicitation artifacts, requirements, rationale, and trace
+links that live within the project's repo.
+
+The elicitation follows a staged and structured pipeline, the first stage of
+which is the impact-mapping decomposition that proposes impacts, deliverables,
+and user stories from the developer's goals. A clarification step then asks
+about missing rules, exceptions, constraints, and quality needs rather than
+the coding assistant inventing them. Finally, a specification stage summarizes
+the confirmed information and extracts and classifies explicit requirements.
+The developer reviews the proposals at each stage and can return to and edit
+earlier stages. From the approved requirements, IDE3.0 generates Java
+interfaces with JML contracts that the coding assistant must implement.
+
+IDE3.0 has four components, each covered by its own functional tests:
+\begin{itemize}
+  \item \textbf{Refinement workflow.} Guides the developer from a
+  natural-language goal through impact mapping, clarification, and
+  specification to proposed requirements and constraints (FR1--FR3).
+  \item \textbf{Review panel and approval gate.} The developer approves,
+  edits, or rejects each proposal in VS Code. Code generation is blocked
+  until every proposal has a recorded decision (FR4--FR8).
+  \item \textbf{Intent model store.} Persists approved artifacts, their
+  rationale, and their trace links in the \texttt{.ide3/} folder of the
+  developer's workspace (FR9, FR11).
+  \item \textbf{Verification arm.} Generates Java interfaces with JML
+  contracts from approved requirements and checks the coding assistant's
+  implementation against them using OpenJML (FR10, FR13).
+
+\end{itemize}
+
 
 \subsection{Objectives}
 
-\wss{State what is intended to be accomplished.  The objective will be around
-  the qualities that are most important for your project.  You might have
-  something like: ``build confidence in the software correctness,''
-  ``demonstrate adequate usability.'' etc.  You won't list all of the qualities,
-  just those that are most important.}
+% \wss{State what is intended to be accomplished.  The objective will be around
+%   the qualities that are most important for your project.  You might have
+%   something like: ``build confidence in the software correctness,''
+%   ``demonstrate adequate usability.'' etc.  You won't list all of the qualities,
+%   just those that are most important.}
 
-\wss{You should also list the objectives that are out of scope.  You don't have 
-the resources to do everything, so what will you be leaving out.  For instance, 
-if you are not going to verify the quality of usability, state this.  It is also 
-worthwhile to justify why the objectives are left out.}
+% \wss{You should also list the objectives that are out of scope.  You don't have 
+% the resources to do everything, so what will you be leaving out.  For instance, 
+% if you are not going to verify the quality of usability, state this.  It is also 
+% worthwhile to justify why the objectives are left out.}
 
-\wss{The objectives are important because they highlight that you are aware of 
-limitations in your resources for verification and validation.  You can't do everything, 
-so what are you going to prioritize?  As an example, if your system depends on an 
-external library, you can explicitly state that you will assume that external library 
-has already been verified by its implementation team.}
+% \wss{The objectives are important because they highlight that you are aware of 
+% limitations in your resources for verification and validation.  You can't do everything, 
+% so what are you going to prioritize?  As an example, if your system depends on an 
+% external library, you can explicitly state that you will assume that external library 
+% has already been verified by its implementation team.}
+
+The primary objective to be accomplished via this plan is to build confidence
+that the IDE3.0 extension correctly carries the developer's intent from a very
+high overview of a goal down to verified code generation without loss,
+fabrication, or friction. The plan aims to validate the following:
+
+\begin{enumerate}
+\item \textbf{Pipeline correctness.} Each elicitation stage produces output that fits and adheres to the shape of the defined intent model schema, and the complete context (original goal, intermediate artifacts, user corrections, confirmed constraints, and unresolved questions) is passed between stages.
+\item \textbf{No silent invention.} When a goal or a user story leaves something unspecified, the clarification stage asks the developer for guidance and context rather than inserting an assumption into the requirements.
+\item \textbf{Approval gate enforcement.} No artifacts should enter the intent model, nor should any code generation occur, without explicit approval from the human in the loop (and it should be recorded).
+\item \textbf{Traceability integrity.} Every approved generated requirement links back to the origination of the goal, user story, and clarification answers, and editing earlier stages correctly ripples through and identifies the affected artifacts downstream.
+\item \textbf{Persistence.} The intent model survives across all sessions.
+\item \textbf{Contract verification.} Generated JML contracts are well-formed, and OpenJML detects implementations that violate them.
+\end{enumerate}
+
+The quality of generated requirements is additionally reviewed against the
+characteristics of well-formed requirements in IEEE/ISO/IEC 29148.
+
 
 \subsection{Custom Documents}
 
