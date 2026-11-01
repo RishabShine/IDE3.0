@@ -3,6 +3,10 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amssymb}
+\usepackage{float}
 \hypersetup{
     colorlinks,
     citecolor=blue,
@@ -89,27 +93,84 @@ This document ... \wss{provide an introductory blurb and roadmap of the
 
 \subsection{Summary}
 
-\wss{Say what software is being tested.  Give its name and a brief overview of
-  its general functions.}
+% \wss{Say what software is being tested.  Give its name and a brief overview of
+%   its general functions.}
+
+The software under test is IDE3.0, a VS Code extension that assists developers
+in turning a high-level goal into explicit, reviewable requirements, and keeps
+those requirements binding on any AI coding assistant that can implement them.
+Without such a tool, the developer struggles with the traceability and
+maintainability of goals and constraints since, during development, those
+details live only in the chat and prompt phase and are lost when the session
+is completed. IDE3.0 instead takes a new spec-driven development approach in
+which the important details are treated as artifacts that are versioned in an
+intent model, with elicitation artifacts, requirements, rationale, and trace
+links that live within the project's repo.
+
+The elicitation follows a staged and structured pipeline, the first stage of
+which is the goal decomposition that proposes impacts, deliverables,
+and user stories from the developer's goals. A clarification step then asks
+about missing rules, exceptions, constraints, and quality needs rather than
+the coding assistant inventing them. Finally, a specification stage summarizes
+the confirmed information and extracts and classifies explicit requirements.
+The developer reviews the proposals at each stage and can return to and edit
+earlier stages. From the approved requirements, IDE3.0 generates Java
+interfaces with JML contracts that the coding assistant must implement.
+
+IDE3.0 has four components, each covered by its own functional tests:
+\begin{itemize}
+  \item \textbf{Refinement workflow.} Guides the developer from a
+  natural-language goal through decomposition (impact-mapping), clarification, and
+  specification to proposed requirements and constraints (FR1--FR3).
+  \item \textbf{Review panel and approval gate.} The developer approves,
+  edits, or rejects each proposal in VS Code. Code generation is blocked
+  until every proposal has a recorded decision (FR4--FR8).
+  \item \textbf{Intent model store.} Persists approved artifacts, their
+  rationale, and their trace links in the \texttt{.ide3/} folder of the
+  developer's workspace (FR9, FR11).
+  \item \textbf{Verification arm.} Generates Java interfaces with JML
+  contracts from approved requirements and checks the coding assistant's
+  implementation against them using OpenJML (FR10, FR13).
+
+\end{itemize}
+
 
 \subsection{Objectives}
 
-\wss{State what is intended to be accomplished.  The objective will be around
-  the qualities that are most important for your project.  You might have
-  something like: ``build confidence in the software correctness,''
-  ``demonstrate adequate usability.'' etc.  You won't list all of the qualities,
-  just those that are most important.}
+% \wss{State what is intended to be accomplished.  The objective will be around
+%   the qualities that are most important for your project.  You might have
+%   something like: ``build confidence in the software correctness,''
+%   ``demonstrate adequate usability.'' etc.  You won't list all of the qualities,
+%   just those that are most important.}
 
-\wss{You should also list the objectives that are out of scope.  You don't have 
-the resources to do everything, so what will you be leaving out.  For instance, 
-if you are not going to verify the quality of usability, state this.  It is also 
-worthwhile to justify why the objectives are left out.}
+% \wss{You should also list the objectives that are out of scope.  You don't have 
+% the resources to do everything, so what will you be leaving out.  For instance, 
+% if you are not going to verify the quality of usability, state this.  It is also 
+% worthwhile to justify why the objectives are left out.}
 
-\wss{The objectives are important because they highlight that you are aware of 
-limitations in your resources for verification and validation.  You can't do everything, 
-so what are you going to prioritize?  As an example, if your system depends on an 
-external library, you can explicitly state that you will assume that external library 
-has already been verified by its implementation team.}
+% \wss{The objectives are important because they highlight that you are aware of 
+% limitations in your resources for verification and validation.  You can't do everything, 
+% so what are you going to prioritize?  As an example, if your system depends on an 
+% external library, you can explicitly state that you will assume that external library 
+% has already been verified by its implementation team.}
+
+The primary objective to be accomplished via this plan is to build confidence
+that the IDE3.0 extension correctly carries the developer's intent from a very
+high overview of a goal down to verified code generation without loss,
+fabrication, or friction. The plan aims to validate the following:
+
+\begin{enumerate}
+\item \textbf{Pipeline correctness.} Each elicitation stage produces output that fits and adheres to the shape of the defined intent model schema, and the complete context (original goal, intermediate artifacts, user corrections, confirmed constraints, and unresolved questions) is passed between stages.
+\item \textbf{No silent invention.} When a goal or a user story leaves something unspecified, the clarification stage asks the developer for guidance and context rather than inserting an assumption into the requirements.
+\item \textbf{Approval gate enforcement.} No artifacts should enter the intent model, nor should any code generation occur, without explicit approval from the human in the loop (and it should be recorded).
+\item \textbf{Traceability integrity.} Every approved generated requirement links back to the origination of the goal, user story, and clarification answers, and editing earlier stages correctly ripples through and identifies the affected artifacts downstream.
+\item \textbf{Persistence.} The intent model survives across all sessions.
+\item \textbf{Contract verification.} Generated JML contracts are well-formed, and OpenJML detects implementations that violate them.
+\end{enumerate}
+
+The quality of generated requirements is additionally reviewed against the
+characteristics of well-formed requirements in IEEE/ISO/IEC 29148.
+
 
 \subsection{Custom Documents}
 
@@ -135,14 +196,52 @@ how they relate to your VnV efforts.}
 
 \section{Plan}
 
-\wss{Introduce this section.  You can provide a roadmap of the sections to
-  come.}
+% \wss{Introduce this section.  You can provide a roadmap of the sections to
+%   come.}
+
+This following section outlines how IDE3.0 will be verified and validated. It defines the verification and validation team and each members responsibilities, then describes the approaches that will be 
+taken to verify SRS, the design, this plan, and the implementation. It also lists the automated testing and verification tools, and describes how the software will be validated with our supervisor. 
+
 
 \subsection{Verification and Validation Team}
 
-\wss{Your teammates.  Maybe your supervisor.
-  You should do more than list names.  You should say what each person's role is
-  for the project's verification.  A table is a good way to summarize this information.}
+% \wss{Your teammates.  Maybe your supervisor.
+%   You should do more than list names.  You should say what each person's role is
+%   for the project's verification.  A table is a good way to summarize this information.}
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|p{3cm}|p{3.2cm}|X|}
+  \hline
+  \textbf{Name} & \textbf{Role} & \textbf{Responsibilities} \\
+  \hline
+  Qusay & Technical Verification Co-Lead &
+  Develops and executes automated tests for the elicitation pipeline,
+  approval gate, intent model store, and verification arm. Maintains the
+  CI pipeline and test coverage reporting. Leads design reviews and code
+  walkthroughs. \\
+  \hline
+  Rishab & Technical Verification Co-Lead &
+  Shares all responsibilities with Qusay. The two leads split test
+  ownership by component and review each other's tests, so no component
+  is verified only by its author. \\
+  \hline
+  [Name] & [Role] & [Responsibilities] \\
+  \hline
+  [Name] & [Role] & [Responsibilities] \\
+  \hline
+  [Name] & [Role] & [Responsibilities] \\
+  \hline
+  Dr.\ Istvan David & Supervisor &
+  Provides expert review of the SRS and design in structured review
+  meetings, with a focus on the elicitation workflow and traceability
+  model. \\
+  \hline
+  \end{tabularx}
+  \caption{Verification and validation team}
+  \label{tab:vnv-team}
+  \end{table}
 
 \subsection{SRS Verification}
 
@@ -160,20 +259,171 @@ issue tracker?}
 
 \subsection{Design Verification}
 
-\wss{Plans for design verification}
+% \wss{Plans for design verification}
 
-\wss{The review will include reviews by your classmates}
+% \wss{The review will include reviews by your classmates}
 
-\wss{Create a checklists?}
+% \wss{Create a checklists?}
+
+\paragraph{Peer review.}
+Team members and classmates will review the design documents using the
+checklist in Table~\ref{tab:design-checklist}. Reviewers will document
+any criteria that are not satisfied and suggest improvements. All
+feedback will be tracked as GitHub Issues and addressed in design
+refinement meetings.
+
+\paragraph{Traceability check.}
+The technical verification leads will maintain a traceability matrix
+mapping each requirement in the SRS to the module(s) that satisfy it.
+Any requirement without a module, or any module that satisfies no
+requirement, will be flagged and resolved.
+
+\paragraph{Supervisor review.}
+A formal review with Dr.\ David will verify three critical aspects of the
+design: (1) the elicitation pipeline, including the state passed between
+the goal decomposition, clarification, and specification stages (2) the
+intent model schema and its trace links and (3) the approval gate and
+the generation of Java interfaces with JML contracts. We will prepare a
+module diagram, the intent model schema, and a UML sequence diagram
+tracing one example goal end-to-end through the system. Action items
+from the meeting will be tracked as GitHub Issues.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\textbf{Focus Area} & \textbf{Verification Tasks} \\
+\hline
+Core Architecture &
+$\square$ Every SRS requirement maps to at least one module \newline
+$\square$ Modules are small, individually testable, and hide a single
+design decision \newline
+$\square$ External dependencies (LLM provider, orchestration framework,
+OpenJML) are isolated behind interfaces \\
+\hline
+Elicitation Pipeline &
+$\square$ Full context is passed between stages, not only the final user
+stories \newline
+$\square$ Editing an earlier stage has a defined effect on downstream
+artifacts \\
+\hline
+Intent Model &
+$\square$ Schema represents every artifact type and its trace links
+\newline
+$\square$ Storage format in \texttt{.ide3/} is versionable with the
+repository \\
+\hline
+IDE Integration &
+$\square$ VS Code extension API usage reviewed \newline
+$\square$ No path allows an artifact to bypass the approval gate \\
+\hline
+Verification Arm &
+$\square$ Mapping from approved requirements to JML contracts is
+defined \\
+\hline
+General &
+$\square$ Terminology is consistent with the SRS \\
+\hline
+\end{tabularx}
+\caption{Design verification checklist}
+\label{tab:design-checklist}
+\end{table}
 
 \subsection{Verification and Validation Plan Verification}
 
-\wss{The verification and validation plan is an artifact that should also be
-verified.  Techniques for this include review and mutation testing.}
+% \wss{The verification and validation plan is an artifact that should also be
+% verified.  Techniques for this include review and mutation testing.}
 
-\wss{The review will include reviews by your classmates}
+% \wss{The review will include reviews by your classmates}
 
-\wss{Create a checklists?}
+% \wss{Create a checklists?}
+
+The VnV plan is a project artifact that must itself be verified for
+completeness, feasibility, and effectiveness. It will be verified
+through team, supervisor, and peer reviews, a feasibility assessment,
+mutation testing, and validation of the rubric used to evaluate
+LLM-generated artifacts.
+
+\paragraph{Team Review.}
+All team members will review the plan using the checklist, confirming that
+each objective in Section 2.2 is covered by at least one test and that each
+test case is executed as written. The plan will also be checked for
+consistency with the SRS and design documents, including component names,
+requirement numbers, and tools.
+
+\paragraph{Supervisor Review.}
+Dr.\ David will review the test plan for the elicitation pipeline and the
+verification arm. We will ask whether the planned tests would give the
+developers confidence, or whether there are any crucial testing gaps that
+need to be addressed. We will further ask him: Would the failures and the
+successes give a more than adequate guarantee that the components function
+as they are intended to?
+
+\paragraph{Peer Review.}
+There will be a peer review of our plan that is dictated by this document lifecycle, and the issues and recommendations for changes in our approach will be documented on GitHub under Issues.
+
+\paragraph{Feasibility Assessment.}
+The technical verification co-leads will confirm that every planned activity is realistic within the project timeline and the team's current skills, time budget, and ability to overcome a not so steep learning curve (if it comes down to it). Activities that cannot be completed in time will be rescoped or listed as out of scope, rather than left unexecuted.
+
+\paragraph{Mutation Testing.}
+To verify that the planned tests can detect defects, there will be an intentional introduction of faults injected into the implementation to see if the test cases fail. Any fault that no test detects shows there is a gap in the plan, and a test case will be added to cover it.
+
+\paragraph{Evaluation Rubric Validation.}
+The quality of the LLM-generated artifacts will be evaluated against an evaluation (eval) suite. We will manually score a set of deliberately flawed outputs (such as requirements having invented constraints or missing trace links) and confirm that each one falls below the pass threshold. If any of the flawed outputs are considered acceptable, then the evals and acceptance rubric would need to be revised. When the LLM-as-judge is used, its scores will be compared with our manual ratings on a sample of acceptable outputs.
+
+\paragraph{Tracking and Success Metrics.}
+All findings will be logged in GitHub Issues and addressed in our team meetings, so that the plan can be refined and retuned. Progress can be measured via requirement coverage, mutation detection rate, and finally issue resolution rate.
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}X|}
+  \hline
+  \textbf{Criteria} & \textbf{Verification Tasks} \\
+  \hline
+  Coverage &
+  $\square$ Every objective in Section~2.2 is covered by at least one
+  test \newline
+  $\square$ Every functional and non-functional requirement traces to at
+  least one test case \newline
+  $\square$ Every component (refinement workflow, review panel and
+  approval gate, intent model store, verification arm) has dedicated
+  tests \\
+  \hline
+  Test Quality &
+  $\square$ Each test has a defined initial state, input, and expected
+  output \newline
+  $\square$ Tests of LLM-driven stages check structure and behaviour,
+  not exact generated wording \\
+  \hline
+  Effectiveness &
+  $\square$ Each seeded fault is detected by at least one test
+  \newline
+  $\square$ Each deliberately flawed output scores below the rubric
+  threshold \newline
+  $\square$ LLM-as-judge scores agree with manual ratings on the sampled
+  outputs \\
+  \hline
+  Feasibility &
+  $\square$ All planned activities fit within the project timeline \\ 
+  \hline
+  Document Quality &
+  $\square$ The plan is consistent with the SRS and design documents
+  \newline
+  $\square$ References are complete and correct \newline
+  $\square$ The document is free of spelling, grammatical, and
+  formatting errors \\
+  \hline
+  Process &
+  $\square$ All review feedback is tracked as GitHub Issues \newline
+  $\square$ Traceability tables are updated when requirements change \\
+  \hline
+  \end{tabularx}
+  \caption{VnV plan verification checklist}
+  \label{tab:vnv-checklist}
+  \end{table}
+
 
 \subsection{Implementation Verification}
 
