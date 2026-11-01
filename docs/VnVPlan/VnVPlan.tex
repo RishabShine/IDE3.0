@@ -440,40 +440,42 @@ CAS741) for a partial usability survey.}
 
 \subsection{Automated Testing and Verification Tools}
 
-\wss{What tools are you using for automated testing.  Likely a unit testing
-  framework and maybe a profiling tool, like ValGrind.  Other possible tools
-  include a static analyzer, make, continuous integration tools, test coverage
-  tools, etc.  Explain your plans for summarizing code coverage metrics.
-  Linters are another important class of tools.  For the programming language
-  you select, you should look at the available linters.  There may also be tools
-  that verify that coding standards have been respected, like flake9 for
-  Python.}
-
-\wss{If you have already done this in the development plan, you can point to
-that document.}
-
-\wss{The details of this section will likely evolve as you get closer to the
-  implementation.}
+The team plans to use pytest for automated testing of the Python backend
+and Vitest for the TypeScript extension logic. These tests will verify
+requirement refinement, contract generation, approval gate enforcement,
+intent model persistence across sessions, and traceability. Controlled responses will
+replace external LLM and coding-agent calls where needed to make workflow
+tests repeatable. LangSmith will support evaluation of the LLM based
+refinement process using representative engineering requests and reviewed
+expectations. Automated checks will assess the structure and required
+properties of generated artifacts, supplemented by manual review of
+whether the resulting contracts preserve the engineer's intent. Where
+implementation checking is supported, examples with known contract
+violations will be used to test whether \progname{} identifies and reports
+them correctly. Ruff and ESLint with typescript-eslint are the proposed
+linters for the team's Python and TypeScript code, respectively.
+GitHub Actions will run automated tests, linting, and TypeScript type
+checks on pull requests and changes to the main branch. Coverage reports
+from pytest-cov and Vitest will used to identify untested parts of \progname{}, 
+to ensure that the tool is tested to an appropriate degree These tool selections
+may be refined as implementation progresses.
 
 \subsection{Software Validation}
 
-\wss{If there is any external data that can be used for validation, you should
-  point to it here.  If there are no plans for validation, you should state that
-  here.}
-
-\wss{You might want to use review sessions with the stakeholder to check that
-the requirements document captures the right requirements.  Maybe task based
-inspection?}
-
-\wss{For those capstone teams with an external supervisor, the Rev 0 demo should 
-be used as an opportunity to validate the requirements.  You should plan on 
-demonstrating your project to your supervisor shortly after the scheduled Rev 0 demo.  
-The feedback from your supervisor will be very useful for improving your project.}
-
-\wss{For teams without an external supervisor, user testing can serve the same purpose 
-as a Rev 0 demo for the supervisor.}
-
-\wss{This section might reference back to the SRS verification section.}
+Software validation will be conducted through structured review sessions
+with our supervisor, Dr. Istvan David, using representative engineering
+requests and the product use cases defined in the SRS. The sessions will
+include demonstrations of iterative intent refinement, clarification of
+ambiguous or conflicting information, review and approval of engineering
+artifacts, contract generation, and traceability. The supervisor will
+assess whether the resulting artifacts and contracts capture the intended
+behaviour and whether the workflow provides sufficient opportunities for
+the engineer to correct and guide the refinement process. A demonstration
+will be arranged around the time of the Rev 0 demo to obtain feedback on the
+implemented workflow. Feedback and identified discrepancies will be
+recorded as GitHub Issues and used to revise the requirements, design,
+or implementation as appropriate. Subsequent review sessions will revisit
+these issues to assess whether the changes address the concerns raised.
 
 \section{System Tests}
 
