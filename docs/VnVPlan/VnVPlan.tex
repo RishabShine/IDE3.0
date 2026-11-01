@@ -489,6 +489,233 @@ the contents of the subsections.}
 \wss{Include a blurb here to explain why the subsections below
   cover the requirements.  References to the SRS would be good here.}
 
+\subsubsection{Intent Capture}
+
+This area covers submission of engineering intent, extraction of structured
+engineering artifacts, and iterative refinement into reviewable proposals
+and contracts, as described by FR1-FR3 in the SRS \citep{SRS}. Test
+identifiers begin with \texttt{IC}, followed by a functionality group and
+a case number. The first group, \texttt{IC-EAS}, covers engineering
+artifact submission; natural-language submission and general iterative
+refinement will be addressed separately.
+
+\paragraph{Engineering Artifact Submission}
+
+These tests assess whether \progname{} uses the information supplied in
+engineering artifacts, identifies issues or uncertainty, and seeks further
+input when the artifact does not justify a sufficiently detailed contract.
+UML and Petri net support are planned capabilities, and the corresponding
+tests will be executed as those artifact types become supported. Comprehensive 
+model verification, including Petri net deadlock analysis, is a potential 
+extension beyond these cases.
+
+All cases are manual system tests using small artifacts with independently
+reviewed expected interpretations. Fixtures include the information needed
+to establish each expected result. Checks compare meaning and relationships,
+not exact generated wording or a particular contract language.
+
+\begin{enumerate}
+
+\item{IC-EAS-1: Submit a Valid UML Diagram\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A project is open. A reviewed UML class diagram defines an
+Account with a numeric balance and a withdraw(amount) operation. Attached
+constraints state that the amount must be positive, must not exceed the
+balance, and is subtracted from the balance on success.
+
+Input: The engineer submits the diagram and its constraints through the
+extension.
+
+Output: A reviewable draft represents the Account, balance, operation, and all
+three withdrawal rules without contradicting their supplied meanings.
+
+Test Case Derivation: FR1 accepts supported engineering artifacts, FR2
+requires structured extraction and refinement, and FR3 requires a reviewable
+draft.
+
+How test will be performed: The tester will submit the fixture and compare the
+resulting draft with the reviewed diagram and constraints, checking each
+specified element and rule.
+
+\item{IC-EAS-2: Submit a Valid Petri Net\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A project is open. A reviewed Petri net has places Ready and
+Complete, a transition Process, arcs Ready to Process and Process to Complete,
+and one initial token in Ready. All arc weights are one. An accompanying
+description identifies a transition firing as a completed processing action.
+
+Input: The engineer submits the net and its description.
+
+Output: The draft captures that Process requires a token in Ready and moves
+that token to Complete when it fires. It preserves the initial marking and
+does not invent concurrent processing or additional transitions. The
+interpretation is available for review.
+
+Test Case Derivation: FR1 and FR2 require supported artifact input to inform
+the structured proposal; FR3 requires the interpretation to be reviewable.
+
+How test will be performed: The tester will submit the fixture and compare the
+extracted behaviour with the independently reviewed token-flow interpretation.
+
+\item{IC-EAS-3: Identify an Erroneous UML Relationship\\}
+
+Requirements: FR1, FR2.
+
+Control: Manual.
+
+Initial State: A UML fixture shows Account inheriting from SavingsAccount and
+SavingsAccount inheriting from Account. The fixture is reviewed in advance to
+identify the circular inheritance as the seeded error.
+
+Input: The engineer submits the diagram without resolving the inheritance
+cycle.
+
+Output: The system identifies the circular relationship and asks the engineer
+to correct or clarify it. The affected relationship is not silently accepted
+as confirmed intent or used as a settled basis for a contract.
+
+Test Case Derivation: Refinement under FR2 must address an identified
+inconsistency in artifact input before relying on it to derive a contract.
+
+How test will be performed: The tester will submit the fixture, inspect the
+reported issue and clarification request, and check that the affected
+relationship remains unresolved in any retained draft.
+
+\item{IC-EAS-4: Identify an Incomplete Petri-Net Definition\\}
+
+Requirements: FR1, FR2.
+
+Control: Manual.
+
+Initial State: A Petri net fixture declares places Ready and Complete and
+transition Process, but one arc references a place named Failed that is absent
+from the supplied net and accompanying description.
+
+Input: The engineer submits the fixture with the missing place definition.
+
+Output: The system identifies the unresolved arc endpoint and requests its
+definition or correction. It does not silently invent the missing place or
+treat the net as a complete confirmed behavioural specification.
+
+Test Case Derivation: FR2 requires refinement of supplied intent; a referenced
+but undefined element must be resolved before the affected behaviour can
+support a contract.
+
+How test will be performed: The tester will submit the fixture and inspect the
+refinement response and draft for identification of Failed, a request for
+clarification, and absence of an invented confirmed definition.
+
+\item{IC-EAS-5: Clarify Informal UML Notation\\}
+
+Requirements: FR1, FR2.
+
+Control: Manual.
+
+Initial State: An otherwise readable UML-like diagram connects Account and
+Customer using an unlabelled arrow with no legend. The accompanying
+description does not establish whether it means ownership, association, or
+inheritance.
+
+Input: The engineer submits the diagram.
+
+Output: The system identifies the uncertain relationship and asks the engineer
+to confirm its meaning. It may suggest an interpretation, but does not
+silently treat one as confirmed. Unambiguous information remains available for
+refinement.
+
+Test Case Derivation: FR2 requires iterative refinement where the supplied
+artifact does not establish a unique interpretation.
+
+How test will be performed: The tester will inspect the response for a
+question about the relationship and verify that any proposed meaning is
+clearly unconfirmed rather than incorporated as a settled requirement.
+
+\item{IC-EAS-6: Refine an Understandable but Insufficient Artifact\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A clear UML diagram defines Account, balance, and
+withdraw(amount), but provides no rules for permitted amounts, overdrafts, or
+the resulting balance.
+
+Input: The engineer submits the diagram without additional behavioural rules.
+
+Output: The system retains the class, attribute, and operation in a draft and
+asks for the missing withdrawal rules before completing a contract that
+depends on them. It does not silently assume that amounts must be positive,
+overdrafts are forbidden, or a particular balance update applies.
+
+Test Case Derivation: FR2 requires iterative refinement toward detailed
+contracts, while FR3 allows the known information to remain available as a
+draft. A readable artifact may still lack the necessary behavioural detail.
+
+How test will be performed: The tester will submit the diagram, inspect the
+captured structural details and clarification questions, and check that
+missing rules are not presented as confirmed contract conditions.
+
+\item{IC-EAS-7: Incorporate Clarification of an Artifact\\}
+
+Requirements: FR2, FR3.
+
+Control: Manual.
+
+Initial State: The diagram in IC-EAS-5 is pending clarification of the
+Account--Customer relationship.
+
+Input: The engineer states that the relationship is an association: each
+Account belongs to exactly one Customer, and a Customer may have zero or more
+Accounts. It does not represent inheritance.
+
+Output: The revised draft captures the association and stated multiplicities,
+excludes inheritance as the confirmed interpretation, and remains available
+for review. Previously captured compatible artifact information is preserved.
+
+Test Case Derivation: FR2 requires the engineer's clarification to guide
+refinement; FR3 requires the resulting draft to be available for review.
+
+How test will be performed: The tester will reproduce the pending
+clarification, submit the answer, and compare the revised relationship and
+multiplicities with the supplied explanation.
+
+\item{IC-EAS-8: Derive a Contract After Supplying Missing Detail\\}
+
+Requirements: FR2, FR3.
+
+Control: Manual.
+
+Initial State: The Account diagram in IC-EAS-6 has been interpreted, and
+withdrawal rules remain unresolved.
+
+Input: The engineer specifies that the withdrawal amount must be positive and
+no greater than the current balance, and that a successful withdrawal reduces
+the balance by that amount.
+
+Output: A contract proposal includes both amount restrictions and the stated
+balance update, consistently tied to the withdraw operation. It remains
+pending engineer review and does not retain the supplied rules as unresolved
+or introduce a contradictory overdraft policy.
+
+Test Case Derivation: FR2 requires refinement into more detailed contracts
+using the engineer's information. FR3 requires the resulting proposal to be
+available for review.
+
+How test will be performed: The tester will reproduce the incomplete-artifact
+state, supply the missing rules, complete any further necessary clarification,
+and inspect the proposed contract for the two preconditions, balance update,
+and pending review status.
+
+\end{enumerate}
+
 \subsubsection{Requirement Review and Approval}
 
 This area tests the presentation, approval, rejection, and revision of
