@@ -489,46 +489,1028 @@ the contents of the subsections.}
 \wss{Include a blurb here to explain why the subsections below
   cover the requirements.  References to the SRS would be good here.}
 
-\subsubsection{Area of Testing1}
+\subsubsection{Intent Capture}
 
-\wss{It would be nice to have a blurb here to explain why the subsections below
-  cover the requirements.  References to the SRS would be good here.  If a section
-  covers tests for input constraints, you should reference the data constraints
-  table in the SRS.}
-		
-\paragraph{Title for Test}
+This area covers submission of engineering intent, extraction of structured
+engineering artifacts, and iterative refinement into reviewable proposals
+and contracts, as described by FR1-FR3 in the SRS \citep{SRS}. Test
+identifiers begin with \texttt{IC}, followed by a functionality group and
+a case number. The groups cover engineering artifact submission
+(\texttt{IC-EAS}), natural-language submission and interpretation
+(\texttt{IC-NL}), iterative refinement and contract readiness
+(\texttt{IC-IR}), and requirement and constraint identification
+(\texttt{IC-RC}).
+
+\paragraph{Engineering Artifact Submission}
+
+These tests assess whether \progname{} uses the information supplied in
+engineering artifacts, identifies issues or uncertainty, and seeks further
+input when the artifact does not justify a sufficiently detailed contract.
+UML and Petri net support are planned capabilities, and the corresponding
+tests will be executed as those artifact types become supported. Comprehensive 
+model verification, including Petri net deadlock analysis, is a potential 
+extension beyond these cases.
+
+All cases are manual system tests using small artifacts with independently
+reviewed expected interpretations. Fixtures include the information needed
+to establish each expected result. Checks compare meaning and relationships,
+not exact generated wording or a particular contract language.
 
 \begin{enumerate}
 
-\item{test-id1\\}
+\item{IC-EAS-1: Submit a Valid UML Diagram\\}
 
-Control: Manual versus Automatic
-					
-Initial State: 
-					
-Input: 
-					
-Output: \wss{The expected result for the given inputs.  Output is not how you
-are going to return the results of the test.  The output is the expected
-result.}
+Requirements: FR1, FR2, FR3.
 
-Test Case Derivation: \wss{Justify the expected value given in the Output field}
-					
-How test will be performed: 
-					
-\item{test-id2\\}
+Control: Manual.
 
-Control: Manual versus Automatic
-					
-Initial State: 
-					
-Input: 
-					
-Output: \wss{The expected result for the given inputs}
+Initial State: A project is open. A reviewed UML class diagram defines an
+Account with a numeric balance and a withdraw(amount) operation. Attached
+constraints state that the amount must be positive, must not exceed the
+balance, and is subtracted from the balance on success.
 
-Test Case Derivation: \wss{Justify the expected value given in the Output field}
+Input: The engineer submits the diagram and its constraints through the
+extension.
 
-How test will be performed: 
+Output: A reviewable draft represents the Account, balance, operation, and all
+three withdrawal rules without contradicting their supplied meanings.
+
+Test Case Derivation: FR1 accepts supported engineering artifacts, FR2
+requires structured extraction and refinement, and FR3 requires a reviewable
+draft.
+
+How test will be performed: The tester will submit the fixture and compare the
+resulting draft with the reviewed diagram and constraints, checking each
+specified element and rule.
+
+\item{IC-EAS-2: Submit a Valid Petri Net\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A project is open. A reviewed Petri net has places Ready and
+Complete, a transition Process, arcs Ready to Process and Process to Complete,
+and one initial token in Ready. All arc weights are one. An accompanying
+description identifies a transition firing as a completed processing action.
+
+Input: The engineer submits the net and its description.
+
+Output: The draft captures that Process requires a token in Ready and moves
+that token to Complete when it fires. It preserves the initial marking and
+does not invent concurrent processing or additional transitions. The
+interpretation is available for review.
+
+Test Case Derivation: FR1 and FR2 require supported artifact input to inform
+the structured proposal; FR3 requires the interpretation to be reviewable.
+
+How test will be performed: The tester will submit the fixture and compare the
+extracted behaviour with the independently reviewed token-flow interpretation.
+
+\item{IC-EAS-3: Identify an Erroneous UML Relationship\\}
+
+Requirements: FR1, FR2.
+
+Control: Manual.
+
+Initial State: A UML fixture shows Account inheriting from SavingsAccount and
+SavingsAccount inheriting from Account. The fixture is reviewed in advance to
+identify the circular inheritance as the seeded error.
+
+Input: The engineer submits the diagram without resolving the inheritance
+cycle.
+
+Output: The system identifies the circular relationship and asks the engineer
+to correct or clarify it. The affected relationship is not silently accepted
+as confirmed intent or used as a settled basis for a contract.
+
+Test Case Derivation: Refinement under FR2 must address an identified
+inconsistency in artifact input before relying on it to derive a contract.
+
+How test will be performed: The tester will submit the fixture, inspect the
+reported issue and clarification request, and check that the affected
+relationship remains unresolved in any retained draft.
+
+\item{IC-EAS-4: Identify an Incomplete Petri-Net Definition\\}
+
+Requirements: FR1, FR2.
+
+Control: Manual.
+
+Initial State: A Petri net fixture declares places Ready and Complete and
+transition Process, but one arc references a place named Failed that is absent
+from the supplied net and accompanying description.
+
+Input: The engineer submits the fixture with the missing place definition.
+
+Output: The system identifies the unresolved arc endpoint and requests its
+definition or correction. It does not silently invent the missing place or
+treat the net as a complete confirmed behavioural specification.
+
+Test Case Derivation: FR2 requires refinement of supplied intent; a referenced
+but undefined element must be resolved before the affected behaviour can
+support a contract.
+
+How test will be performed: The tester will submit the fixture and inspect the
+refinement response and draft for identification of Failed, a request for
+clarification, and absence of an invented confirmed definition.
+
+\item{IC-EAS-5: Clarify Informal UML Notation\\}
+
+Requirements: FR1, FR2.
+
+Control: Manual.
+
+Initial State: An otherwise readable UML-like diagram connects Account and
+Customer using an unlabelled arrow with no legend. The accompanying
+description does not establish whether it means ownership, association, or
+inheritance.
+
+Input: The engineer submits the diagram.
+
+Output: The system identifies the uncertain relationship and asks the engineer
+to confirm its meaning. It may suggest an interpretation, but does not
+silently treat one as confirmed. Unambiguous information remains available for
+refinement.
+
+Test Case Derivation: FR2 requires iterative refinement where the supplied
+artifact does not establish a unique interpretation.
+
+How test will be performed: The tester will inspect the response for a
+question about the relationship and verify that any proposed meaning is
+clearly unconfirmed rather than incorporated as a settled requirement.
+
+\item{IC-EAS-6: Refine an Understandable but Insufficient Artifact\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A clear UML diagram defines Account, balance, and
+withdraw(amount), but provides no rules for permitted amounts, overdrafts, or
+the resulting balance.
+
+Input: The engineer submits the diagram without additional behavioural rules.
+
+Output: The system retains the class, attribute, and operation in a draft and
+asks for the missing withdrawal rules before completing a contract that
+depends on them. It does not silently assume that amounts must be positive,
+overdrafts are forbidden, or a particular balance update applies.
+
+Test Case Derivation: FR2 requires iterative refinement toward detailed
+contracts, while FR3 allows the known information to remain available as a
+draft. A readable artifact may still lack the necessary behavioural detail.
+
+How test will be performed: The tester will submit the diagram, inspect the
+captured structural details and clarification questions, and check that
+missing rules are not presented as confirmed contract conditions.
+
+\item{IC-EAS-7: Incorporate Clarification of an Artifact\\}
+
+Requirements: FR2, FR3.
+
+Control: Manual.
+
+Initial State: The diagram in IC-EAS-5 is pending clarification of the
+Account--Customer relationship.
+
+Input: The engineer states that the relationship is an association: each
+Account belongs to exactly one Customer, and a Customer may have zero or more
+Accounts. It does not represent inheritance.
+
+Output: The revised draft captures the association and stated multiplicities,
+excludes inheritance as the confirmed interpretation, and remains available
+for review. Previously captured compatible artifact information is preserved.
+
+Test Case Derivation: FR2 requires the engineer's clarification to guide
+refinement; FR3 requires the resulting draft to be available for review.
+
+How test will be performed: The tester will reproduce the pending
+clarification, submit the answer, and compare the revised relationship and
+multiplicities with the supplied explanation.
+
+\item{IC-EAS-8: Derive a Contract After Supplying Missing Detail\\}
+
+Requirements: FR2, FR3.
+
+Control: Manual.
+
+Initial State: The Account diagram in IC-EAS-6 has been interpreted, and
+withdrawal rules remain unresolved.
+
+Input: The engineer specifies that the withdrawal amount must be positive and
+no greater than the current balance, and that a successful withdrawal reduces
+the balance by that amount.
+
+Output: A contract proposal includes both amount restrictions and the stated
+balance update, consistently tied to the withdraw operation. It remains
+pending engineer review and does not retain the supplied rules as unresolved
+or introduce a contradictory overdraft policy.
+
+Test Case Derivation: FR2 requires refinement into more detailed contracts
+using the engineer's information. FR3 requires the resulting proposal to be
+available for review.
+
+How test will be performed: The tester will reproduce the incomplete-artifact
+state, supply the missing rules, complete any further necessary clarification,
+and inspect the proposed contract for the two preconditions, balance update,
+and pending review status.
+
+\end{enumerate}
+
+\paragraph{Natural-Language Submission and Interpretation}
+
+These tests cover requests that start at different levels of detail. The
+tester checks that the system uses what has already been provided and asks
+for missing information rather than filling it in silently. Each case starts
+with a separate request in an open project. These are manual tests, and
+outputs are compared by meaning rather than exact wording.
+
+\begin{enumerate}
+
+\item{IC-NL-1: Submit a Broad System Description\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A project is open with no proposal for the new request.
+
+Input: ``I want a small application where users can keep track of their tasks
+and mark them complete.
+
+Output: The system captures task tracking and completion as proposed
+functionality, makes the draft available for review, and asks for further
+detail needed to refine it. It does not treat the broad description as a
+complete basis for implementation contracts.
+
+Test Case Derivation: FR1 accepts natural-language requests, FR2 requires
+extraction and refinement, and FR3 requires a reviewable draft.
+
+How test will be performed: The tester will submit the request and inspect the
+draft and follow-up questions. Task sharing, reminders, and other unspecified
+features must not appear as confirmed requirements.
+
+\item{IC-NL-2: Submit a Partially Detailed Requirement\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A project is open with no proposal for the new request.
+
+Input: ``Users can withdraw money from their account, but they cannot withdraw
+more than their balance.
+
+Output: The draft preserves the withdrawal behaviour and balance restriction.
+The system asks about missing rules, including permitted amounts and the
+effect on the balance, before completing a contract that depends on those
+rules.
+
+Test Case Derivation: FR2 requires supplied information to be retained while
+missing detail is obtained through interaction.
+
+How test will be performed: The tester will submit the requirement and check
+that the balance restriction is preserved and the missing rules are raised
+rather than silently assumed.
+
+\item{IC-NL-3: Submit a Detailed Request\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A project is open with no proposal for the new request.
+
+Input: ``Allow withdrawals of positive whole units only, up to 5,000 units per
+withdrawal and no more than the available balance. A successful withdrawal
+subtracts the amount. A rejected withdrawal leaves the balance unchanged. Do
+not add other operations.
+
+Output: The proposal preserves all supplied rules. Follow-up questions concern
+remaining gaps rather than requiring the engineer to restate these rules. Once
+necessary clarification and review are complete, the information can be used
+to propose a contract.
+
+Test Case Derivation: FR2 requires refinement based on the information already
+supplied, regardless of how detailed the initial request is.
+
+How test will be performed: The tester will compare the proposal and questions
+with each supplied rule, respond to any remaining relevant questions, and
+review the resulting proposal. Brief confirmation of supplied rules is
+acceptable.
+
+\item{IC-NL-4: Interpret Equivalent Wording\\}
+
+Requirements: FR1, FR2.
+
+Control: Manual.
+
+Initial State: Two separate requests start with the same empty project
+context.
+
+Input: The first request states ``A withdrawal must not exceed the available
+balance. The second states ``Users cannot take out more money than they
+currently have in their account.
+
+Output: Both proposals express the same balance restriction. Differences in
+wording or organization do not introduce different withdrawal policies.
+
+Test Case Derivation: FR2 requires extraction of the intended requirement,
+which should not change solely because equivalent natural-language wording is
+used.
+
+How test will be performed: The tester will submit each request separately and
+compare the extracted restriction. Any additional clarification is answered
+consistently in both runs.
+
+\end{enumerate}
+
+\paragraph{Iterative Refinement and Contract Readiness}
+
+These tests follow the request from an initial description through requirements
+to contract proposals, supporting FR2--FR3 and PUC2 and PUC4. Before requesting
+contracts, the tester reviews and approves the relevant refined engineering
+artifacts as required by PUC4. Generated contracts remain proposals for review.
+
+For \texttt{IC-IR-1}, the tester uses a reference sheet for a small account
+withdrawal component. The initial prompt is ``I want a small component that
+lets a user withdraw money from an account.'' The reference sheet contains:
+\begin{itemize}
+  \item Amounts are positive whole units.
+  \item The limit is 5,000 units per withdrawal.
+  \item Withdrawals cannot exceed the available balance; overdrafts are not allowed.
+  \item Successful withdrawals subtract the amount from the balance.
+  \item Rejected withdrawals leave the balance unchanged.
+  \item Deposits, transfers, fees, and scheduled withdrawals are outside the request.
+\end{itemize}
+The limit and other rules are sample input, not targets for \progname{}.
+The tester answers questions from this sheet when prompted, including broad
+questions about limits, exceptions, and scope. The tester does not volunteer
+missing rules simply to complete the expected output. Questions may occur in
+any order and may cover several rules at once. If a necessary rule is not
+elicited before the system treats refinement as complete, the omission is
+recorded. If the interaction does not reach completion, it is recorded as
+incomplete rather than passed. The tester retains the conversation and
+resulting proposals as evidence.
+
+\begin{enumerate}
+
+\item{IC-IR-1: Refine a Broad Request Through Conversation\\}
+
+Requirements: FR1, FR2, FR3; PUC2, PUC4.
+
+Control: Manual.
+
+Initial State: A new request is ready, and the tester has the account
+withdrawal reference sheet above.
+
+Input: The tester submits the broad initial prompt and answers clarification
+questions using the reference sheet.
+
+Output: The system elicits the necessary rules and produces reviewable
+requirements consistent with the sheet. After approval of those requirements,
+the contract proposals express the permitted amount, per-withdrawal limit,
+balance restriction, and balance effects. Excluded features are not included
+as confirmed functionality.
+
+Test Case Derivation: FR2 and PUC2 describe iterative refinement; PUC4
+describes deriving contracts after the relevant artifacts have been approved.
+
+How test will be performed: The tester will follow the conversation, record
+which questions elicit each rule, review the refined requirements, and approve
+them when consistent with the supplied information. The tester will then
+inspect the proposed contracts against every reference-sheet rule.
+
+\item{IC-IR-2: Do Not Complete a Contract With a Missing Rule\\}
+
+Requirements: FR2, FR3; PUC2, PUC4.
+
+Control: Manual.
+
+Initial State: A pending request allows account withdrawals but does not
+specify whether overdrafts are permitted.
+
+Input: The tester asks for a withdrawal contract without supplying the
+overdraft policy.
+
+Output: The system asks for the missing policy and leaves the affected
+contract condition unresolved. It does not silently finalize either an
+overdraft prohibition or an overdraft allowance.
+
+Test Case Derivation: FR2 and PUC2 require clarification of insufficient
+detail before PUC4 contract generation can rely on it.
+
+How test will be performed: The tester will request the contract, withhold the
+policy, and inspect the response and any draft conditions. A clearly
+incomplete draft is acceptable; an assumed policy presented as settled is not.
+
+\item{IC-IR-3: Continue After a Partial Clarification\\}
+
+Requirements: FR2, FR3; PUC2.
+
+Control: Manual.
+
+Initial State: The system has asked whether withdrawal amounts must be
+positive and whether overdrafts are allowed.
+
+Input: The engineer answers only ``The withdrawal amount must be positive.
+
+Output: The positive-amount rule is retained, and the system continues seeking
+the overdraft policy before completing the affected contract. It does not
+treat the partial answer as resolving both questions.
+
+Test Case Derivation: FR2 and PUC2 require refinement to continue where
+necessary information remains missing.
+
+How test will be performed: The tester will establish the two missing rules,
+provide only the positive-amount answer, and check the updated draft and
+subsequent clarification.
+
+\item{IC-IR-4: Preserve Earlier Rules During Refinement\\}
+
+Requirements: FR2, FR3; PUC2.
+
+Control: Manual.
+
+Initial State: A draft already records positive whole-unit withdrawals and a
+5,000-unit per-withdrawal limit.
+
+Input: In later clarification, the engineer prohibits overdrafts and specifies
+that rejected withdrawals leave the balance unchanged.
+
+Output: The updated draft contains both earlier rules and both newly supplied
+rules without changing their meanings. None of the earlier rules disappears
+when later detail is added.
+
+Test Case Derivation: FR2 requires iterative refinement of the accumulated
+intent, and FR3 requires the updated draft to remain reviewable.
+
+How test will be performed: The tester will supply the rules in separate
+exchanges and compare the final draft with the information given at each step.
+
+\item{IC-IR-5: Derive Conditions From Refined Requirements\\}
+
+Requirements: FR2, FR3; PUC4.
+
+Control: Manual.
+
+Initial State: Reviewed and approved requirements specify positive whole-unit
+withdrawals, a 5,000-unit per-withdrawal limit, no overdrafts, subtraction on
+success, and no balance change on rejection. The starting balance is
+nonnegative.
+
+Input: The engineer requests implementation contracts for the withdrawal
+operation.
+
+Output: The contract proposal expresses all amount restrictions and both
+balance outcomes, and preserves a nonnegative balance. It is associated with
+the relevant requirements and available for review. The conditions do not
+permit behaviour prohibited by the approved requirements.
+
+Test Case Derivation: PUC4 requires precise contracts derived from approved
+artifacts, including preconditions, postconditions, or invariants as
+appropriate.
+
+How test will be performed: The tester will inspect the contract conditions
+against the approved rules. The representation may use preconditions or
+explicit rejection cases, but must describe both successful and rejected
+withdrawals consistently. Exact syntax or a particular contract language is
+not required.
+
+\item{IC-IR-6: Exclude Unrequested and Declined Features\\}
+
+Requirements: FR2, FR3; PUC2, PUC4.
+
+Control: Manual.
+
+Initial State: A withdrawal-only component is being refined. Deposits,
+transfers, fees, and scheduled withdrawals are explicitly outside scope.
+
+Input: The engineer completes clarification for withdrawals and declines any
+suggestions to add the excluded features.
+
+Output: The resulting requirements and contract proposals remain limited to
+withdrawals. Excluded features are not retained as confirmed requirements or
+contract obligations.
+
+Test Case Derivation: FR2 requires refinement of the engineer's intent, rather
+than expansion into functionality the engineer has excluded.
+
+How test will be performed: The tester will follow the withdrawal refinement
+flow, state the scope exclusions, and inspect the resulting requirements and
+contracts for unwanted features. Recording exclusions or declined suggestions
+as context is acceptable.
+
+\end{enumerate}
+
+\paragraph{Requirement and Constraint Identification}
+
+These tests check the types of information extracted under FR2, not the
+performance or quality of a generated application. Quality targets and
+technology choices in the input are example requirements supplied by the
+tester. They do not set targets or implementation choices for \progname{}.
+A quality requirement may also be represented as a quality constraint;
+the check is that its meaning and role are preserved. Constraints that do
+not map directly to operation contracts must remain represented in the
+engineering artifacts rather than being dropped.
+
+\begin{enumerate}
+
+\item{IC-RC-1: Identify Separate Functional Requirements\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A new natural-language request is ready for submission.
+
+Input: ``Users can create tasks, rename an existing task, and mark a task
+complete. Only the selected task should change when it is renamed or
+completed.
+
+Output: The draft identifies creation, renaming, and completion as distinct
+behaviours and preserves the selected-task restriction for the relevant
+operations.
+
+Test Case Derivation: FR2 requires extraction of structured functional
+requirements while retaining the conditions attached to each behaviour.
+
+How test will be performed: The tester will submit the request and inspect the
+draft for all three behaviours and the restriction on which task may change.
+
+\item{IC-RC-2: Identify a Quality Requirement\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A task-management request is pending, with task listing already
+identified as functionality.
+
+Input: ``The task list must be usable with a keyboard without requiring a
+mouse.
+
+Output: The draft retains keyboard accessibility as a quality requirement or
+constraint applying to task listing, rather than replacing it with unrelated
+functionality.
+
+Test Case Derivation: FR2 explicitly includes nonfunctional requirements and
+quality constraints in the extracted artifacts.
+
+How test will be performed: The tester will submit the accessibility need and
+inspect its representation and association with the task-list functionality.
+
+\item{IC-RC-3: Clarify a Vague Quality Statement\\}
+
+Requirements: FR1, FR2, FR3; PUC2.
+
+Control: Manual.
+
+Initial State: A request includes a task search function but no response-time
+target or workload conditions.
+
+Input: ``Task searches should respond quickly.
+
+Output: The system identifies a performance concern and asks for a measurable
+expectation and relevant conditions. It does not silently assign a numerical
+response-time target.
+
+Test Case Derivation: FR2 and PUC2 require refinement of insufficiently
+detailed quality needs into more precise information.
+
+How test will be performed: The tester will submit the statement and inspect
+the clarification questions and draft. A suggested target is acceptable only
+if clearly presented for confirmation rather than treated as supplied intent.
+
+\item{IC-RC-4: Identify a Mandated Design Constraint\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A task-management request is pending without a selected
+persistence technology.
+
+Input: ``The application must store its task data in SQLite because it must
+work with our existing database.
+
+Output: The draft records SQLite as a mandated design constraint with the
+supplied reason. It is not treated as an optional suggestion or silently
+replaced with another technology.
+
+Test Case Derivation: FR2 requires design constraints to be extracted from the
+engineer's request.
+
+How test will be performed: The tester will submit the constraint and inspect
+the draft for the mandated technology and its stated role. This input concerns
+the example application, not storage inside \progname{}.
+
+\item{IC-RC-5: Extract a Mixed Request\\}
+
+Requirements: FR1, FR2, FR3.
+
+Control: Manual.
+
+Initial State: A new request is ready with no existing proposal.
+
+Input: ``Users must be able to create and complete tasks. They must be able to
+do both using only a keyboard. Task data must be stored in SQLite to work with
+our existing database.
+
+Output: The draft captures task creation and completion, keyboard
+accessibility for both actions, and the mandated SQLite constraint. The
+quality and design constraints remain associated with the relevant
+functionality without being lost during refinement.
+
+Test Case Derivation: FR2 requires functional requirements, nonfunctional
+requirements, quality constraints, and design constraints to be represented
+together where supplied.
+
+How test will be performed: The tester will submit the mixed request, answer
+relevant clarification questions, and check the resulting draft for each
+behaviour and constraint and their intended scope.
+
+\end{enumerate}
+
+\subsubsection{Requirement Review and Approval}
+
+This area tests the presentation, approval, rejection, and revision of
+engineering proposals required by FR4-FR6 in the SRS \citep{SRS}.
+Related checks cover draft availability (FR3), iterative refinement (FR2),
+recorded review decisions (FR8), and persistence of approved intent (FR9).
+Test identifiers use \texttt{RRA}, a group code, and a case number:
+\texttt{PR} for presentation, \texttt{AD} for accept/decline,
+\texttt{ED} for editing through refinement, and \texttt{PA} for pending item
+amendment and removal. Accept and decline correspond to approve and reject
+in the SRS.
+
+All cases are manual system tests performed through the extension's review
+workflow. Each case uses a separate proposal unless stated otherwise.
+Persistence checks reopen the same project in a new session and retrieve
+its recorded artifacts and decisions, without assuming a storage location
+or mechanism. Rejected proposals may be retained as history, but must not
+be recorded as approved intent. For generated revisions, the tester checks
+the specified meaning rather than exact wording. Report related requirements
+below are sample input to \progname{}, not requirements for \progname{} itself.
+
+\paragraph{Presentation}
+
+\begin{enumerate}
+
+\item{RRA-PR-1: Present Requirements and Constraints\\}
+
+Requirements: FR3, FR4.
+
+Control: Manual.
+
+Initial State: A pending proposal contains the requirement ``Users shall be
+able to export reports and the constraint ``Exports shall use CSV format.
+
+Input: The engineer opens the proposal for review.
+
+Output: Both items are available for inspection with their complete content
+and pending review status. Neither is presented as approved.
+
+Test Case Derivation: FR4 requires requirements and quality constraints to be
+presented for review; FR3 requires the draft to be available.
+
+How test will be performed: The tester will open the prepared proposal and
+compare the displayed items and review status with the known draft content.
+
+\item{RRA-PR-2: Present an Implementation Contract\\}
+
+Requirements: FR4.
+
+Control: Manual.
+
+Initial State: A pending contract specifies a withdrawal operation with amount
+greater than zero, amount no greater than the current balance, and a resulting
+balance equal to the previous balance minus the amount.
+
+Input: The engineer opens the contract for review.
+
+Output: The operation, both preconditions, and the postcondition are available
+for inspection. The contract is identified as pending review.
+
+Test Case Derivation: FR4 requires contracts to be presented before
+corresponding code generation. The engineer must be able to inspect the
+proposed conditions.
+
+How test will be performed: The tester will compare the displayed contract
+with the prepared draft, checking that the precondition and the
+postcondition are not omitted or altered.
+
+\item{RRA-PR-3: Distinguish Multiple Proposal Items\\}
+
+Requirements: FR4, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains requirements for report export and
+report preview, plus a CSV export constraint.
+
+Input: The engineer inspects each item and selects the report preview
+requirement for amendment.
+
+Output: All three items can be inspected and distinguished. The selected
+content corresponds to report preview, with no change to any item.
+
+Test Case Derivation: FR4 requires presentation of the proposal, and FR6
+requires individual items to be identifiable for amendment or removal.
+
+How test will be performed: The tester will inspect all three items, select
+the preview requirement, and verify that the selected content matches that
+item.
+
+\end{enumerate}
+
+\paragraph{Accept and Decline}
+
+\begin{enumerate}
+
+\item{RRA-AD-1: Approve a Requirements Proposal\\}
+
+Requirements: FR5, FR8, FR9.
+
+Control: Manual.
+
+Initial State: A pending proposal contains a report export requirement and a
+CSV export constraint.
+
+Input: The engineer approves the proposal.
+
+Output: The approval is recorded for the reviewed content. Both approved items
+are retrievable unchanged after reopening the project in a new session.
+
+Test Case Derivation: FR5 permits approval, FR8 requires the decision to be
+recorded internally, and FR9 requires approved requirements and constraints to
+be retained in the intent model.
+
+How test will be performed: The tester will approve the proposal, check its
+decision and content, then reopen the project in a new session and retrieve
+the approved items.
+
+\item{RRA-AD-2: Approve a Contract\\}
+
+Requirements: FR4, FR5, FR8.
+
+Control: Manual.
+
+Initial State: A pending withdrawal contract contains the two preconditions
+and postcondition described in RRA-PR-2.
+
+Input: The engineer reviews and approves the contract.
+
+Output: The approval is associated with the reviewed contract and its
+conditions. The contract and its approval remain retrievable after reopening
+the project in a new session.
+
+Test Case Derivation: FR4 includes contracts in the review workflow, while FR5
+and FR8 require approval and recording of the decision.
+
+How test will be performed: The tester will inspect and approve the contract,
+reopen the project in a new session, and compare the retrieved contract and
+decision with the reviewed version.
+
+\item{RRA-AD-3: Reject a Requirements Proposal\\}
+
+Requirements: FR5, FR8, FR9.
+
+Control: Manual.
+
+Initial State: A report export proposal is pending. A separate report preview
+requirement has already been approved.
+
+Input: The engineer rejects the pending export proposal.
+
+Output: The rejection remains recorded after reopening the project. The
+rejected items do not appear as approved intent, and the previously approved
+preview requirement remains unchanged.
+
+Test Case Derivation: FR5 permits rejection and FR8 requires recording the
+decision. FR9 distinguishes approved intent from a rejected proposal.
+
+How test will be performed: The tester will reject the export proposal, reopen
+the project in a new session, and inspect the recorded decision and approved
+artifacts. Retention of the rejected draft as history is acceptable.
+
+\item{RRA-AD-4: Reject a Contract\\}
+
+Requirements: FR4, FR5, FR8.
+
+Control: Manual.
+
+Initial State: A pending withdrawal contract incorrectly permits a negative
+withdrawal amount. An unrelated contract is already approved.
+
+Input: The engineer rejects the pending withdrawal contract.
+
+Output: The rejection remains recorded after reopening the project. The
+rejected contract is not marked approved, and the unrelated approved contract
+is unchanged.
+
+Test Case Derivation: FR4 includes contracts in review, and FR5 and FR8
+require rejection to be supported and recorded without assigning approval.
+
+How test will be performed: The tester will reject the contract, reopen the
+project in a new session, and check the rejected contract's decision and the
+unrelated approved contract.
+
+\end{enumerate}
+
+\paragraph{Editing Through Refinement}
+
+\begin{enumerate}
+
+\item{RRA-ED-1: Add Detail to a Requirement\\}
+
+Requirements: FR2, FR3, FR5, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal states ``Users shall be able to export reports.
+
+Input: The engineer edits the proposal to specify CSV exports with column headings.
+
+Output: The revised proposal retains report export and includes both CSV
+format and column headings. It remains pending and available for review.
+
+Test Case Derivation: FR5 and FR6 permit edits; FR2 requires refinement to
+incorporate further information from the engineer.
+
+How test will be performed: The tester will submit the edit, complete any
+requested clarification, and inspect the revised proposal for both added
+details and its pending status.
+
+\item{RRA-ED-2: Correct a Contract Condition\\}
+
+Requirements: FR2, FR4, FR5.
+
+Control: Manual.
+
+Initial State: A pending withdrawal contract requires amount greater than zero
+but does not limit the amount to the available balance.
+
+Input: The engineer edits the proposal to state that overdrafts are prohibited
+and the withdrawal amount must not exceed the current balance.
+
+Output: The revised contract includes both a positive-amount condition and a
+balance limit. Its result remains consistent with subtracting the withdrawal
+amount, and the revised contract is pending review.
+
+Test Case Derivation: FR4 includes contracts in review, FR5 permits editing,
+and FR2 requires the refinement to reflect the clarified constraint.
+
+How test will be performed: The tester will submit the correction, complete
+any requested clarification, and inspect the resulting conditions and review
+status.
+
+\item{RRA-ED-3: Replace a Misunderstood Requirement\\}
+
+Requirements: FR2, FR3, FR5, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal requires reports to be emailed automatically
+to all registered users every day.
+
+Input: The engineer replaces that intent with on-demand report downloads and
+explicitly prohibits automatic report emails.
+
+Output: The revised proposal supports on-demand downloads and prohibits
+automatic report emails. Daily scheduling and delivery to all users are not
+retained as confirmed requirements. The revision remains pending review.
+
+Test Case Derivation: FR5 and FR6 allow correction of a pending proposal,
+including substantial changes. FR2 requires subsequent refinement to follow
+the revised intent.
+
+How test will be performed: The tester will replace the requirement, complete
+any requested clarification, and inspect the resulting proposal for the new
+behaviour and absence of the contradicted assumptions.
+
+\item{RRA-ED-4: Retain Successive Edits\\}
+
+Requirements: FR2, FR3, FR5, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal requires report exports in CSV format.
+
+Input: The engineer first adds column headings, then makes a second edit
+requiring export of only the records selected by the user.
+
+Output: The resulting proposal includes CSV format, column headings, and
+selected record filtering. It remains pending and retains these details after
+reopening the project in a new session.
+
+Test Case Derivation: FR2 requires iterative interaction and FR3 requires
+draft retention. Successive edits under FR5 and FR6 must preserve compatible
+information from earlier revisions.
+
+How test will be performed: The tester will submit the two edits in sequence,
+inspect the resulting proposal, then reopen the project in a new session and
+retrieve the pending revision.
+
+\end{enumerate}
+
+\paragraph{Amendment and Removal of Pending Items}
+
+\begin{enumerate}
+
+\item{RRA-PA-1: Amend an Individual Requirement\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains separate requirements for report
+export and report preview, plus a CSV export constraint.
+
+Input: The engineer amends only the export requirement to export records
+selected by the user.
+
+Output: The export requirement reflects the amendment. The preview requirement
+and CSV constraint are unchanged. The saved proposal remains pending after
+reopening the project.
+
+Test Case Derivation: FR6 permits amendment of an individual pending
+requirement; FR3 requires the revised draft to remain available.
+
+How test will be performed: The tester will amend the export item, reopen the
+project in a new session, and compare each retrieved item and its review
+status with the expected proposal.
+
+\item{RRA-PA-2: Amend an Individual Quality Constraint\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains report export and report preview
+requirements, with a separate constraint that exported reports be readable
+using assistive technology.
+
+Input: The engineer amends only the constraint to specify that exported column
+headings must be available to screen readers.
+
+Output: The constraint reflects the revised accessibility condition. Both
+functional requirements are unchanged, and the revised proposal remains
+pending after reopening the project.
+
+Test Case Derivation: FR6 permits amendment of an individual quality
+constraint; FR3 requires retention of the revised draft.
+
+How test will be performed: The tester will amend the constraint, reopen the
+project in a new session, and inspect the retrieved constraint, other items,
+and pending review status.
+
+\item{RRA-PA-3: Remove an Individual Requirement\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains report export and report preview
+requirements, plus a CSV constraint associated with export.
+
+Input: The engineer removes only the report preview requirement.
+
+Output: The preview requirement is absent from the pending proposal. The
+export requirement and CSV constraint remain unchanged, and the removal
+persists after reopening the project.
+
+Test Case Derivation: FR6 permits removal of an individual pending
+requirement, while FR3 requires the resulting draft to remain available for
+review.
+
+How test will be performed: The tester will remove the preview item, reopen
+the project in a new session, and inspect the pending proposal for the removed
+item and the unchanged remaining items.
+
+\item{RRA-PA-4: Remove an Individual Quality Constraint\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains report export and report preview
+requirements, plus a separate accessibility constraint for exported reports.
+
+Input: The engineer removes only the accessibility constraint.
+
+Output: The constraint is absent from the pending proposal. Both requirements
+remain unchanged, and the proposal remains pending with the removal preserved
+after reopening the project.
+
+Test Case Derivation: FR6 permits removal of an individual quality constraint
+without removing the other pending items. FR3 requires the revised draft to
+remain available.
+
+How test will be performed: The tester will remove the constraint, reopen the
+project in a new session, and check that the retrieved pending proposal
+contains both requirements without the removed constraint.
 
 \end{enumerate}
 
