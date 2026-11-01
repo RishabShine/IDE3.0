@@ -489,46 +489,384 @@ the contents of the subsections.}
 \wss{Include a blurb here to explain why the subsections below
   cover the requirements.  References to the SRS would be good here.}
 
-\subsubsection{Area of Testing1}
+\subsubsection{Requirement Review and Approval}
 
-\wss{It would be nice to have a blurb here to explain why the subsections below
-  cover the requirements.  References to the SRS would be good here.  If a section
-  covers tests for input constraints, you should reference the data constraints
-  table in the SRS.}
-		
-\paragraph{Title for Test}
+This area tests the presentation, approval, rejection, and revision of
+engineering proposals required by FR4-FR6 in the SRS \citep{SRS}.
+Related checks cover draft availability (FR3), iterative refinement (FR2),
+recorded review decisions (FR8), and persistence of approved intent (FR9).
+Test identifiers use \texttt{RRA}, a group code, and a case number:
+\texttt{PR} for presentation, \texttt{AD} for accept/decline,
+\texttt{ED} for editing through refinement, and \texttt{PA} for pending item
+amendment and removal. Accept and decline correspond to approve and reject
+in the SRS.
+
+All cases are manual system tests performed through the extension's review
+workflow. Each case uses a separate proposal unless stated otherwise.
+Persistence checks reopen the same project in a new session and retrieve
+its recorded artifacts and decisions, without assuming a storage location
+or mechanism. Rejected proposals may be retained as history, but must not
+be recorded as approved intent. For generated revisions, the tester checks
+the specified meaning rather than exact wording. Report related requirements
+below are sample input to \progname{}, not requirements for \progname{} itself.
+
+\paragraph{Presentation}
 
 \begin{enumerate}
 
-\item{test-id1\\}
+\item{RRA-PR-1: Present Requirements and Constraints\\}
 
-Control: Manual versus Automatic
-					
-Initial State: 
-					
-Input: 
-					
-Output: \wss{The expected result for the given inputs.  Output is not how you
-are going to return the results of the test.  The output is the expected
-result.}
+Requirements: FR3, FR4.
 
-Test Case Derivation: \wss{Justify the expected value given in the Output field}
-					
-How test will be performed: 
-					
-\item{test-id2\\}
+Control: Manual.
 
-Control: Manual versus Automatic
-					
-Initial State: 
-					
-Input: 
-					
-Output: \wss{The expected result for the given inputs}
+Initial State: A pending proposal contains the requirement ``Users shall be
+able to export reports and the constraint ``Exports shall use CSV format.
 
-Test Case Derivation: \wss{Justify the expected value given in the Output field}
+Input: The engineer opens the proposal for review.
 
-How test will be performed: 
+Output: Both items are available for inspection with their complete content
+and pending review status. Neither is presented as approved.
+
+Test Case Derivation: FR4 requires requirements and quality constraints to be
+presented for review; FR3 requires the draft to be available.
+
+How test will be performed: The tester will open the prepared proposal and
+compare the displayed items and review status with the known draft content.
+
+\item{RRA-PR-2: Present an Implementation Contract\\}
+
+Requirements: FR4.
+
+Control: Manual.
+
+Initial State: A pending contract specifies a withdrawal operation with amount
+greater than zero, amount no greater than the current balance, and a resulting
+balance equal to the previous balance minus the amount.
+
+Input: The engineer opens the contract for review.
+
+Output: The operation, both preconditions, and the postcondition are available
+for inspection. The contract is identified as pending review.
+
+Test Case Derivation: FR4 requires contracts to be presented before
+corresponding code generation. The engineer must be able to inspect the
+proposed conditions.
+
+How test will be performed: The tester will compare the displayed contract
+with the prepared draft, checking that the precondition and the
+postcondition are not omitted or altered.
+
+\item{RRA-PR-3: Distinguish Multiple Proposal Items\\}
+
+Requirements: FR4, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains requirements for report export and
+report preview, plus a CSV export constraint.
+
+Input: The engineer inspects each item and selects the report preview
+requirement for amendment.
+
+Output: All three items can be inspected and distinguished. The selected
+content corresponds to report preview, with no change to any item.
+
+Test Case Derivation: FR4 requires presentation of the proposal, and FR6
+requires individual items to be identifiable for amendment or removal.
+
+How test will be performed: The tester will inspect all three items, select
+the preview requirement, and verify that the selected content matches that
+item.
+
+\end{enumerate}
+
+\paragraph{Accept and Decline}
+
+\begin{enumerate}
+
+\item{RRA-AD-1: Approve a Requirements Proposal\\}
+
+Requirements: FR5, FR8, FR9.
+
+Control: Manual.
+
+Initial State: A pending proposal contains a report export requirement and a
+CSV export constraint.
+
+Input: The engineer approves the proposal.
+
+Output: The approval is recorded for the reviewed content. Both approved items
+are retrievable unchanged after reopening the project in a new session.
+
+Test Case Derivation: FR5 permits approval, FR8 requires the decision to be
+recorded internally, and FR9 requires approved requirements and constraints to
+be retained in the intent model.
+
+How test will be performed: The tester will approve the proposal, check its
+decision and content, then reopen the project in a new session and retrieve
+the approved items.
+
+\item{RRA-AD-2: Approve a Contract\\}
+
+Requirements: FR4, FR5, FR8.
+
+Control: Manual.
+
+Initial State: A pending withdrawal contract contains the two preconditions
+and postcondition described in RRA-PR-2.
+
+Input: The engineer reviews and approves the contract.
+
+Output: The approval is associated with the reviewed contract and its
+conditions. The contract and its approval remain retrievable after reopening
+the project in a new session.
+
+Test Case Derivation: FR4 includes contracts in the review workflow, while FR5
+and FR8 require approval and recording of the decision.
+
+How test will be performed: The tester will inspect and approve the contract,
+reopen the project in a new session, and compare the retrieved contract and
+decision with the reviewed version.
+
+\item{RRA-AD-3: Reject a Requirements Proposal\\}
+
+Requirements: FR5, FR8, FR9.
+
+Control: Manual.
+
+Initial State: A report export proposal is pending. A separate report preview
+requirement has already been approved.
+
+Input: The engineer rejects the pending export proposal.
+
+Output: The rejection remains recorded after reopening the project. The
+rejected items do not appear as approved intent, and the previously approved
+preview requirement remains unchanged.
+
+Test Case Derivation: FR5 permits rejection and FR8 requires recording the
+decision. FR9 distinguishes approved intent from a rejected proposal.
+
+How test will be performed: The tester will reject the export proposal, reopen
+the project in a new session, and inspect the recorded decision and approved
+artifacts. Retention of the rejected draft as history is acceptable.
+
+\item{RRA-AD-4: Reject a Contract\\}
+
+Requirements: FR4, FR5, FR8.
+
+Control: Manual.
+
+Initial State: A pending withdrawal contract incorrectly permits a negative
+withdrawal amount. An unrelated contract is already approved.
+
+Input: The engineer rejects the pending withdrawal contract.
+
+Output: The rejection remains recorded after reopening the project. The
+rejected contract is not marked approved, and the unrelated approved contract
+is unchanged.
+
+Test Case Derivation: FR4 includes contracts in review, and FR5 and FR8
+require rejection to be supported and recorded without assigning approval.
+
+How test will be performed: The tester will reject the contract, reopen the
+project in a new session, and check the rejected contract's decision and the
+unrelated approved contract.
+
+\end{enumerate}
+
+\paragraph{Editing Through Refinement}
+
+\begin{enumerate}
+
+\item{RRA-ED-1: Add Detail to a Requirement\\}
+
+Requirements: FR2, FR3, FR5, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal states ``Users shall be able to export reports.
+
+Input: The engineer edits the proposal to specify CSV exports with column headings.
+
+Output: The revised proposal retains report export and includes both CSV
+format and column headings. It remains pending and available for review.
+
+Test Case Derivation: FR5 and FR6 permit edits; FR2 requires refinement to
+incorporate further information from the engineer.
+
+How test will be performed: The tester will submit the edit, complete any
+requested clarification, and inspect the revised proposal for both added
+details and its pending status.
+
+\item{RRA-ED-2: Correct a Contract Condition\\}
+
+Requirements: FR2, FR4, FR5.
+
+Control: Manual.
+
+Initial State: A pending withdrawal contract requires amount greater than zero
+but does not limit the amount to the available balance.
+
+Input: The engineer edits the proposal to state that overdrafts are prohibited
+and the withdrawal amount must not exceed the current balance.
+
+Output: The revised contract includes both a positive-amount condition and a
+balance limit. Its result remains consistent with subtracting the withdrawal
+amount, and the revised contract is pending review.
+
+Test Case Derivation: FR4 includes contracts in review, FR5 permits editing,
+and FR2 requires the refinement to reflect the clarified constraint.
+
+How test will be performed: The tester will submit the correction, complete
+any requested clarification, and inspect the resulting conditions and review
+status.
+
+\item{RRA-ED-3: Replace a Misunderstood Requirement\\}
+
+Requirements: FR2, FR3, FR5, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal requires reports to be emailed automatically
+to all registered users every day.
+
+Input: The engineer replaces that intent with on-demand report downloads and
+explicitly prohibits automatic report emails.
+
+Output: The revised proposal supports on-demand downloads and prohibits
+automatic report emails. Daily scheduling and delivery to all users are not
+retained as confirmed requirements. The revision remains pending review.
+
+Test Case Derivation: FR5 and FR6 allow correction of a pending proposal,
+including substantial changes. FR2 requires subsequent refinement to follow
+the revised intent.
+
+How test will be performed: The tester will replace the requirement, complete
+any requested clarification, and inspect the resulting proposal for the new
+behaviour and absence of the contradicted assumptions.
+
+\item{RRA-ED-4: Retain Successive Edits\\}
+
+Requirements: FR2, FR3, FR5, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal requires report exports in CSV format.
+
+Input: The engineer first adds column headings, then makes a second edit
+requiring export of only the records selected by the user.
+
+Output: The resulting proposal includes CSV format, column headings, and
+selected record filtering. It remains pending and retains these details after
+reopening the project in a new session.
+
+Test Case Derivation: FR2 requires iterative interaction and FR3 requires
+draft retention. Successive edits under FR5 and FR6 must preserve compatible
+information from earlier revisions.
+
+How test will be performed: The tester will submit the two edits in sequence,
+inspect the resulting proposal, then reopen the project in a new session and
+retrieve the pending revision.
+
+\end{enumerate}
+
+\paragraph{Amendment and Removal of Pending Items}
+
+\begin{enumerate}
+
+\item{RRA-PA-1: Amend an Individual Requirement\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains separate requirements for report
+export and report preview, plus a CSV export constraint.
+
+Input: The engineer amends only the export requirement to export records
+selected by the user.
+
+Output: The export requirement reflects the amendment. The preview requirement
+and CSV constraint are unchanged. The saved proposal remains pending after
+reopening the project.
+
+Test Case Derivation: FR6 permits amendment of an individual pending
+requirement; FR3 requires the revised draft to remain available.
+
+How test will be performed: The tester will amend the export item, reopen the
+project in a new session, and compare each retrieved item and its review
+status with the expected proposal.
+
+\item{RRA-PA-2: Amend an Individual Quality Constraint\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains report export and report preview
+requirements, with a separate constraint that exported reports be readable
+using assistive technology.
+
+Input: The engineer amends only the constraint to specify that exported column
+headings must be available to screen readers.
+
+Output: The constraint reflects the revised accessibility condition. Both
+functional requirements are unchanged, and the revised proposal remains
+pending after reopening the project.
+
+Test Case Derivation: FR6 permits amendment of an individual quality
+constraint; FR3 requires retention of the revised draft.
+
+How test will be performed: The tester will amend the constraint, reopen the
+project in a new session, and inspect the retrieved constraint, other items,
+and pending review status.
+
+\item{RRA-PA-3: Remove an Individual Requirement\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains report export and report preview
+requirements, plus a CSV constraint associated with export.
+
+Input: The engineer removes only the report preview requirement.
+
+Output: The preview requirement is absent from the pending proposal. The
+export requirement and CSV constraint remain unchanged, and the removal
+persists after reopening the project.
+
+Test Case Derivation: FR6 permits removal of an individual pending
+requirement, while FR3 requires the resulting draft to remain available for
+review.
+
+How test will be performed: The tester will remove the preview item, reopen
+the project in a new session, and inspect the pending proposal for the removed
+item and the unchanged remaining items.
+
+\item{RRA-PA-4: Remove an Individual Quality Constraint\\}
+
+Requirements: FR3, FR6.
+
+Control: Manual.
+
+Initial State: A pending proposal contains report export and report preview
+requirements, plus a separate accessibility constraint for exported reports.
+
+Input: The engineer removes only the accessibility constraint.
+
+Output: The constraint is absent from the pending proposal. Both requirements
+remain unchanged, and the proposal remains pending with the removal preserved
+after reopening the project.
+
+Test Case Derivation: FR6 permits removal of an individual quality constraint
+without removing the other pending items. FR3 requires the revised draft to
+remain available.
+
+How test will be performed: The tester will remove the constraint, reopen the
+project in a new session, and check that the retrieved pending proposal
+contains both requirements without the removed constraint.
 
 \end{enumerate}
 
