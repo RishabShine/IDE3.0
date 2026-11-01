@@ -174,25 +174,73 @@ characteristics of well-formed requirements in IEEE/ISO/IEC 29148.
 
 \subsection{Custom Documents}
 
-\wss{Summarize the CDs (Custom Documents) that were tackled by this project.  CDs 
-can include usability testing, code walkthroughs, user documentation, formal
-proof, GenderMag personas, Design Thinking, etc.  CDs should have already
-been approved by the course instructor as included in your problem statement.
-You can use a pull request to update your CDs (in TeamComposition.csv or
-Repos.csv) if your plan changes as a result of the VnV planning exercise.}
+% \wss{Summarize the CDs (Custom Documents) that were tackled by this project.  CDs
+% can include usability testing, code walkthroughs, user documentation, formal
+% proof, GenderMag personas, Design Thinking, etc.  CDs should have already
+% been approved by the course instructor as included in your problem statement.
+% You can use a pull request to update your CDs (in TeamComposition.csv or
+% Repos.csv) if your plan changes as a result of the VnV planning exercise.}
+
+The team has selected two custom documents, as stated in the Problem
+Statement \citep{ProblemStatement}. Both support verification and validation
+directly.
+
+\begin{itemize}
+  \item \textbf{CD-Fall: Literature Review.} A review of existing research on
+  requirements traceability, design rationale capture, program comprehension,
+  and the risk of AI-generated code drifting from its specification. For V\&V,
+  it gives the team an outside reference for what a complete and correct
+  intent model looks like. Findings will feed the SRS and design review
+  checklists (Sections 3.2 and 3.3), and the validation
+  criteria in Section 3.7.
+  \item \textbf{CD-Winter: Code Walkthroughs.} Structured walkthroughs of the
+  project's critical code, recording the process, issues found, and follow-up
+  actions. This is the team's main manual verification method for the
+  implementation (Section 3.5). It also mirrors what \progname{} automates:
+  checking that code still follows the recorded intent. Running the process by
+  hand on our own codebase shows where the tool's automated checks fall short.
+\end{itemize}
+
+Both are feasible within the course timeline. The literature review is
+completed in Term 1, before most design work, so its findings are available
+when the design is reviewed. The code walkthroughs run in Term 2, once the
+critical modules are implemented, and finish before the final demo.
 
 \subsection{Relevant Documentation}
 
-\wss{Reference relevant documentation.  This will definitely include your SRS
-  and your other project documents (design documents, like MG, MIS, etc).  You
-  can include these even before they are written, since by the time the project
-  is done, they will be written.  You can create BibTeX entries for your
-  documents and within those entries include a hyperlink to the documents.}
+% \wss{Reference relevant documentation.  This will definitely include your SRS
+%   and your other project documents (design documents, like MG, MIS, etc).  You
+%   can include these even before they are written, since by the time the project
+%   is done, they will be written.  You can create BibTeX entries for your
+%   documents and within those entries include a hyperlink to the documents.}
 
-\citet{SRS}
+% \wss{Don't just list the other documents.  You should explain why they are relevant and
+% how they relate to your VnV efforts.}
 
-\wss{Don't just list the other documents.  You should explain why they are relevant and 
-how they relate to your VnV efforts.}
+The following project documents are used by this plan.
+
+\begin{itemize}
+  \item \textbf{Software Requirements Specification} \citep{SRS}. The main
+  input to this plan. Every system test in Section 4 traces to a functional or
+  nonfunctional requirement in the SRS, and Section 3.2 describes how the SRS
+  itself is verified.
+  \item \textbf{Hazard Analysis} \citep{HazardAnalysis}. Defines the safety
+  and security requirements added to the SRS. These requirements get system
+  tests like any other, so each identified hazard has a test showing its
+  mitigation works.
+  \item \textbf{Development Plan} \citep{DevelopmentPlan}. Sets the team's
+  workflow, tools, and coding standards. The CI pipeline, linters, and testing
+  frameworks listed in Section 3.6 come from this plan.
+  \item \textbf{Problem Statement and Goals} \citep{ProblemStatement}. States
+  the project goals and the custom documents (Section 2.3). Validation in
+  Section 3.7 checks the finished software against these goals.
+  \item \textbf{Module Guide and Module Interface Specification}
+  \citep{MG, MIS}. Not yet written. Section 3.3 describes how they will be
+  verified, and the unit tests in Section 5 will be written against the
+  modules they define.
+  \item \textbf{Verification and Validation Report} \citep{VnVReport}. Due in
+  Term 2. Records the results of running the tests and reviews in this plan.
+\end{itemize}
 
 \section{Plan}
 
@@ -245,17 +293,72 @@ taken to verify SRS, the design, this plan, and the implementation. It also list
 
 \subsection{SRS Verification}
 
-\wss{List any approaches you intend to use for SRS verification.  This may
-  include ad hoc feedback from reviewers, like your classmates (like your
-  primary reviewer), or you may plan for something more rigorous/systematic.}
+% \wss{List any approaches you intend to use for SRS verification.  This may
+%   include ad hoc feedback from reviewers, like your classmates (like your
+%   primary reviewer), or you may plan for something more rigorous/systematic.}
 
-\wss{If you have a supervisor for the project, you shouldn't just say they will
-read over the SRS.  You should explain your structured approach to the review.
-Will you have a meeting?  What will you present?  What questions will you ask?
-Will you give them instructions for a task-based inspection?  Will you use your
-issue tracker?}
+% \wss{If you have a supervisor for the project, you shouldn't just say they will
+% read over the SRS.  You should explain your structured approach to the review.
+% Will you have a meeting?  What will you present?  What questions will you ask?
+% Will you give them instructions for a task-based inspection?  Will you use your
+% issue tracker?}
 
-\wss{Maybe create an SRS checklist?}
+% \wss{Maybe create an SRS checklist?}
+
+The SRS \citep{SRS} is verified through peer review, supervisor review, and an
+internal checklist review. All feedback, whatever its source, is tracked as a
+GitHub Issue and closed by a commit that references it.
+
+\paragraph{Peer review.}
+Classmates review the SRS and file each piece of feedback as a separate GitHub
+Issue using the course peer review template. Teams 12 and 24 have already
+reviewed the SRS and Hazard Analysis (Issues \#40 to \#54), raising points such
+as measurable acceptance criteria, requirement traceability, and scope. For each
+issue, a team member either updates the SRS and links the commit, or replies
+with the reason no change is needed, before closing it.
+
+\paragraph{Supervisor review.}
+The team meets weekly with Dr.\ David to brief him on new work and get feedback.
+When the SRS has changed since the last meeting, the meeting includes a short
+structured review:
+\begin{enumerate}
+  \item The team sends the changed SRS sections before the meeting.
+  \item In the meeting, the team walks through one example goal end to end:
+  the developer's request, the elicitation stages, the requirements produced,
+  and their trace links. This shows the requirements in the context of the
+  workflow rather than as a list.
+  \item The team asks prepared questions, such as:
+  \begin{itemize}
+    \item Do the functional requirements fully cover the elicitation workflow
+    and approval gate, or is a stage missing?
+    \item Is the intent model and its trace links described at the right level
+    of detail for the design to follow?
+    \item Are any requirements out of scope, or unrealistic for the timeline?
+    \item Are the nonfunctional requirements measurable as written?
+  \end{itemize}
+\end{enumerate}
+Action items from each meeting are recorded as GitHub Issues and assigned to a
+team member.
+
+\paragraph{Checklist review.}
+Before each SRS revision is submitted, a team member who did not write the
+changed sections reviews them against the checklist below, based on the
+characteristics of well-formed requirements in IEEE/ISO/IEC 29148. Any unmet
+item is filed as a GitHub Issue.
+
+\begin{itemize}
+  \item Each requirement states one need, has a unique ID, and has a rationale.
+  \item Each requirement is verifiable, with a fit criterion or a clear
+  pass/fail condition.
+  \item Every elicitation stage, the approval gate, the intent model, and the
+  verification arm are covered by requirements.
+  \item Every hazard in the Hazard Analysis maps to a safety or security
+  requirement.
+  \item No requirements conflict, and terms match the glossary.
+  \item Every requirement is in scope and achievable with the team's time and
+  tools.
+  \item Every requirement traces to a project goal and to a test in Section 4.
+\end{itemize}
 
 \subsection{Design Verification}
 
@@ -662,36 +765,56 @@ Their values are defined in this section for easy maintenance.
 
 \section{Appendix --- Generative AI Use Disclosure}
 
-\wss{ChatGPT (version 5) was used to brainstorm ideas for the template for this disclose section.}
+% \wss{ChatGPT (version 5) was used to brainstorm ideas for the template for this disclose section.}
 
 \subsection{AI Tools Used}
 
-\wss{Give the name of the AI tool(s) used and the version.}
+% \wss{Give the name of the AI tool(s) used and the version.}
+
+\begin{itemize}
+  \item 
+  Claude Sonnet 5.5.
+\end{itemize}
 
 \subsection{How and Where Used}
 
-\wss{Explain what the tool(s) were used for.  Examples include: brainstorming,
-explaining a technical concept, reviewing the document, generating or modifying
-text, generating or modifying diagrams, identifying errors or omissions or
-inconsistencies.}
+% \wss{Explain what the tool(s) were used for.  Examples include: brainstorming,
+% explaining a technical concept, reviewing the document, generating or modifying
+% text, generating or modifying diagrams, identifying errors or omissions or
+% inconsistencies.}
 
-\wss{For each of the uses, identify which parts of the document were affected.}
+% \wss{For each of the uses, identify which parts of the document were affected.}
 
-\wss{You do not need to report every interaction, but you should disclose the 
-uses that materially contributed to your work}
+% \wss{You do not need to report every interaction, but you should disclose the
+% uses that materially contributed to your work}
+
+\begin{itemize}
+  \item \textbf{Sections 2.3, 2.4, and 3.2 (Vedant).} Vedant gave Claude the
+  structure and main ideas for each section Claude drafted an initial version of each section, and Vedant then revised
+  the drafts as needed.
+\end{itemize}
 
 \subsection{Verification of AI-Generated Content}
 
-\wss{\begin{itemize}
-    \item Describe how the team checked AI-generated or AI-assisted material
-    before including it in the document.
-    \item In particular, verify factual claims, technical assertions,
-    requirements, calculations, references, and other information for which an
-    AI system may produce incorrect or fabricated results.
-    \item \textbf{The team is responsible for the accuracy, completeness,
-consistency, and appropriateness of the submitted document, regardless of
-whether material was generated by a human or an AI system.}
-\end{itemize}}
+% \wss{\begin{itemize}
+%     \item Describe how the team checked AI-generated or AI-assisted material
+%     before including it in the document.
+%     \item In particular, verify factual claims, technical assertions,
+%     requirements, calculations, references, and other information for which an
+%     AI system may produce incorrect or fabricated results.
+%     \item \textbf{The team is responsible for the accuracy, completeness,
+% consistency, and appropriateness of the submitted document, regardless of
+% whether material was generated by a human or an AI system.}
+% \end{itemize}}
+
+\begin{itemize}
+  \item \textbf{Sections 2.3, 2.4, and 3.2 (Vedant).} Vedant reviewed each draft
+  before including it and edited it where needed. Facts in these sections come
+  from the team's own project documents and repository: the custom documents
+  from the Problem Statement, the peer review issue numbers from GitHub, and the
+  document links from the repository. 
+  
+\end{itemize}
 
 \newpage{}
 
