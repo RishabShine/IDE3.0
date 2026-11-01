@@ -332,12 +332,98 @@ $\square$ Terminology is consistent with the SRS \\
 
 \subsection{Verification and Validation Plan Verification}
 
-\wss{The verification and validation plan is an artifact that should also be
-verified.  Techniques for this include review and mutation testing.}
+% \wss{The verification and validation plan is an artifact that should also be
+% verified.  Techniques for this include review and mutation testing.}
 
-\wss{The review will include reviews by your classmates}
+% \wss{The review will include reviews by your classmates}
 
-\wss{Create a checklists?}
+% \wss{Create a checklists?}
+
+The VnV plan is a project artifact that must itself be verified for
+completeness, feasibility, and effectiveness. It will be verified
+through team, supervisor, and peer reviews, a feasibility assessment,
+mutation testing, and validation of the rubric used to evaluate
+LLM-generated artifacts.
+
+\paragraph{Team Review.}
+All team members will review the plan using the checklist, confirming that
+each objective in Section 2.2 is covered by at least one test and that each
+test case is executed as written. The plan will also be checked for
+consistency with the SRS and design documents, including component names,
+requirement numbers, and tools.
+
+\paragraph{Supervisor Review.}
+Dr.\ David will review the test plan for the elicitation pipeline and the
+verification arm. We will ask whether the planned tests would give the
+developers confidence, or whether there are any crucial testing gaps that
+need to be addressed. We will further ask him: Would the failures and the
+successes give a more than adequate guarantee that the components function
+as they are intended to?
+
+\paragraph{Peer Review.}
+There will be a peer review of our plan that is dictated by this document lifecycle, and the issues and recommendations for changes in our approach will be documented on GitHub under Issues.
+
+\paragraph{Feasibility Assessment.}
+The technical verification co-leads will confirm that every planned activity is realistic within the project timeline and the team's current skills, time budget, and ability to overcome a not so steep learning curve (if it comes down to it). Activities that cannot be completed in time will be rescoped or listed as out of scope, rather than left unexecuted.
+
+\paragraph{Mutation Testing.}
+To verify that the planned tests can detect defects, there will be an intentional introduction of faults injected into the implementation to see if the test cases fail. Any fault that no test detects shows there is a gap in the plan, and a test case will be added to cover it.
+
+\paragraph{Evaluation Rubric Validation.}
+The quality of the LLM-generated artifacts will be evaluated against an evaluation (eval) suite. We will manually score a set of deliberately flawed outputs (such as requirements having invented constraints or missing trace links) and confirm that each one falls below the pass threshold. If any of the flawed outputs are considered acceptable, then the evals and acceptance rubric would need to be revised. When the LLM-as-judge is used, its scores will be compared with our manual ratings on a sample of acceptable outputs.
+
+\paragraph{Tracking and Success Metrics.}
+All findings will be logged in GitHub Issues and addressed in our team meetings, so that the plan can be refined and retuned. Progress can be measured via requirement coverage, mutation detection rate, and finally issue resolution rate.
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}X|}
+  \hline
+  \textbf{Criteria} & \textbf{Verification Tasks} \\
+  \hline
+  Coverage &
+  $\square$ Every objective in Section~2.2 is covered by at least one
+  test \newline
+  $\square$ Every functional and non-functional requirement traces to at
+  least one test case \newline
+  $\square$ Every component (refinement workflow, review panel and
+  approval gate, intent model store, verification arm) has dedicated
+  tests \\
+  \hline
+  Test Quality &
+  $\square$ Each test has a defined initial state, input, and expected
+  output \newline
+  $\square$ Tests of LLM-driven stages check structure and behaviour,
+  not exact generated wording \\
+  \hline
+  Effectiveness &
+  $\square$ Each seeded fault is detected by at least one test
+  \newline
+  $\square$ Each deliberately flawed output scores below the rubric
+  threshold \newline
+  $\square$ LLM-as-judge scores agree with manual ratings on the sampled
+  outputs \\
+  \hline
+  Feasibility &
+  $\square$ All planned activities fit within the project timeline \\ 
+  \hline
+  Document Quality &
+  $\square$ The plan is consistent with the SRS and design documents
+  \newline
+  $\square$ References are complete and correct \newline
+  $\square$ The document is free of spelling, grammatical, and
+  formatting errors \\
+  \hline
+  Process &
+  $\square$ All review feedback is tracked as GitHub Issues \newline
+  $\square$ Traceability tables are updated when requirements change \\
+  \hline
+  \end{tabularx}
+  \caption{VnV plan verification checklist}
+  \label{tab:vnv-checklist}
+  \end{table}
+
 
 \subsection{Implementation Verification}
 
