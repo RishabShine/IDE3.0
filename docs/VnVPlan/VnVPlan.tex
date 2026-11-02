@@ -622,7 +622,7 @@ the contents of the subsections.}
   different areas.  If there are no identifiable subsets for the tests, this
   level of document structure can be removed.}
 
-The tests below follow the workflow in the SRS \citep{SRS}. Intent capture
+The tests below follow the workflow in the SRS. Intent capture
 covers FR1--FR3. Requirement review and approval covers FR4--FR6. Code
 generation control covers FR7 and FR8. The intent model covers FR9 and FR11.
 Verification of generated changes covers FR10 and FR12.
@@ -631,7 +631,7 @@ Verification of generated changes covers FR10 and FR12.
 
 This area covers submission of engineering intent, extraction of structured
 engineering artifacts, and iterative refinement into reviewable proposals
-and contracts, as described by FR1-FR3 in the SRS \citep{SRS}. Test
+and contracts, as described by FR1-FR3 in the SRS. Test
 identifiers begin with \texttt{IC}, followed by a functionality group and
 a case number. The groups cover engineering artifact submission
 (\texttt{IC-EAS}), natural-language submission and interpretation
@@ -1274,7 +1274,7 @@ behaviour and constraint and their intended scope.
 \subsubsection{Requirement Review and Approval}
 
 This area tests the presentation, approval, rejection, and revision of
-engineering proposals required by FR4-FR6 in the SRS \citep{SRS}.
+engineering proposals required by FR4-FR6 in the SRS.
 Related checks cover draft availability (FR3), iterative refinement (FR2),
 recorded review decisions (FR8), and persistence of approved intent (FR9).
 Test identifiers use \texttt{RRA}, a group code, and a case number:
@@ -1908,62 +1908,227 @@ implementations, and match the extension's report to OpenJML's output.
 
 \subsection{Tests for Nonfunctional Requirements}
 
-\wss{The nonfunctional requirements for accuracy will likely just reference the
-  appropriate functional tests from above.  The test cases should mention
-  reporting the relative error for these tests.  Not all projects will
-  necessarily have nonfunctional requirements related to accuracy.}
+The following tests assess the presentation, usability, and communication
+qualities specified in the SRS. They use inspections and user
+walkthroughs. Functional correctness is checked by the functional tests;
+these cases focus on how easily engineers can understand and use the
+available functionality.
 
-\wss{For some nonfunctional tests, you won't be setting a target threshold for
-passing the test, but rather describing the experiment you will do to measure
-the quality for different inputs.  For instance, you could measure speed versus
-the problem size.  The output of the test isn't pass/fail, but rather a summary
-table or graph.}
+\subsubsection{Look and Feel Requirements}
 
-\wss{Tests related to usability could include conducting a usability test and
-  survey.  The survey will be in the Appendix.}
-
-\wss{Static tests, review, inspections, and walkthroughs, will not follow the
-format for the tests given below.}
-
-\wss{If you introduce static tests in your plan, you need to provide details.
-How will they be done?  In cases like code (or document) walkthroughs, who will
-be involved? Be specific.}
-
-\subsubsection{Area of Testing1}
-		
-\paragraph{Title for Test}
+These tests cover AR1-AR2 and SR1-SR2. They check how the interface fits
+within the host IDE and whether information is presented consistently.
 
 \begin{enumerate}
 
-\item{test-id1\\}
+\item{LF-1: Fit Within the Host IDE\\}
 
-Type: Functional, Dynamic, Manual, Static etc.
-					
-Initial State: 
-					
-Input/Condition: 
-					
-Output/Result: 
-					
-How test will be performed: 
-					
-\item{test-id2\\}
+Requirements: AR1, SR1.
 
-Type: Functional, Dynamic, Manual, Static etc.
-					
-Initial State: 
-					
-Input: 
-					
-Output: 
-					
-How test will be performed: 
+Type: Dynamic, Manual.
+
+Initial State: \progname{} is installed in the supported host IDE, with a
+project open.
+
+Input/Condition: The tester opens the extension, reviews a proposal, and moves
+between extension views and source files.
+
+Output/Result: The extension follows familiar IDE styles and interaction
+patterns without obstructing the developer's workspace.
+
+How test will be performed: A team member will perform the workflow and
+inspect how the extension fits within the IDE. Obstructed source views,
+unfamiliar interaction patterns, and interruptions to normal editing will be
+recorded.
+
+\item{LF-2: Readability and Visual Consistency\\}
+
+Requirements: AR2, SR2.
+
+Type: Dynamic, Manual.
+
+Initial State: The extension has request submission, clarification, review,
+and decision views available.
+
+Input/Condition: The tester navigates the views and compares their fonts,
+colours, spacing, grouping, and controls.
+
+Output/Result: Information is readable and logically grouped. Equivalent
+controls and workflow states are presented consistently.
+
+How test will be performed: A team member will inspect the views during a
+refinement session and record unreadable or obscured content, unclear
+grouping, and inconsistent presentation.
 
 \end{enumerate}
 
-\subsubsection{Area of Testing2}
+\subsubsection{Usability and Humanity Requirements}
 
-...
+These tests assess ease of use, learning, understandability, and
+accessibility. Where practical, an engineer unfamiliar with \progname{} will
+perform the walkthrough while a team member observes. The observer will record
+difficulties and assistance needed without directing each action. Results will
+describe the issues observed rather than use an unsupported time limit or
+passing score. Familiarity with the tool and guidance used will be recorded.
+
+\begin{enumerate}
+
+\item{UH-1: Learn the Main Workflow\\}
+
+Requirements: EUR1, LR1, LR2. Supporting references: UDR2, TRR1.
+
+Type: Dynamic, Manual.
+
+Initial State: An engineer unfamiliar with the extension has access to its
+introductory documentation and sample project.
+
+Input/Condition: The engineer submits intent, answers clarification questions,
+reviews a proposal, and makes an approval or rejection decision.
+
+Output/Result: The engineer can follow the interaction with minimal
+instruction, using the available interface and documentation.
+
+How test will be performed: The observer will ask the engineer to follow the
+sample project and record requests for help and points where additional
+guidance is needed. The engineer will be asked which parts of the workflow
+were unclear.
+
+\item{UH-2: Understand Actions and Review Expectations\\}
+
+Requirements: EUR2. Supporting references: UDR2, UDR3, TRR2.
+
+Type: Dynamic, Manual.
+
+Initial State: The engineer has reached clarification and review stages,
+including a contract proposal, and can access the user guide and contract
+examples.
+
+Input/Condition: The engineer explains what information or decision is needed
+and how to continue, revise, reject, or return to an earlier stage.
+
+Output/Result: Available actions and review expectations are understandable
+from the interface, stage descriptions, and documentation.
+
+How test will be performed: The observer will compare the engineer's
+explanation with the intended actions and review expectations. Missing
+guidance, unclear instructions, and whether documentation resolves questions
+will be recorded.
+
+\item{UH-3: Find and Understand Traceability Information\\}
+
+Requirements: EUR3. Related use cases: PUC7, PUC8.
+
+Type: Dynamic, Manual.
+
+Initial State: A project contains verified links between requirements or
+contracts, implementation code, and tests.
+
+Input/Condition: The engineer is asked to locate the implementation associated
+with a requirement, then the engineering intent associated with an
+implementation artifact.
+
+Output/Result: The engineer can find the information and understand the
+displayed relationships without being shown which controls to use.
+
+How test will be performed: The observer will record navigation difficulties,
+assistance needed, and confusing relationship displays. Link correctness is
+established beforehand and tested separately by functional tests; this case
+assesses how easily the information can be found and understood.
+
+\item{UH-4: Clear Prompts Without Unnecessary Repetition\\}
+
+Requirements: UPR1, UPR2.
+
+Type: Dynamic, Manual.
+
+Initial State: A project contains an engineering artifact stating that
+withdrawals cannot exceed the available balance. Other withdrawal rules remain
+unspecified.
+
+Input/Condition: The engineer requests further refinement of the withdrawal
+operation.
+
+Output/Result: Prompts use clear engineering terminology without requiring
+knowledge of internal implementation details. The engineer is not
+unnecessarily asked to repeat available information. Clarification or
+confirmation is acceptable where uncertainty remains.
+
+How test will be performed: The observer will compare the conversation with
+the prepared artifact and ask the engineer whether the prompts are
+understandable. Unexplained internal terms and unnecessary requests for
+existing information will be recorded.
+
+\item{UH-5: Familiar IDE Interaction and Accessibility\\}
+
+Requirements: ACCR1, ACCR2.
+
+Type: Dynamic, Manual.
+
+Initial State: The extension is running in the supported IDE, with keyboard
+navigation and its supported screen-reader facilities available.
+
+Input/Condition: The tester navigates the workflow using familiar IDE
+controls, keyboard navigation, and screen-reader facilities.
+
+Output/Result: The workflow stays within the IDE and preserves its existing
+accessibility facilities. Actions can be reached by keyboard, and control
+names and review content can be identified with the screen reader.
+
+How test will be performed: A team member will navigate the request and review
+flow without a mouse and inspect it with a screen reader. Unreachable
+controls, unclear focus, missing labels, inaccessible review content, and any
+need to use a separate standalone interface will be recorded.
+
+\end{enumerate}
+
+\subsubsection{Cultural Requirements}
+
+These tests cover CULR1-CULR2 and PIR1. They inspect the language and symbols
+used in the interface and representative generated prompts.
+
+\begin{enumerate}
+
+\item{CUL-1: Canadian English\\}
+
+Requirements: CULR1.
+
+Type: Manual inspection.
+
+Initial State: Interface text and records of representative refinement
+sessions are available.
+
+Input/Condition: The tester inspects interface text, notifications, error
+messages, and generated prompts.
+
+Output/Result: System-authored communication uses Canadian English.
+User-supplied wording, code identifiers, and technical names are excluded from
+spelling corrections.
+
+How test will be performed: Team members will review the interface and
+recorded sessions and record spelling or language inconsistencies that need
+correction.
+
+\item{CUL-2: Clear, Neutral, and Professional Communication\\}
+
+Requirements: CULR2, PIR1.
+
+Type: Manual inspection.
+
+Initial State: Interface labels, symbols, instructions, and records of
+representative refinement sessions are available.
+
+Input/Condition: The tester inspects the material for regional slang,
+unexplained cultural references, and inappropriate language.
+
+Output/Result: Communication is professional and culturally neutral. Labels
+and symbols have enough context to make their purpose understandable to users
+from different backgrounds.
+
+How test will be performed: Team members will inspect the interface and
+recorded prompts and record unclear or inappropriate wording, symbols, and
+interaction instructions.
+
+\end{enumerate}
 
 \subsection{Traceability Between Test Cases and Requirements}
 
