@@ -486,8 +486,10 @@ the contents of the subsections.}
   different areas.  If there are no identifiable subsets for the tests, this
   level of document structure can be removed.}
 
-\wss{Include a blurb here to explain why the subsections below
-  cover the requirements.  References to the SRS would be good here.}
+The tests below follow the workflow in the SRS \citep{SRS}. Intent capture
+covers FR1--FR3. Requirement review and approval covers FR4--FR6. Code
+generation control covers FR7 and FR8. The intent model covers FR9 and FR11.
+Verification of generated changes covers FR10 and FR12.
 
 \subsubsection{Intent Capture}
 
@@ -1514,9 +1516,259 @@ contains both requirements without the removed constraint.
 
 \end{enumerate}
 
-\subsubsection{Area of Testing2}
+\subsubsection{Code Generation Control}
 
-...
+These tests check that the coding assistant is instructed only from an
+approved proposal, and that a rejection sends the assistant back for a
+revision. They correspond to FR7 and FR8.
+
+\paragraph{Generation Control}
+
+\begin{enumerate}
+
+\item{CG-1: Block Generation Until Approval\\}
+
+Requirements: FR7, SCR1.
+
+Control: Automated.
+
+Initial State: The fixture has approved requirements and an unapproved
+contract.
+
+Input: A request, from the developer or from the coding assistant, to
+generate an implementation of the approved requirements.
+
+Output: No implementation is requested from the assistant. The extension
+reports that the contract is still unapproved.
+
+Test Case Derivation: FR7 requires generation to wait until the required
+engineering artifacts and contracts are approved. SCR1 requires the same
+explicit approval.
+
+How test will be performed: The tester will invoke the generate command in
+the extension test host and check that the assistant adapter receives no
+implementation request. The reported reason names the unapproved contract.
+
+\item{CG-2: Send the Approved Proposal\\}
+
+Requirements: FR8, PUC6.
+
+Control: Automated.
+
+Initial State: The fixture's requirements, constraints, and contracts are
+approved.
+
+Input: The developer confirms generation.
+
+Output: The stub assistant receives the approved requirements, the
+constraints, the contracts, and the originating request. It does not
+receive rejected or pending items. The instruction is to implement that
+approved set.
+
+Test Case Derivation: FR8 requires the decision to be communicated to the
+assistant and to the intent store, and an approval to instruct
+implementation of exactly the approved requirements. PUC6 is the same
+handoff.
+
+How test will be performed: The tester will confirm generation against a
+stub assistant and compare the payload with the approved set in the intent
+store. Pending and rejected items are absent.
+
+\item{CG-3: Ask How to Revise a Rejection\\}
+
+Requirements: FR8.
+
+Control: Automated.
+
+Initial State: The fixture's proposal is rejected, and the rejection
+includes no replacement text.
+
+Input: The rejection decision.
+
+Output: The assistant is told not to implement the proposal. The developer
+is asked how to revise the request. The intent store records the rejection.
+
+Test Case Derivation: FR8 requires a rejection without an edit to withhold
+implementation and to ask how the request should be revised.
+
+How test will be performed: The tester will reject the proposal with an
+empty edit and check the stub assistant's instruction, the developer
+prompt, and the stored rejection.
+
+\end{enumerate}
+
+\subsubsection{Intent Model, Rationale, and Traceability}
+
+These tests check the record that remains after approval: the artifacts,
+why they exist, and which code and tests realize them. They correspond to
+FR9 and FR11, and to PUC7 and PUC8.
+
+\paragraph{Persistence and Traceability}
+
+\begin{enumerate}
+
+\item{IM-1: Record Approved Artifacts\\}
+
+Requirements: FR9.
+
+Control: Automated.
+
+Initial State: A proposal for the fixture has been approved, and the
+\texttt{.ide3/} store is empty.
+
+Input: The approval of that proposal.
+
+Output: The store contains the approved requirements, quality constraints,
+and design rationale. The files validate against the intent-model schema.
+Each artifact records its identifier and its links to related artifacts.
+Reopening the workspace shows the same record.
+
+Test Case Derivation: FR9 requires a versioned intent model with a
+structured schema, holding the approved requirements, constraints, and
+rationale. Reopening checks that the record belongs to the project rather
+than to one session.
+
+How test will be performed: The tester will approve the proposal, validate
+the written files against the schema, reload the extension host, and read
+the model again.
+
+\item{IM-2: Trace a Requirement to Code and Tests\\}
+
+Requirements: FR9, PUC7.
+
+Control: Manual.
+
+Initial State: One approved requirement has an accepted implementation and
+an accepted test, and the trace links between them are recorded.
+
+Input: The developer selects that requirement and asks for its
+implementation trace.
+
+Output: The view lists the implementing source and the test, and it shows
+the requirement those files are linked to. A requirement with no
+implementation yet shows an empty trace rather than a link to an unrelated
+file.
+
+Test Case Derivation: FR9 requires traceability from intent-model elements
+to the code and tests that implement and satisfy them. PUC7 is this query.
+
+How test will be performed: The tester will select the linked requirement
+and an unlinked requirement, and compare the listed files with the links
+stored in \texttt{.ide3/}.
+
+\item{IM-3: Explain Why an Implementation Exists\\}
+
+Requirements: FR11, PUC8.
+
+Control: Manual.
+
+Initial State: The state produced by IM-2.
+
+Input: The developer selects the implementation linked to that requirement
+and asks why it exists.
+
+Output: The view shows the originating request, the approved requirement,
+and the recorded rationale. The rationale is the text stored at approval
+time.
+
+Test Case Derivation: FR11 requires, for each approved requirement and
+design decision, the rationale and the originating request. PUC8 is the
+query from an implementation artifact back to that record.
+
+How test will be performed: The tester will select the implementation, open
+the intent explanation, and match the request text, requirement identifier,
+and rationale to the intent model.
+
+\end{enumerate}
+
+\subsubsection{Verification of Generated Changes}
+
+These tests check the verification arm. Approved constraints become checks
+the generated code must meet, and a change that breaks them is reported.
+They correspond to FR10 and FR12. The contract form for the capstone
+demonstration is a Java interface annotated with JML, checked with OpenJML.
+The project reuses that checker rather than building one.
+
+\paragraph{Verification}
+
+\begin{enumerate}
+
+\item{VF-1: Report Whether a Change Satisfies the Intent Model\\}
+
+Requirements: FR10.
+
+Control: Automated.
+
+Initial State: The approved model contains one precondition and one
+postcondition. The expected interpretation names both, and names the
+requirement each comes from.
+
+Input: Two implementations of the same behaviour. One satisfies both
+constraints. The other violates the precondition.
+
+Output: The first implementation is reported as satisfying the recorded
+constraints. The second is reported as violating the precondition. The
+report names that constraint and the requirement it comes from.
+
+Test Case Derivation: FR10 requires generated changes to be checked against
+the intent model, with a report of whether they satisfy the recorded
+requirements and constraints.
+
+How test will be performed: The tester will submit both versions through
+the verification command and compare the report with the constraints in
+the intent model.
+
+\item{VF-2: Compile Constraints into Executable Tests\\}
+
+Requirements: FR12.
+
+Control: Automated.
+
+Initial State: One precondition and one postcondition are approved. The
+fixture names an input that satisfies each and an input that violates each.
+
+Input: The approved constraint set.
+
+Output: Executable tests are written for the approved constraints. Each
+test fails on the violating input and passes on the satisfying input. Each
+test is linked to the constraint it encodes.
+
+Test Case Derivation: FR12 requires the approved requirements and quality
+constraints to be compiled into executable tests that the generated code
+must satisfy.
+
+How test will be performed: The tester will generate the tests, run them
+against a stub that passes and a stub that violates each constraint, and
+check the trace links back to the constraints.
+
+\item{VF-3: Check a Contract with OpenJML\\}
+
+Requirements: FR10, PUC4.
+
+Control: Automated.
+
+Initial State: An approved requirement is ready for a contract. The
+expected interpretation names its precondition and postcondition.
+
+Input: A generated interface whose operation carries those two constraints
+in JML. The contract is shown for review before use. A second
+implementation violates the postcondition.
+
+Output: The contract is linked to the requirement and is not used for
+generation until the developer approves it. After approval, OpenJML reports
+the violating implementation and the extension surfaces that report. A
+satisfying implementation produces no violation.
+
+Test Case Derivation: PUC4 requires contracts, including preconditions and
+postconditions, derived from approved artifacts, linked to those artifacts,
+and reviewed before implementation. FR10 requires the resulting check to be
+reported.
+
+How test will be performed: The tester will generate the interface, confirm
+the review gate holds, approve the contract, run OpenJML on both
+implementations, and match the extension's report to OpenJML's output.
+
+\end{enumerate}
 
 \subsection{Tests for Nonfunctional Requirements}
 
