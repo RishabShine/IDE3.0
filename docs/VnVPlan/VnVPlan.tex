@@ -275,7 +275,9 @@ taken to verify SRS, the design, this plan, and the implementation. It also list
   ownership by component and review each other's tests, so no component
   is verified only by its author. \\
   \hline
-  [Name] & [Role] & [Responsibilities] \\
+  Vedant & Requirements and Documentation Verification &
+  Leads SRS checklist reviews and tracks peer review issues through to
+  resolution. Checks that system tests trace to SRS requirements. \\
   \hline
   [Name] & [Role] & [Responsibilities] \\
   \hline
@@ -2137,132 +2139,132 @@ interaction instructions.
 
 \section{Unit Test Description}
 
-\wss{This section should not be filled in until after the MIS (detailed design
-  document) has been completed.}
+% \wss{This section should not be filled in until after the MIS (detailed design
+%   document) has been completed.}
 
-\wss{Reference your MIS (detailed design document) and explain your overall
-philosophy for test case selection.}  
+% \wss{Reference your MIS (detailed design document) and explain your overall
+% philosophy for test case selection.}  
 
-\wss{To save space and time, it may be an option to provide less detail in this section.  
-For the unit tests you can potentially layout your testing strategy here.  That is, you 
-can explain how tests will be selected for each module.  For instance, your test building 
-approach could be test cases for each access program, including one test for normal behaviour 
-and as many tests as needed for edge cases.  Rather than create the details of the input 
-and output here, you could point to the unit testing code.  For this to work, you code 
-needs to be well-documented, with meaningful names for all of the tests.}
+% \wss{To save space and time, it may be an option to provide less detail in this section.  
+% For the unit tests you can potentially layout your testing strategy here.  That is, you 
+% can explain how tests will be selected for each module.  For instance, your test building 
+% approach could be test cases for each access program, including one test for normal behaviour 
+% and as many tests as needed for edge cases.  Rather than create the details of the input 
+% and output here, you could point to the unit testing code.  For this to work, you code 
+% needs to be well-documented, with meaningful names for all of the tests.}
 
 \subsection{Unit Testing Scope}
 
-\wss{What modules are outside of the scope.  If there are modules that are
-  developed by someone else, then you would say here if you aren't planning on
-  verifying them.  There may also be modules that are part of your software, but
-  have a lower priority for verification than others.  If this is the case,
-  explain your rationale for the ranking of module importance.}
+% \wss{What modules are outside of the scope.  If there are modules that are
+%   developed by someone else, then you would say here if you aren't planning on
+%   verifying them.  There may also be modules that are part of your software, but
+%   have a lower priority for verification than others.  If this is the case,
+%   explain your rationale for the ranking of module importance.}
 
 \subsection{Tests for Functional Requirements}
 
-\wss{Most of the verification will be through automated unit testing.  If
-  appropriate specific modules can be verified by a non-testing based
-  technique.  That can also be documented in this section.}
+% \wss{Most of the verification will be through automated unit testing.  If
+%   appropriate specific modules can be verified by a non-testing based
+%   technique.  That can also be documented in this section.}
 
 \subsubsection{Module 1}
 
-\wss{Include a blurb here to explain why the subsections below cover the module.
-  References to the MIS would be good.  You will want tests from a black box
-  perspective and from a white box perspective.  Explain to the reader how the
-  tests were selected.}
+% \wss{Include a blurb here to explain why the subsections below cover the module.
+%   References to the MIS would be good.  You will want tests from a black box
+%   perspective and from a white box perspective.  Explain to the reader how the
+%   tests were selected.}
 
-\begin{enumerate}
+% \begin{enumerate}
 
-\item{test-id1\\}
+% \item{test-id1\\}
 
-Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-  be automatic}
+% Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
+%   be automatic}
 					
-Initial State: 
+% Initial State: 
 					
-Input: 
+% Input: 
 					
-Output: \wss{The expected result for the given inputs}
+% Output: \wss{The expected result for the given inputs}
 
-Test Case Derivation: \wss{Justify the expected value given in the Output field}
+% Test Case Derivation: \wss{Justify the expected value given in the Output field}
 
-How test will be performed: 
+% How test will be performed: 
 					
-\item{test-id2\\}
+% \item{test-id2\\}
 
-Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-  be automatic}
+% Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
+%   be automatic}
 					
-Initial State: 
+% Initial State: 
 					
-Input: 
+% Input: 
 					
-Output: \wss{The expected result for the given inputs}
+% Output: \wss{The expected result for the given inputs}
 
-Test Case Derivation: \wss{Justify the expected value given in the Output field}
+% Test Case Derivation: \wss{Justify the expected value given in the Output field}
 
-How test will be performed: 
+% How test will be performed: 
 
-\item{...\\}
+% \item{...\\}
     
-\end{enumerate}
+% \end{enumerate}
 
-\subsubsection{Module 2}
+% \subsubsection{Module 2}
 
-...
+% ...
 
 \subsection{Tests for Nonfunctional Requirements}
 
-\wss{If there is a module that needs to be independently assessed for
-  performance, those test cases can go here.  In some projects, planning for
-  nonfunctional tests of units will not be that relevant.}
+% \wss{If there is a module that needs to be independently assessed for
+%   performance, those test cases can go here.  In some projects, planning for
+%   nonfunctional tests of units will not be that relevant.}
 
-\wss{These tests may involve collecting performance data from previously
-  mentioned functional tests.}
+% \wss{These tests may involve collecting performance data from previously
+%   mentioned functional tests.}
 
 \subsubsection{Module ?}
 		
-\begin{enumerate}
+% \begin{enumerate}
 
-\item{test-id1\\}
+% \item{test-id1\\}
 
-Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-  be automatic}
+% Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
+%   be automatic}
 					
-Initial State: 
+% Initial State: 
 					
-Input/Condition: 
+% Input/Condition: 
 					
-Output/Result: 
+% Output/Result: 
 					
-How test will be performed: 
+% How test will be performed: 
 					
-\item{test-id2\\}
+% \item{test-id2\\}
 
-Type: Functional, Dynamic, Manual, Static etc.
+% Type: Functional, Dynamic, Manual, Static etc.
 					
-Initial State: 
+% Initial State: 
 					
-Input: 
+% Input: 
 					
-Output: 
+% Output: 
 					
-How test will be performed: 
+% How test will be performed: 
 
-\end{enumerate}
+% \end{enumerate}
 
 \subsubsection{Module ?}
 
-...
+% ...
 
 \subsection{Traceability Between Test Cases and Modules}
 
-\wss{Provide evidence that all modules have been considered.}
+% \wss{Provide evidence that all modules have been considered.}
 				
-\bibliographystyle{plainnat}
+% \bibliographystyle{plainnat}
 
-\bibliography{../../refs/References}
+% \bibliography{../../refs/References}
 
 \newpage
 
@@ -2382,14 +2384,32 @@ graduate attribute of Lifelong Learning.
   us, so I can distinguish information the system can extract from information
   it should ask the engineer to clarify.
 
+  \textbf{Qusay Qadir: }
+
+  I will need to further develop my skills in building evaluation suites for LLM-generated responses. Our elicitation pipeline relies on an iterative conversation in which the chatbot guides the user toward a well-engineered system, and the LLM does not produce the same response for the same input.
+  Because of this, traditional pass/fail unit tests are not enough to verify that the pipeline extracts and classifies requirements correctly. I need to learn how to build a reference dataset of system descriptions with expected requirements, and how to use prompt versioning and evaluation tools such as
+  LangSmith to track the correctness of extracted requirements and their functional/non-functional classification. These evaluations need to be rerun whenever a prompt or model changes, so regressions are caught early. I also need to learn how to use an LLM as a judge effectively, and understand its
+  limitations, so I can tell when an evaluation result needs human review rather than an automated verdict.
+
+
+  \textbf{Vedant Patel:}
+
+  I will need to improve at reviewing requirements systematically, especially
+  at judging whether a requirement can be verified and writing fit criteria
+  for it. Peer review of our SRS raised measurable acceptance criteria as an
+  issue, and most of our functional requirements do not have fit criteria yet.
+  Since the system tests in this plan trace back to those requirements, unclear
+  requirements lead directly to unclear tests.
+
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
   mastering the skill?  Of the identified approaches, which will each team
   member pursue, and why did they make this choice?
-
+  
   \textbf{Tyler Yue:}
 
   For JML and OpenJML, one approach is to study the OpenJML documentation and
+  
   small annotated Java examples. A second approach is to take one approved
   fixture contract from this plan, generate a matching interface, and run
   OpenJML on a satisfying and a violating implementation. Both approaches 
@@ -2406,6 +2426,30 @@ graduate attribute of Lifelong Learning.
   descriptions of the intended behaviour. Comparing the two will help me
   identify information that was lost or assumptions that were added.
 
+  \textbf{Qusay Qadir:} 
+
+  One approach is learning by reference, by studying the LangSmith evaluation
+  documentation and published research on evaluating requirements extraction
+  with LLMs. A second approach is learning by building, by writing a labelled
+  dataset from our SRS with the requirements we expect the pipeline to extract
+  and running the pipeline against it. I will use the second approach as my
+  main one and the first as a reference to confirm my methods are sound.
+  Checking the results by hand will show me what errors the pipeline actually
+  makes and which metrics are worth automating, and comparing my results with
+  an LLM judge will show where its verdicts can be trusted. A teammate will
+  also review the dataset so my own assumptions do not shape both the pipeline
+  and its test.
+
+  \textbf{Vedant Patel:}
+
+  One approach is to study the characteristics of well-formed requirements in
+  IEEE/ISO/IEC 29148 and the fit criterion guidance in the Volere template. A
+  second approach is to practise on our own SRS by applying the checklist in
+  Section 3.2 to the functional requirements and resolving the related peer
+  review issues. I will use the second approach as my main one, with the first
+  as a reference, because working on real requirements will show me where our
+  wording is too vague to test.
+  
 \end{enumerate}
 
 \end{document}
