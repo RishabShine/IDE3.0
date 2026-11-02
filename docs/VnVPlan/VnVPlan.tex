@@ -427,16 +427,49 @@ All findings will be logged in GitHub Issues and addressed in our team meetings,
 
 \subsection{Implementation Verification}
 
-\wss{You should at least point to the tests listed in this document and the unit
-  testing plan.}
+% \wss{You should at least point to the tests listed in this document and the unit
+%   testing plan.}
 
-\wss{In this section you would also give any details of any plans for static
-  verification of the implementation.  Potential techniques include code
-  walkthroughs, code inspection, static analyzers, etc.}
+% \wss{In this section you would also give any details of any plans for static
+%   verification of the implementation.  Potential techniques include code
+%   walkthroughs, code inspection, static analyzers, etc.}
 
-\wss{The final class presentation in CAS 741 could be used as a code
-walkthrough.  There is also a possibility of using the final presentation (in
-CAS741) for a partial usability survey.}
+% \wss{The final class presentation in CAS 741 could be used as a code
+% walkthrough.  There is also a possibility of using the final presentation (in
+% CAS741) for a partial usability survey.}
+
+Implementation verification ensures that the source code that is implemented successfully satisfies a valid implementation and satisfies the requirements that are outlined in the SRS. 
+It should combine dynamic testing and static testing. 
+
+\paragraph{System and Unit Tests.} 
+All functional and non-functional requirements shall be verified through the system test plans in Section 4 and Section 5, and the unit test cases in Section 6. Each test should trace to at least one requirement, and there should be full requirement coverage. 
+
+\paragraph{Evaluation Suite}
+Due to the nature of LLM-generated artifacts being non-deterministic, other than the expected output schema, the elicitation pipeline will be verified via an eval suite created by the team. 
+The suite will be rerun whenever a prompt, model, or pipeline stage changes, so that regressions in output quality are caught early. The rubric itself is validated as described in Section~3.4.
+The suite will consist of fixed scenario goals, each having their own gaps that the agent should raise. The pipeline's output for each scenario is scored against a rubric derived from the objectives in Section 2.2 and the requirement quality that is outlined by IEEE/ISO/IEC 29148. 
+
+\paragraph{Static Contract Verification}
+In addition to checking the code during runtime, OpenJML's static checking will be used to verify the AI agentic coding assistant's Java implementation against the generated JML contracts without executing the code. 
+This will allow us to test for contract violations on routes/paths that dynamic testing might not be able to pick up. 
+
+\paragraph{Static Analysis and Linters}
+The team will utilize linters for static analysis that will be integrated in the CI pipeline, and a PR will not be able to be successfully merged into the main branch from a feature branch until all the failed blocks are resolved. 
+
+\paragraph{Peer Code Inspection.}
+All code changes require review and approval through a GitHub pull request by team members other than the author (a minimum of 2 approvals is required before a merge is possible). Reviewers will
+specifically check for:
+\begin{itemize}
+  \item Correct handling of the full context passed between elicitation
+  stages.
+  \item No path that allows an artifact to bypass the approval gate.
+  \item Trace links being created and updated whenever artifacts change.
+  \item Proper handling of malformed or unexpected LLM output.
+  \item Adherence to coding standards and the module interfaces.
+\end{itemize}
+
+\paragraph{Code Walkthrough.}
+The Revision~0 demonstration will be used as a code walkthrough and knowledge transfer. The team will trace one example goal through the system end-to-end, from elicitation to contract verification, and explain the code responsible for each stage. Feedback from Dr.\ David, the TA, and classmates will be tracked as GitHub Issues.
 
 \subsection{Automated Testing and Verification Tools}
 
