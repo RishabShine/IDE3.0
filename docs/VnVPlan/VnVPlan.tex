@@ -7,6 +7,7 @@
 \usepackage{tabularx}
 \usepackage{amssymb}
 \usepackage{float}
+\usepackage{longtable}
 \hypersetup{
     colorlinks,
     citecolor=blue,
@@ -130,7 +131,7 @@ IDE3.0 has four components, each covered by its own functional tests:
   developer's workspace (FR9, FR11).
   \item \textbf{Verification arm.} Generates Java interfaces with JML
   contracts from approved requirements and checks the coding assistant's
-  implementation against them using OpenJML (FR10, FR13).
+  implementation against them using OpenJML (FR10, FR12).
 
 \end{itemize}
 
@@ -662,7 +663,7 @@ not exact generated wording or a particular contract language.
 
 \item{IC-EAS-1: Submit a Valid UML Diagram\\}
 
-Requirements: FR1, FR2, FR3.
+Requirements: FR1, FR2, FR3; PUC1.
 
 Control: Manual.
 
@@ -872,7 +873,7 @@ outputs are compared by meaning rather than exact wording.
 
 \item{IC-NL-1: Submit a Broad System Description\\}
 
-Requirements: FR1, FR2, FR3.
+Requirements: FR1, FR2, FR3; PUC1.
 
 Control: Manual.
 
@@ -971,7 +972,7 @@ consistently in both runs.
 \paragraph{Iterative Refinement and Contract Readiness}
 
 These tests follow the request from an initial description through requirements
-to contract proposals, supporting FR2--FR3 and PUC2 and PUC4. Before requesting
+to contract proposals, supporting FR2--FR3 and PUC2, PUC4, and PUC5. Before requesting
 contracts, the tester reviews and approves the relevant refined engineering
 artifacts as required by PUC4. Generated contracts remain proposals for review.
 
@@ -1144,6 +1145,31 @@ flow, state the scope exclusions, and inspect the resulting requirements and
 contracts for unwanted features. Recording exclusions or declined suggestions
 as context is acceptable.
 
+\item{IC-IR-7: Resolve a Conflict With an Approved Requirement\\}
+
+Requirements: FR2, FR3; PUC5.
+
+Control: Manual.
+
+Initial State: The intent model contains the approved requirement that a
+withdrawal must not exceed the available balance.
+
+Input: The engineer submits ``Allow overdrafts of up to 100 units.'' When asked,
+the engineer selects the new overdraft rule as the intended behaviour.
+
+Output: Before the selection, the system identifies both conflicting statements
+and asks which is intended, without changing the approved requirement. After
+the selection, the affected draft artifacts reflect the overdraft rule and its
+relationship to the earlier requirement. The change remains pending review.
+
+Test Case Derivation: PUC5 requires conflicting artifacts to be identified and
+presented, the engineer to select the intended interpretation, and the affected
+artifacts and relationships to be updated.
+
+How test will be performed: The tester will submit the request, check the
+reported conflict and the unchanged intent model, make the selection, and
+inspect the revised draft and its links.
+
 \end{enumerate}
 
 \paragraph{Requirement and Constraint Identification}
@@ -1302,7 +1328,7 @@ below are sample input to \progname{}, not requirements for \progname{} itself.
 
 \item{RRA-PR-1: Present Requirements and Constraints\\}
 
-Requirements: FR3, FR4.
+Requirements: FR3, FR4, HA-SR2.
 
 Control: Manual.
 
@@ -1373,7 +1399,7 @@ item.
 
 \item{RRA-AD-1: Approve a Requirements Proposal\\}
 
-Requirements: FR5, FR8, FR9.
+Requirements: FR5, FR8, FR9, HA-SR1; PUC3.
 
 Control: Manual.
 
@@ -1417,7 +1443,7 @@ decision with the reviewed version.
 
 \item{RRA-AD-3: Reject a Requirements Proposal\\}
 
-Requirements: FR5, FR8, FR9.
+Requirements: FR5, FR8, FR9, HA-SR1; PUC3.
 
 Control: Manual.
 
@@ -1467,7 +1493,7 @@ unrelated approved contract.
 
 \item{RRA-ED-1: Add Detail to a Requirement\\}
 
-Requirements: FR2, FR3, FR5, FR6.
+Requirements: FR2, FR3, FR5, FR6; PUC3.
 
 Control: Manual.
 
@@ -1668,7 +1694,7 @@ revision. They correspond to FR7 and FR8.
 
 \item{CG-1: Block Generation Until Approval\\}
 
-Requirements: FR7, SCR1.
+Requirements: FR7, SCR1, HA-SR1, HA-SR6.
 
 Control: Automated.
 
@@ -1835,7 +1861,7 @@ The project reuses that checker rather than building one.
 
 \item{VF-1: Report Whether a Change Satisfies the Intent Model\\}
 
-Requirements: FR10.
+Requirements: FR10, HA-SR11.
 
 Control: Automated.
 
@@ -1912,11 +1938,14 @@ implementations, and match the extension's report to OpenJML's output.
 
 \subsection{Tests for Nonfunctional Requirements}
 
-The following tests assess the presentation, usability, and communication
-qualities specified in the SRS. They use inspections and user
-walkthroughs. Functional correctness is checked by the functional tests;
-these cases focus on how easily engineers can understand and use the
-available functionality.
+The following tests assess the nonfunctional requirements in the SRS and the
+safety and security requirements in the Hazard Analysis
+\citep{HazardAnalysis}. They cover presentation, usability, communication,
+performance, robustness, operation, maintainability, security, compliance,
+migration, and documentation. They combine user walkthroughs, inspections, and
+automated checks. Functional correctness is checked by the functional tests.
+Numeric limits are given as symbolic parameters in the Appendix. Hazard
+Analysis requirements are labelled with the prefix \texttt{HA-}.
 
 \subsubsection{Look and Feel Requirements}
 
@@ -1999,7 +2028,7 @@ were unclear.
 
 \item{UH-2: Understand Actions and Review Expectations\\}
 
-Requirements: EUR2. Supporting references: UDR2, UDR3, TRR2.
+Requirements: EUR2, HA-SR2. Supporting references: UDR2, UDR3, TRR2.
 
 Type: Dynamic, Manual.
 
@@ -2134,10 +2163,931 @@ interaction instructions.
 
 \end{enumerate}
 
+\subsubsection{Performance and Robustness Requirements}
+
+These tests cover speed, feedback handling, fault tolerance, capacity, and
+scalability. Automated timing cases use a stub LLM service so that they measure
+\progname{} rather than an external model. Timing results will be reported as
+medians and 95th percentiles, and PF-6 will include a plot of query time against
+model size.
+
+\begin{enumerate}
+
+\item{PF-1: Proposal Response Time\\}
+
+Requirements: PR1.
+
+Type: Dynamic, Automatic.
+
+Initial State: The sample project is open, and the stub LLM service responds
+immediately.
+
+Input/Condition: The withdrawal requests from IC-NL-1 to IC-NL-3 are each
+submitted 20 times.
+
+Output/Result: The median processing time added by \progname{} is no more than
+PROPOSAL\_OVERHEAD\_LIMIT. Runs against the real model are recorded for
+comparison with a direct request to the same model.
+
+How test will be performed: A timing script will measure from submission to the
+proposal becoming available. A smaller set of real-model runs will be recorded
+descriptively, because external response time is outside the project's control.
+
+\item{PF-2: Feedback During a Long Operation\\}
+
+Requirements: PR2, HA-SR4.
+
+Type: Dynamic, Automatic.
+
+Initial State: The stub LLM service waits 10 seconds before responding.
+
+Input/Condition: The tester submits a request through the extension test host.
+
+Output/Result: A status indication appears within FEEDBACK\_LIMIT and remains
+until the operation finishes.
+
+How test will be performed: The test will record the time between submission and
+the first status update, then check that the status clears on completion.
+
+\item{PF-3: Incorporate Review Feedback\\}
+
+Requirements: PAR1.
+
+Type: Dynamic, Manual.
+
+Initial State: A pending proposal requires report exports in CSV and PDF formats.
+
+Input/Condition: The tester rejects it with ``Export CSV only'', then requests
+column headings on the next revision, then terminates the workflow on a second
+proposal without approving it.
+
+Output/Result: The first revision removes PDF export. The second keeps that
+change and adds column headings. The terminated proposal is not recorded as
+approved.
+
+How test will be performed: The tester will compare each revision with all
+feedback given so far, then inspect the intent model after termination.
+
+\item{PF-4: Resume an Interrupted Workflow\\}
+
+Requirements: RFR1, RFR3, HA-SR5.
+
+Type: Dynamic, Automatic.
+
+Initial State: Requirement A is approved and linked to its rationale.
+Requirement B is pending.
+
+Input/Condition: The extension host is terminated during the review of
+requirement B and then restarted. The test is repeated, discarding B after
+restart.
+
+Output/Result: Requirement A and its links are unchanged and are not presented
+for approval again. Requirement B can be resumed at its pending stage or
+discarded without affecting A.
+
+How test will be performed: The test will compare the intent model before and
+after the restart, resume the workflow, and repeat with the discard path.
+
+\item{PF-5: Handle an External Failure\\}
+
+Requirements: RFR2, SUPR1, SUPR2, HA-SR4.
+
+Type: Dynamic, Automatic.
+
+Initial State: The intent model contains approved artifacts, and a cryptographic
+hash of the \texttt{.ide3/} folder has been recorded.
+
+Input/Condition: Separate runs make the stub LLM service time out, disconnect the
+stub coding agent, and crash the OpenJML process.
+
+Output/Result: The hash is unchanged after each run. The developer sees a message
+naming the failed service, and the diagnostic log contains the failure and the
+operation it interrupted.
+
+How test will be performed: The test will inject each fault, compare the hash,
+and check the message and log entry.
+
+\item{PF-6: Capacity and Scaling\\}
+
+Requirements: CR1, SER1.
+
+Type: Dynamic, Automatic.
+
+Initial State: Generated intent models contain 10\%, 25\%, 50\%, and 100\% of
+CAPACITY\_REQUIREMENTS and CAPACITY\_LINKS.
+
+Input/Condition: For each model, the test loads the model and queries the trace
+of a selected requirement.
+
+Output/Result: All artifacts and links are retained. Each trace query at full
+capacity takes no more than QUERY\_LIMIT.
+
+How test will be performed: A script will generate the models, validate them
+against the schema, time 20 queries at each size, and plot the results.
+
+\item{PF-7: Process One Request With Several Artifacts\\}
+
+Requirements: CR2.
+
+Type: Dynamic, Manual.
+
+Initial State: A new request is ready with no existing proposal.
+
+Input/Condition: The tester submits the mixed request from IC-RC-5.
+
+Output/Result: One proposal contains all related requirements and constraints
+and retains their relationships. The tester is not asked to split the request.
+
+How test will be performed: The tester will complete the interaction and compare
+the proposal with each item in the request.
+
+\end{enumerate}
+
+\subsubsection{Operational and Release Requirements}
+
+These tests cover packaging, integration with adjacent systems, and release
+practices.
+
+\begin{enumerate}
+
+\item{OP-1: Install and Activate the Extension\\}
+
+Requirements: PRD1, PRD3, IAS1.
+
+Type: Dynamic, Manual.
+
+Initial State: A clean VS Code profile runs on a machine without the project's
+development environment.
+
+Input/Condition: The tester installs the VSIX package and opens the sample
+project.
+
+Output/Result: The extension activates and its commands are available without
+manual installation of its bundled runtime dependencies. It uses only the
+official VS Code Extension API.
+
+How test will be performed: The tester will install the package, run the first
+workflow stage, and inspect the extension source for use of private IDE
+interfaces.
+
+\item{OP-2: Meet Marketplace Requirements\\}
+
+Requirements: PRD2.
+
+Type: Static, Manual inspection.
+
+Initial State: A release candidate and its manifest are available.
+
+Input/Condition: The tester runs \texttt{vsce package} and inspects the package
+against the current Visual Studio Code Marketplace publishing requirements.
+
+Output/Result: Packaging succeeds without errors, and the required manifest
+fields and package contents meet the recorded requirements. Secrets and
+unnecessary development files are not packaged.
+
+How test will be performed: The tester will review the output of \texttt{vsce ls}
+and record the result of each publishing requirement.
+
+\item{OP-3: Connect Through MCP\\}
+
+Requirements: IAS2, STDR1.
+
+Type: Dynamic, Manual.
+
+Initial State: The \progname{} MCP server is running.
+
+Input/Condition: The tester connects the MCP Inspector and one MCP-capable coding
+assistant, then lists and calls the available workflow tools.
+
+Output/Result: Both clients complete initialization and tool calls without
+protocol errors. The assistant can drive the workflow as far as the approval
+gate using only MCP.
+
+How test will be performed: The tester will record the protocol version, tool
+listing, and responses from each client and compare them with the MCP
+specification.
+
+\item{OP-4: Version the Intent Model With Git\\}
+
+Requirements: IAS3.
+
+Type: Dynamic, Automatic.
+
+Initial State: The sample project is a Git repository with an approved
+requirement.
+
+Input/Condition: A second requirement is approved, and the model change is
+committed and then reverted with standard Git commands.
+
+Output/Result: The change appears as a readable diff under \texttt{.ide3/}. After
+the revert, \progname{} reads the earlier model without error.
+
+How test will be performed: The test will run the Git commands, inspect the diff,
+and reload the model.
+
+\item{OP-5: Release Notes\\}
+
+Requirements: REL1, UDR4.
+
+Type: Static, Manual inspection.
+
+Initial State: A tagged release and the previous tag are available.
+
+Input/Condition: The tester compares the release notes with the pull requests
+merged between the two tags.
+
+Output/Result: The notes describe the new features and patched bugs in that
+range.
+
+How test will be performed: A team member other than the release author will
+record any feature or fix missing from the notes.
+
+\item{OP-6: Read an Intent Model From an Earlier Release\\}
+
+Requirements: REL2, HA-SR9.
+
+Type: Dynamic, Automatic.
+
+Initial State: A stored \texttt{.ide3/} fixture was written by the previous
+release.
+
+Input/Condition: The current release opens the fixture.
+
+Output/Result: All artifacts and links are read directly or through the provided
+migration, and the result validates against the current schema.
+
+How test will be performed: CI will load the fixture, run any migration, and
+compare the artifacts with the fixture.
+
+\end{enumerate}
+
+\subsubsection{Maintainability and Support Requirements}
+
+These tests inspect the structure of the implementation and exercise its planned
+extension points. Failure handling and logging (SUPR1, SUPR2) are covered by
+PF-5.
+
+\begin{enumerate}
+
+\item{MT-1: Inspect Modularity and Dependency Isolation\\}
+
+Requirements: MR1, MR2.
+
+Type: Static, Manual inspection.
+
+Initial State: The Module Guide and implementation are available.
+
+Input/Condition: Reviewers compare each module with the Module Guide and search
+import statements for external LLM, orchestration, and OpenJML libraries.
+
+Output/Result: Each module has a defined responsibility and interface. External
+libraries are imported only by their designated wrapper modules.
+
+How test will be performed: Two reviewers will complete the inspection during a
+code walkthrough and record each violation as a GitHub Issue.
+
+\item{MT-2: Add a Coding Agent\\}
+
+Requirements: MR3, ADR1, SER2, LGR1.
+
+Type: Dynamic, Manual.
+
+Initial State: The workflow passes with the existing coding agent integration.
+
+Input/Condition: A developer adds a second stub agent through the integration
+interface.
+
+Output/Result: The approval and handoff workflow passes with the new agent. The
+core intent management and traceability modules are unchanged.
+
+How test will be performed: The developer will add the stub on a test branch, run
+CG-1 and CG-2 against it, and inspect the diff.
+
+\item{MT-3: Add an Input Type and Change the Model\\}
+
+Requirements: ADR2, SER2, LGR1, MR2.
+
+Type: Dynamic, Manual.
+
+Initial State: Natural-language input and the configured LLM model pass their
+tests.
+
+Input/Condition: A developer adds a parser for the Petri net fixture from
+IC-EAS-2, then configures a different LLM model.
+
+Output/Result: The Petri net reaches the existing refinement workflow, and the
+workflow runs with the new model. The intent-model schema and core workflow are
+unchanged.
+
+How test will be performed: The developer will make each change on a test branch,
+run IC-EAS-2 and the schema tests, and inspect the diff.
+
+\item{MT-4: Inspect Maintainer Documentation\\}
+
+Requirements: MR4, UDR5.
+
+Type: Static, Manual inspection.
+
+Initial State: The maintainer documentation and Module Guide are available.
+
+Input/Condition: A reviewer checks every major component and interface.
+
+Output/Result: Each has a documented purpose, dependencies, and expected usage.
+
+How test will be performed: A team member who did not write the documentation
+will complete the check and record missing entries as GitHub Issues.
+
+\end{enumerate}
+
+\subsubsection{Security Requirements}
+
+These tests cover access control, integrity, privacy, auditing, and immunity. They
+also verify related safety and security requirements from the Hazard Analysis.
+
+\begin{enumerate}
+
+\item{SEC-1: Prevent Assistant Self-Approval\\}
+
+Requirements: ACR1, HA-SR7.
+
+Type: Dynamic, Automatic.
+
+Initial State: A proposal is pending, and a stub coding agent is connected through
+MCP.
+
+Input/Condition: The agent lists all tools and calls approve, edit, and reject
+operations by name with the proposal identifier.
+
+Output/Result: No decision tool is listed, each call is refused, and the proposal
+remains pending. The same decisions succeed from the IDE panel.
+
+How test will be performed: The test will inspect the tool list and call results,
+compare the stored proposal, then make a decision through the panel.
+
+\item{SEC-2: Inherit Workspace Permissions\\}
+
+Requirements: ACR2, ACR3.
+
+Type: Dynamic, Manual.
+
+Initial State: A workspace is owned by one operating-system account. A second
+account has no access, and a third has write access to the repository.
+
+Input/Condition: Each account attempts to read and write the intent model.
+
+Output/Result: The account without access cannot read or write the model. The
+account with repository write access can write it. \progname{} has no separate
+access-control configuration.
+
+How test will be performed: The tester will set the permissions, attempt each
+operation, and inspect the extension settings and stored files.
+
+\item{SEC-3: Apply a Decision Atomically\\}
+
+Requirements: IR1, HA-SR8.
+
+Type: Dynamic, Automatic.
+
+Initial State: A proposal is pending, and a stub coding agent is connected.
+
+Input/Condition: Separate runs terminate the process during the intent-model write
+and fail delivery of the decision to the agent.
+
+Output/Result: The model is left in its complete previous state or complete new
+state. If delivery fails, the model and agent are both left unchanged and the
+failure is reported.
+
+How test will be performed: The test will inject each failure, validate and compare
+the model, and inspect the agent's received messages and the reported error.
+
+\item{SEC-4: Reject Invalid Intent-Model Changes\\}
+
+Requirements: IR2, STDR3, HA-SR9.
+
+Type: Dynamic, Automatic.
+
+Initial State: A valid model is stored in the documented format.
+
+Input/Condition: Writes are attempted with a missing identifier, an unknown link
+target, and an invalid decision value, followed by one valid write.
+
+Output/Result: Each invalid write is rejected with the model unchanged. The valid
+write is committed and validates against the published schema.
+
+How test will be performed: The test will attempt each write and validate the
+stored files after each attempt.
+
+\item{SEC-5: Isolate Concurrent Operations\\}
+
+Requirements: IR3.
+
+Type: Dynamic, Automatic.
+
+Initial State: Two proposals are pending in the same workspace.
+
+Input/Condition: Parallel operations approve different proposals, then attempt
+conflicting decisions on one proposal. Each scenario runs CONCURRENCY\_RUNS times.
+
+Output/Result: Different approvals are both retained. A conflicting decision is
+reported and does not silently overwrite the other. The model is valid after every
+run.
+
+How test will be performed: The test will start the operations together and validate
+the resulting model and history after each run.
+
+\item{SEC-6: Durable History and Recovery\\}
+
+Requirements: IR4, AUR2, HA-SR9.
+
+Type: Dynamic, Automatic.
+
+Initial State: A requirement has been approved, amended, and rejected in separate
+versions. One model change is uncommitted in Git.
+
+Input/Condition: The extension host restarts, and the tester requests the history
+and recovery of the first version.
+
+Output/Result: All committed changes remain. The history shows what changed, when,
+and why, and the first version can be recovered. The uncommitted change produces a
+warning.
+
+How test will be performed: The test will compare the history with the known
+sequence and compare the recovered version with its stored fixture.
+
+\item{SEC-7: Protect Project Data\\}
+
+Requirements: PRR1, HA-SR12.
+
+Type: Dynamic, Manual.
+
+Initial State: The workspace contains a \texttt{.env} file and Git-ignored file with
+unique marker strings. A local endpoint records requests to the LLM and tracing
+services.
+
+Input/Condition: The tester runs a refinement session with tracing enabled, then
+repeats it with tracing disabled.
+
+Output/Result: The markers never appear in outgoing requests, and the intent model
+is stored only in the workspace. Disabling tracing stops tracing requests. The
+documentation states what may leave the machine.
+
+How test will be performed: The tester will search the captured requests for the
+markers, inspect the storage location, and compare outgoing content with the
+documentation.
+
+\item{SEC-8: Record Decisions and Verification\\}
+
+Requirements: AUR1, AUR3, AUR4, HA-SR9.
+
+Type: Dynamic, Automatic.
+
+Initial State: A proposal is pending, and a generated change is ready to verify.
+
+Input/Condition: The proposal is approved and later amended, then the change is
+verified.
+
+Output/Result: The audit record contains the decision outcome, decision time,
+modification time, and verification result. The schema has a field that can
+attribute each decision to a user.
+
+How test will be performed: The test will compare the record with the performed
+actions and inspect the schema. Multi-user attribution itself is outside this test
+because it applies only to a future multi-user deployment.
+
+\item{SEC-9: Reject Unsafe Input\\}
+
+Requirements: IMR1.
+
+Type: Dynamic, Automatic.
+
+Initial State: The extension and MCP server are running.
+
+Input/Condition: Requests are submitted that are empty, contain only whitespace, are
+exactly MAX\_REQUEST\_SIZE, exceed it by one byte, and contain malformed MCP data.
+
+Output/Result: The request of exactly MAX\_REQUEST\_SIZE is accepted. The others are
+rejected with a clear error, and the intent model and running service are unaffected.
+
+How test will be performed: The test will submit each input, check its response, and
+then complete a valid request.
+
+\item{SEC-10: Fail Safely When a Service Is Unavailable\\}
+
+Requirements: IMR2, HA-SR6, HA-SR11.
+
+Type: Dynamic, Automatic.
+
+Initial State: A proposal is pending, and a separate approved change is ready for
+verification.
+
+Input/Condition: Separate runs stop the server, close the review panel, disconnect
+the extraction service, and stop OpenJML.
+
+Output/Result: No generation instruction is sent during any outage. Verification is
+reported as not completed rather than passed. The block remains until a human
+decision is recorded after recovery.
+
+How test will be performed: The test will inject each outage and inspect the stub
+agent's messages and the reported status.
+
+\item{SEC-11: Maintain Dependencies\\}
+
+Requirements: IMR3.
+
+Type: Static, Manual inspection.
+
+Initial State: Dependency manifests and pull requests since the previous release are
+available.
+
+Input/Condition: A reviewer runs \texttt{npm audit} and \texttt{pip-audit} and inspects
+each dependency upgrade.
+
+Output/Result: Known vulnerabilities have a recorded action. Each upgrade includes the
+related code, test, or configuration change and states why it was made.
+
+How test will be performed: The reviewer will record the audit results and any upgrade
+that is only a version change as a GitHub Issue.
+
+\end{enumerate}
+
+\subsubsection{Compliance Requirements}
+
+These tests inspect licence and IDE guideline compliance. MCP conformance (STDR1) is
+covered by OP-3, and intent-model format conformance (STDR3) by SEC-4.
+
+\begin{enumerate}
+
+\item{CP-1: Licence Compliance\\}
+
+Requirements: LEGR1.
+
+Type: Static, Manual inspection.
+
+Initial State: A release candidate and its dependency manifests are available.
+
+Input/Condition: A reviewer lists each bundled or copied third-party resource with its
+licence and required notices.
+
+Output/Result: Every resource is cited, its licence terms are met, and any required
+permission is recorded before public distribution.
+
+How test will be performed: The reviewer will compare the list with the release package
+and raise any unknown or incompatible licence with the team.
+
+\item{CP-2: IDE Guidelines and Accessibility\\}
+
+Requirements: STDR2, STDR4.
+
+Type: Static, Dynamic, Manual.
+
+Initial State: The extension is installed in VS Code, the supported IDE for the capstone
+demonstration.
+
+Input/Condition: A reviewer compares the extension with the VS Code Extension API and UX
+guidelines, then uses it with a high-contrast theme, keyboard navigation, and a screen
+reader.
+
+Output/Result: Contributions follow the guidelines. Content remains readable under the
+theme, controls can be reached by keyboard, and controls have accessible names.
+
+How test will be performed: The reviewer will record each guideline checked and each
+failure. Equivalent checks will be added if Cursor or PyCharm become supported IDEs.
+
+\end{enumerate}
+
+\subsubsection{Migration and Documentation Requirements}
+
+These tests check adoption on an existing project and the required guides.
+
+\begin{enumerate}
+
+\item{MD-1: Adopt on an Existing Project\\}
+
+Requirements: MIG1, MIG2.
+
+Type: Dynamic, Manual.
+
+Initial State: An existing Java project has passing tests, a clean Git status, and no
+\texttt{.ide3/} folder.
+
+Input/Condition: The tester installs \progname{} and refines one new feature without
+recording intent for existing code.
+
+Output/Result: The workflow completes for the new feature. Existing source files are
+unchanged.
+
+How test will be performed: The tester will complete the workflow and inspect
+\texttt{git status} and \texttt{git diff} for existing files.
+
+\item{MD-2: Set Up and Remove \progname{}\\}
+
+Requirements: MIG3, MIG4.
+
+Type: Dynamic, Manual.
+
+Initial State: The project from MD-1 has a recorded assistant configuration and build
+result from before setup.
+
+Input/Condition: The tester adds the MCP server, then removes the extension, its MCP
+entry, and \texttt{.ide3/}.
+
+Output/Result: The only assistant configuration change is the added MCP server. After
+removal, the build and tests give the same results as before setup.
+
+How test will be performed: The tester will compare the configuration files, source
+tree, and build results with those recorded before setup.
+
+\item{MD-3: Follow the Installation Guide\\}
+
+Requirements: UDR1.
+
+Type: Dynamic, Manual.
+
+Initial State: A person who did not write the guide has a clean environment and only the
+installation guide.
+
+Input/Condition: The person installs the extension, connects an AI coding assistant
+through MCP, and sets up the LLM service.
+
+Output/Result: All three tasks are completed using the guide.
+
+How test will be performed: An observer will record each point where help was needed or
+the guide was incorrect, and record these as GitHub Issues.
+
+\item{MD-4: Inspect the User Guide and Sample Project\\}
+
+Requirements: UDR2, UDR3, TRR1, TRR2.
+
+Type: Static, Dynamic, Manual.
+
+Initial State: The user guide, sample project, and extension are available.
+
+Input/Condition: A reviewer checks the guide for each refinement stage and contract
+format, then completes the sample project from high-level intent to formal contracts.
+
+Output/Result: The guide explains each stage, what to review, each available action, and
+the contract format with examples. Each workflow stage shows what to check before
+approval, and the sample project reaches formal contracts.
+
+How test will be performed: The reviewer will use this list as a checklist and record any
+missing item as a GitHub Issue.
+
+\end{enumerate}
+
+\subsubsection{Hazard Mitigation Requirements}
+
+These tests cover Hazard Analysis requirements not already fully covered by the tests
+above. The Hazard Analysis schedules HA-SR3 and HA-SR10 as stretch work, so those cases
+will run when the corresponding features are implemented.
+
+\begin{enumerate}
+
+\item{HZ-1: Show Each Requirement's Source\\}
+
+Requirements: HA-SR3.
+
+Type: Dynamic, Manual.
+
+Initial State: A pending proposal is derived from ``Users can export reports as CSV.''
+A prepared stub response also adds an unrelated requirement to delete old reports.
+
+Input/Condition: The tester opens the proposal for review.
+
+Output/Result: The export requirement shows the request text it came from. The deletion
+requirement is flagged as having no source.
+
+How test will be performed: The tester will compare the displayed source of each item
+with the original request.
+
+\item{HZ-2: Report Broken Traceability Links\\}
+
+Requirements: HA-SR10.
+
+Type: Dynamic, Automatic.
+
+Initial State: An approved requirement is linked to a source file and a test. A second
+approved requirement has no links.
+
+Input/Condition: The linked test is deleted, the linked source file is renamed, and a
+link check is run.
+
+Output/Result: The report identifies the missing test, the broken source link, and the
+requirement with no links. It does not substitute another file.
+
+How test will be performed: The test will change the fixture, run the check, and compare
+the report with the known changes.
+
+\item{HZ-3: Present Verification Evidence and Limits\\}
+
+Requirements: HA-SR11.
+
+Type: Dynamic, Automatic.
+
+Initial State: A newer approved model version adds a constraint to an earlier version. A
+generated change satisfies the older constraints but violates the new one.
+
+Input/Condition: The tester verifies the change.
+
+Output/Result: The check uses the newer model and reports the violation. The report lists
+what was checked and states that behaviour outside the checked requirements was not
+verified.
+
+How test will be performed: The test will compare the report with the newer constraint
+set and check for the limitation statement.
+
+\end{enumerate}
+
 \subsection{Traceability Between Test Cases and Requirements}
 
-\wss{Provide a table that shows which test cases are supporting which
-  requirements.}
+The tables below show how each requirement is verified. Each row lists the
+system tests that support a requirement, along with any other verification
+described in Sections 3.3, 3.5, and 3.7. A dash means that no additional
+verification is planned. Requirement labels match the SRS \citep{SRS}. Hazard
+Analysis \citep{HazardAnalysis} requirements use the prefix \texttt{HA-}
+because some of their labels, such as SR1, are also used in the SRS for
+different requirements.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.43\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}}
+\caption{Traceability of functional requirements} \label{tab:trace-fr} \\
+\toprule
+\textbf{Requirement} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Requirement} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+FR1 & IC-EAS-1 to 6, IC-NL-1 to 4, IC-IR-1, IC-RC-1 to 5 & Code walkthrough (3.5) \\
+FR2 & IC-EAS-1 to 8, IC-NL-1 to 4, IC-IR-1 to 7, IC-RC-1 to 5, RRA-ED-1 to 4 & Evaluation suite (3.5); Peer code inspection (3.5); Code walkthrough (3.5) \\
+FR3 & IC-EAS-1, IC-EAS-2, IC-EAS-6 to 8, IC-NL-1 to 3, IC-IR-1 to 7, IC-RC-1 to 5, RRA-PR-1, RRA-ED-1, RRA-ED-3, RRA-ED-4, RRA-PA-1 to 4 & --- \\
+FR4 & RRA-PR-1 to 3, RRA-AD-2, RRA-AD-4, RRA-ED-2 & --- \\
+FR5 & RRA-AD-1 to 4, RRA-ED-1 to 4 & --- \\
+FR6 & RRA-PR-3, RRA-ED-1, RRA-ED-3, RRA-ED-4, RRA-PA-1 to 4 & --- \\
+FR7 & CG-1 & Peer code inspection (3.5); Design review (3.3) \\
+FR8 & RRA-AD-1 to 4, CG-2, CG-3 & --- \\
+FR9 & RRA-AD-1, RRA-AD-3, IM-1, IM-2 & Peer code inspection (3.5); Design review (3.3) \\
+FR10 & VF-1, VF-3 & OpenJML static check (3.5); Code walkthrough (3.5) \\
+FR11 & IM-3 & --- \\
+FR12 & VF-2 & --- \\
+\end{longtable}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.43\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}}
+\caption{Traceability of nonfunctional requirements} \label{tab:trace-nfr} \\
+\toprule
+\textbf{Requirement} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Requirement} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\multicolumn{3}{l}{\textit{Look and Feel Requirements}} \\
+AR1 & LF-1 & --- \\
+AR2 & LF-2 & --- \\
+SR1 & LF-1 & --- \\
+SR2 & LF-2 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Usability and Humanity Requirements}} \\
+EUR1 & UH-1 & --- \\
+EUR2 & UH-2 & --- \\
+EUR3 & UH-3 & --- \\
+PIR1 & CUL-2 & --- \\
+LR1 & UH-1 & --- \\
+LR2 & UH-1 & --- \\
+UPR1 & UH-4 & --- \\
+UPR2 & UH-4 & --- \\
+ACCR1 & UH-5 & --- \\
+ACCR2 & UH-5 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Performance Requirements}} \\
+PR1 & PF-1 & --- \\
+PR2 & PF-2 & --- \\
+SCR1 & CG-1 & Peer code inspection (3.5) \\
+PAR1 & PF-3 & --- \\
+RFR1 & PF-4 & --- \\
+RFR2 & PF-5 & --- \\
+RFR3 & PF-4 & --- \\
+CR1 & PF-6 & --- \\
+CR2 & PF-7 & --- \\
+SER1 & PF-6 & --- \\
+SER2 & MT-2, MT-3 & --- \\
+LGR1 & MT-2, MT-3 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Operational and Environmental Requirements}} \\
+IAS1 & OP-1 & --- \\
+IAS2 & OP-3 & --- \\
+IAS3 & OP-4 & --- \\
+PRD1 & OP-1 & --- \\
+PRD2 & OP-2 & --- \\
+PRD3 & OP-1 & --- \\
+REL1 & OP-5 & --- \\
+REL2 & OP-6 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Maintainability and Support Requirements}} \\
+MR1 & MT-1 & Design review (3.3); Peer code inspection (3.5) \\
+MR2 & MT-1, MT-3 & Design review (3.3) \\
+MR3 & MT-2 & --- \\
+MR4 & MT-4 & --- \\
+SUPR1 & PF-5 & Peer code inspection (3.5) \\
+SUPR2 & PF-5 & --- \\
+ADR1 & MT-2 & --- \\
+ADR2 & MT-3 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Security Requirements}} \\
+ACR1 & SEC-1 & --- \\
+ACR2 & SEC-2 & --- \\
+ACR3 & SEC-2 & --- \\
+IR1 & SEC-3 & --- \\
+IR2 & SEC-4 & --- \\
+IR3 & SEC-5 & --- \\
+IR4 & SEC-6 & --- \\
+PRR1 & SEC-7 & --- \\
+AUR1 & SEC-8 & --- \\
+AUR2 & SEC-6 & --- \\
+AUR3 & SEC-8 & --- \\
+AUR4 & SEC-8 & --- \\
+IMR1 & SEC-9 & --- \\
+IMR2 & SEC-10 & --- \\
+IMR3 & SEC-11 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Cultural Requirements}} \\
+CULR1 & CUL-1 & --- \\
+CULR2 & CUL-2 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Compliance Requirements}} \\
+LEGR1 & CP-1 & --- \\
+STDR1 & OP-3 & --- \\
+STDR2 & CP-2 & --- \\
+STDR3 & SEC-4 & --- \\
+STDR4 & CP-2 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Migration to the New Product}} \\
+MIG1 & MD-1 & --- \\
+MIG2 & MD-1 & --- \\
+MIG3 & MD-2 & --- \\
+MIG4 & MD-2 & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{User Documentation and Training}} \\
+UDR1 & MD-3 & --- \\
+UDR2 & MD-4; UH-1, UH-2 (supporting) & --- \\
+UDR3 & MD-4; UH-2 (supporting) & --- \\
+UDR4 & OP-5 & --- \\
+UDR5 & MT-4 & --- \\
+TRR1 & MD-4; UH-1 (supporting) & --- \\
+TRR2 & MD-4; UH-2 (supporting) & --- \\
+\end{longtable}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.43\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}}
+\caption{Traceability of product use cases} \label{tab:trace-puc} \\
+\toprule
+\textbf{Use case} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Use case} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+PUC1 & IC-EAS-1, IC-NL-1 & Supervisor validation (3.7) \\
+PUC2 & IC-IR-1 to 4, IC-IR-6, IC-RC-3 & Supervisor validation (3.7) \\
+PUC3 & RRA-AD-1, RRA-AD-3, RRA-ED-1 & Supervisor validation (3.7) \\
+PUC4 & IC-IR-1, IC-IR-2, IC-IR-5, IC-IR-6, VF-3 & Supervisor validation (3.7) \\
+PUC5 & IC-IR-7 & Supervisor validation (3.7) \\
+PUC6 & CG-2 & Supervisor validation (3.7) \\
+PUC7 & IM-2, UH-3 & Supervisor validation (3.7) \\
+PUC8 & IM-3, UH-3 & Supervisor validation (3.7) \\
+\end{longtable}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.43\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}}
+\caption{Traceability of Hazard Analysis requirements} \label{tab:trace-ha} \\
+\toprule
+\textbf{Requirement} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Requirement} & \textbf{System tests} & \textbf{Other verification} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+HA-SR1 & RRA-AD-1, RRA-AD-3, CG-1 & Peer code inspection (3.5) \\
+HA-SR2 & RRA-PR-1, UH-2 & --- \\
+HA-SR3 & HZ-1 & --- \\
+HA-SR4 & PF-2, PF-5 & --- \\
+HA-SR5 & PF-4 & --- \\
+HA-SR6 & CG-1, SEC-10 & Peer code inspection (3.5) \\
+HA-SR7 & SEC-1 & Peer code inspection (3.5) \\
+HA-SR8 & SEC-3 & --- \\
+HA-SR9 & OP-6, SEC-4, SEC-6, SEC-8 & --- \\
+HA-SR10 & HZ-2 & Peer code inspection (3.5) \\
+HA-SR11 & VF-1, SEC-10, HZ-3 & OpenJML static check (3.5) \\
+HA-SR12 & SEC-7 & --- \\
+\end{longtable}
 
 \section{Unit Test Description}
 
@@ -2264,9 +3214,9 @@ interaction instructions.
 
 % \wss{Provide evidence that all modules have been considered.}
 				
-% \bibliographystyle{plainnat}
+\bibliographystyle{plainnat}
 
-% \bibliography{../../refs/References}
+\bibliography{../../refs/References}
 
 \newpage
 
@@ -2277,7 +3227,27 @@ This is where you can place additional information.
 \subsection{Symbolic Parameters}
 
 The definition of the test cases will call for SYMBOLIC\_CONSTANTS.
-Their values are defined in this section for easy maintenance.
+Their values are defined in this section for easy maintenance. They are initial
+targets and will be reviewed once baseline measurements are available.
+
+\begin{table}[H]
+\centering
+\caption{Symbolic parameters}
+\label{tab:symbolic-parameters}
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Used by} \\
+\midrule
+PROPOSAL\_OVERHEAD\_LIMIT & 2 s & PF-1 \\
+FEEDBACK\_LIMIT & 1 s & PF-2 \\
+CAPACITY\_REQUIREMENTS & 500 & PF-6 \\
+CAPACITY\_LINKS & 2,000 & PF-6 \\
+QUERY\_LIMIT & 1 s & PF-6 \\
+CONCURRENCY\_RUNS & 50 & SEC-5 \\
+MAX\_REQUEST\_SIZE & 100 KB & SEC-9 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Usability Survey Questions?}
 
