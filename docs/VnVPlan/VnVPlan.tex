@@ -35,60 +35,81 @@
 \begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
-Date 1 & 1.0 & Notes\\
-Date 2 & 1.1 & Notes\\
+Oct 29, 2026 & 0.1 & Qusay Qadir: Drafted Sections 2.1, 2.2, 3, 3.1, and 3.3\\
+Oct 31, 2026 & 0.2 & Vedant Patel: Completed Sections 2.3, 2.4, and 3.2\\
+Oct 31, 2026 & 0.3 & Qusay Qadir: Completed Sections 3.4 and 3.5\\
+Oct 31, 2026 & 0.4 & Rishab Shine: Completed Section 3.6\\
+Nov 1, 2026 & 0.5 & Rishab Shine: Completed Section 4.1 Intent Capture and
+Requirement Review and Approval tests\\
+Nov 1, 2026 & 0.6 & Tyler Yue: Added Sections 4.1.3--4.1.5 (Code Generation
+Control; Intent Model, Rationale, and Traceability; Verification of Generated
+Changes). Drafted Sections 4.1.1. \\
+Nov 1, 2026 & 0.7 & Rishab Shine: Completed Section 4.2 Look and Feel,
+Usability and Humanity, and Cultural tests\\
+Nov 2, 2026 & 0.8 & Tyler Yue: Drafted Section 4.2 nonfunctional tests; added
+reflection and AI disclosure appendices; updated Section 3.1, acronyms, and
+document introduction\\
+Nov 2, 2026 & 0.9 & Rishab Shine: Completed Sections 3.6 and 3.7; added
+individual reflection\\
+Nov 2, 2026 & 1.0 & Qusay Qadir: Added individual reflection and cleaned up
+template comments\\
+Nov 2, 2026 & 1.1 & Vedant Patel: Added individual reflection and Section 3.1
+team-table row\\
+Nov 2, 2026 & 1.2 & Saumy Patel: Updated Section 4.1; completed remaining
+Section 4.2 nonfunctional tests; added Section 4.3 traceability\\
+Nov 2, 2026 & 1.1 & Tyler Yue: Drafted Section 4.2 nonfunctional tests; added
+reflection and AI disclosure appendices. Modified Section 3.1, added acronym table and revision history table..\\
 \bottomrule
 \end{tabularx}
-
-~\\
-\wss{The intention of the VnV plan is to increase confidence in the software.
-However, this does not mean listing every verification and validation technique
-that has ever been devised.  The VnV plan should also be a \textbf{feasible}
-plan. Execution of the plan should be possible with the time and team available.
-If the full plan cannot be completed during the time available, it can either be
-modified to ``fake it'', or a better solution is to add a section describing
-what work has been completed and what work is still planned for the future.}
-
-\wss{The VnV plan is typically started after the requirements stage, but before
-the design stage.  This means that the sections related to unit testing cannot
-initially be completed.  The sections will be filled in after the design stage
-is complete.  the final version of the VnV plan should have all sections filled
-in.}
 
 \newpage
 
 \tableofcontents
 
 \listoftables
-\wss{Remove this section if it isn't needed}
-
-\listoffigures
-\wss{Remove this section if it isn't needed}
 
 \newpage
 
 \section{Symbols, Abbreviations, and Acronyms}
 
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{l l} 
-  \toprule		
+\begin{tabular}{l l}
+  \toprule
   \textbf{symbol} & \textbf{description}\\
-  \midrule 
-  T & Test\\
+  \midrule
+  AI & Artificial Intelligence\\
+  API & Application Programming Interface\\
+  CI & Continuous Integration\\
+  FR & Functional Requirement\\
+  HA & Hazard Analysis\\
+  HA-SR & Hazard Analysis Safety Requirement\\
+  IC & Intent Capture (system test identifier)\\
+  IDE & Integrated Development Environment\\
+  JML & Java Modeling Language\\
+  LLM & Large Language Model\\
+  MG & Module Guide\\
+  MIS & Module Interface Specification\\
+  OpenJML & Open-source tool for checking JML contracts against Java code\\
+  PUC & Product Use Case\\
+  RRA & Requirement Review and Approval (system test identifier)\\
+  SRS & Software Requirements Specification\\
+  UML & Unified Modeling Language\\
+  VnV & Verification and Validation\\
   \bottomrule
 \end{tabular}\\
-
-\wss{symbols, abbreviations, or acronyms --- you can simply reference the SRS
-  \citep{SRS} tables, if appropriate}
-
-\wss{Remove this section if it isn't needed}
 
 \newpage
 
 \pagenumbering{arabic}
 
-This document ... \wss{provide an introductory blurb and roadmap of the
-  Verification and Validation plan}
+This document is the System Verification and Validation Plan for
+\progname{}. It explains how the team will verify the requirements, design,
+implementation, and this plan itself, and how the software will be validated
+with the project supervisor. Section~2 gives background on the system under
+test. Section~3 describes the VnV team and the planned verification and
+validation activities. Section~4 specifies the system tests. Section~5
+reserves space for unit tests after the detailed design is complete. The
+appendices record AI use and team reflection.
 
 \section{General Information}
 
@@ -280,9 +301,17 @@ taken to verify SRS, the design, this plan, and the implementation. It also list
   Leads SRS checklist reviews and tracks peer review issues through to
   resolution. Checks that system tests trace to SRS requirements. \\
   \hline
-  [Name] & [Role] & [Responsibilities] \\
+  Tyler & Safety and Contract Verification &
+  Owns verification of the Hazard Analysis safety requirements and the
+  contract verification path, including system tests for code generation
+  control, the intent model, and OpenJML-based checks of generated changes.
+  Drafts nonfunctional tests and maintains the AI disclosure for this plan. \\
   \hline
-  [Name] & [Role] & [Responsibilities] \\
+  Saumy & Nonfunctional Testing and Traceability &
+  Develops and maintains system tests for nonfunctional requirements,
+  including performance, robustness, security, maintainability, compliance,
+  migration, and hazard mitigation. Builds and keeps the traceability
+  tables between requirements, use cases, and system tests. \\
   \hline
   Dr.\ Istvan David & Supervisor &
   Provides expert review of the SRS and design in structured review
@@ -618,19 +647,26 @@ these issues to assess whether the changes address the concerns raised.
 
 \section{System Tests}
 
-\wss{There should be text between all headings, even if it is just a roadmap of
-the contents of the subsections.}
+This section describes the system tests that will be used to verify that
+IDE3.0 satisfies the requirements in the SRS~\citep{SRS} and the related
+safety requirements in the Hazard Analysis~\citep{HazardAnalysis}. The tests
+are organised into functional tests (Section~4.1), nonfunctional tests
+(Section~4.2), and traceability between the test cases and the requirements
+(Section~4.3). Functional tests follow the product workflow from intent
+capture through verification of generated changes. Nonfunctional tests cover
+presentation, usability, performance, security, and related qualities.
+Traceability tables show which tests support each requirement and use case.
 
 \subsection{Tests for Functional Requirements}
 
-\wss{Subsets of the tests may be in related, so this section is divided into
-  different areas.  If there are no identifiable subsets for the tests, this
-  level of document structure can be removed.}
-
-The tests below follow the workflow in the SRS. Intent capture
-covers FR1--FR3. Requirement review and approval covers FR4--FR6. Code
-generation control covers FR7 and FR8. The intent model covers FR9 and FR11.
-Verification of generated changes covers FR10 and FR12.
+The functional system tests are grouped by area of the IDE3.0 workflow so
+that related behaviours can be verified together. Intent capture covers
+FR1--FR3. Requirement review and approval covers FR4--FR6. Code generation
+control covers FR7 and FR8. The intent model, rationale, and traceability
+cover FR9 and FR11. Verification of generated changes covers FR10 and
+FR12. Within each area, tests are further divided into related cases with
+shared identifiers, such as \texttt{IC} for intent capture and \texttt{RRA}
+for requirement review and approval.
 
 \subsubsection{Intent Capture}
 
