@@ -3409,6 +3409,16 @@ graduate attribute of Lifelong Learning.
   Since the system tests in this plan trace back to those requirements, unclear
   requirements lead directly to unclear tests.
 
+  \textbf{Saumy Patel:}
+
+  I will need to develop my understanding of the Model Context Protocol (MCP) and
+  how to test an MCP server. \progname{} relies on MCP to connect coding assistants
+  to its workflow, so I need to understand how clients initialize a connection,
+  discover tools, and call them. I also need to learn how to test this boundary from
+  a security perspective. OP-3 requires conformance with the MCP specification, and
+  SEC-1 requires showing that an assistant cannot approve, edit, or reject a proposal
+  through any tool it can reach.
+
   \item For each of the knowledge areas and skills identified in the previous
   question, what are at least two approaches to acquiring the knowledge or
   mastering the skill?  Of the identified approaches, which will each team
@@ -3457,6 +3467,17 @@ graduate attribute of Lifelong Learning.
   review issues. I will use the second approach as my main one, with the first
   as a reference, because working on real requirements will show me where our
   wording is too vague to test.
+
+  \textbf{Saumy Patel:}
+
+  One approach is to study the MCP specification and SDK documentation, using the
+  MCP Inspector to observe how a server responds to initialization, tool listing,
+  and tool calls. A second approach is to build a small MCP server and a stub client
+  that behaves like an uncooperative coding assistant, for example by calling tools
+  that are not listed or by sending malformed data. I will use the second approach
+  as my main one and the first as a reference. Acting as a misbehaving client will
+  show me how the approval gate could be bypassed, which reading the specification
+  alone would not. The stub client can also be reused for OP-3, SEC-1, and SEC-9.
   
 \end{enumerate}
 
