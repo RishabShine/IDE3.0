@@ -280,6 +280,25 @@ TSWLatexianTemp*
 
 # DS_Store file from Mac computers
 .DS_Store
-## Python bytecode from the build scripts
+
+## Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# virtual environments
+.venv/
+venv/
+env/
+
+# environment / secrets
+.env
+.env.*
+
+# notebooks
+.ipynb_checkpoints/
