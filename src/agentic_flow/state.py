@@ -1,4 +1,6 @@
-from typing import Literal, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
+
+from langchain_core.messages import BaseMessage
 
 Verdict = Literal["met", "partially_met", "not_met"]
 
@@ -10,6 +12,23 @@ class IntentCapture(TypedDict):
     attempt_number: int
 
 
+class StakeHolderMetadata(TypedDict):
+    initialized: bool
+    intent_context: dict[str, Any]
+    messages: list[BaseMessage]
+    drafts: list[dict[str, Any]]
+    next_draft_id: int
+    draft_version: int
+    pending_suggestions: list[dict[str, str]]
+    declined_suggestions: list[dict[str, str]]
+    evaluation: dict[str, Any] | None
+    latest_user_response: str
+    response_feedback: str
+    user_confirmed: bool
+    approved_version: int | None
+    finalized_stakeholders: list[dict[str, Any]]
+
+
 # the total agent memory state, which is a dictionary of all the states of the agent
 class AgentState(TypedDict):
 
@@ -17,3 +36,9 @@ class AgentState(TypedDict):
 
     # Capture Intent State
     intent_metadata: IntentCapture
+
+    # Full upstream intent snapshot, once the capture phase provides it.
+    captured_intent: NotRequired[dict[str, Any]]
+
+    # Stakeholder conversation and drafts, saved together by the checkpointer.
+    stakeholder_metadata: NotRequired[StakeHolderMetadata]

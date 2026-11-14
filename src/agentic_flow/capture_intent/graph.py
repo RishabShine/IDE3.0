@@ -12,7 +12,7 @@ from agentic_flow.capture_intent.node import (
 )
 
 
-def build_capture_intent():
+def build_capture_intent(checkpointer=None):
 
     builder = StateGraph(AgentState)
 
@@ -34,9 +34,10 @@ def build_capture_intent():
         }
     )
 
-    return builder.compile(checkpointer=InMemorySaver())
+    return builder.compile(checkpointer=checkpointer)
 
-capture_intent_graph = build_capture_intent()
+# Standalone use keeps its own memory; embedded use inherits the parent's.
+capture_intent_graph = build_capture_intent(checkpointer=InMemorySaver())
 # capture_intent_graph.get_graph(xray=True).draw_mermaid_png(
 #     output_file_path="agentic_flow/capture_intent/capture_intent_graph.png"
 # )
