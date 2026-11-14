@@ -1,0 +1,35 @@
+{
+  "id": "prop-1790650334177",
+  "user_query": "add a checkout card payment system",
+  "status": "approved",
+  "created_at": "2026-09-29T02:52:14.177567+00:00",
+  "decided_at": "2026-09-29T05:11:32.409Z",
+  "requirements": [
+    {
+      "id": "FR-1",
+      "title": "Support: add a checkout card payment system",
+      "description": "The system shall fulfil the user's request: \"add a checkout card payment system\".",
+      "kind": "functional"
+    },
+    {
+      "id": "FR-2",
+      "title": "Provide user feedback",
+      "description": "The system shall confirm to the user when the requested capability has completed successfully or failed.",
+      "kind": "functional"
+    }
+  ],
+  "quality_constraints": [
+    {
+      "id": "QC-1",
+      "title": "Responsiveness",
+      "description": "User-visible actions shall respond within 200 ms.",
+      "kind": "quality"
+    },
+    {
+      "id": "QC-2",
+      "title": "Testability",
+      "description": "The new capability shall be covered by automated tests before it is considered complete.",
+      "kind": "quality"
+    }
+  ]
+}
