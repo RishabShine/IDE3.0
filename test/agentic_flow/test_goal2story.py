@@ -277,6 +277,14 @@ class Goal2StoryFlowTests(unittest.TestCase):
         self.assertIn("Janitors", self.message(result))
         self.assertEqual(self.message(result).count(prompt.UNKNOWN_STAKEHOLDER_NOTE), 1)
 
+    def test_stakeholder_id_from_the_model_is_mapped_to_its_name(self):
+        self.stubs[ActorList].responses.append(actors(("Students", "1"), ("Staff", " 2 ")))
+        self.start()
+        result = self.resume("APPROVE")
+        self.assertEqual([a["stakeholder"] for a in self.meta()["actors"]],
+                         ["Students", "Front-desk staff"])
+        self.assertNotIn(prompt.UNKNOWN_STAKEHOLDER_NOTE, self.message(result))
+
     def test_format_doctor_repairs_invalid_json_once(self):
         self.stubs[ActorList].responses.append(ValueError("Invalid JSON: unquoted key"))
         self.start()

@@ -260,9 +260,20 @@ def generate_actors(state: AgentState) -> AgentState:
     task = prompt.ACTORS_TASK.format(n=n)
     result = _call(ActorList, _generation_messages(meta, "actors", task))
     meta["actors"] = [
-        _make_item(meta, "actors", None, a.model_dump()) for a in result.actors[:n]
+        _make_item(meta, "actors", None, _with_stakeholder_name(meta, a.model_dump()))
+        for a in result.actors[:n]
     ]
     return {"goal2story_metadata": meta}
+
+
+def _with_stakeholder_name(meta, actor) -> dict:
+    """Small models sometimes return the stakeholder's ID instead of its name."""
+    by_id = {
+        str(s.get("stakeholder_id")): s["name"]
+        for s in meta["context"].get("confirmed_stakeholders", [])
+    }
+    reference = actor["stakeholder"].strip()
+    return {**actor, "stakeholder": by_id.get(reference, reference)}
 
 
 def _generate_children(state, level, schema, task_template, list_field):
