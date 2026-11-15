@@ -1,3 +1,5 @@
+import os
+
 from langchain_ollama import ChatOllama
 from typing import Optional
 
@@ -17,7 +19,8 @@ def make_model(
     )
 
 base_model = make_model(
-    model="llama2:7b-chat",
+    # IDE3_MODEL lets you try another local model without changing the default
+    model=os.environ.get("IDE3_MODEL", "llama2:7b-chat"),
     temperature=0.0,
     max_tokens=1024,
     timeout=30,

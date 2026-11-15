@@ -242,7 +242,7 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertIsNone(metadata["evaluation"])
         self.assertFalse(metadata["user_confirmed"])
 
-    def test_parent_graph_runs_sson_then_stakeholders_and_ends(self):
+    def test_parent_graph_runs_sson_then_stakeholders_then_hands_off(self):
         from agentic_flow.capture_intent import node as capture_node
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat
@@ -267,11 +267,12 @@ class StakeHolderFlowTests(unittest.TestCase):
             self.assertIn("Enter APPROVE", self.message(result))
             result = self.resume("APPROVE")
 
-        self.assertNotIn("__interrupt__", result)
+        # stakeholders are done; the flow now waits in Goal2Story (lane 3)
+        self.assertIn("Goal2Story", self.message(result))
         self.assertEqual(result["intent_metadata"]["evaluation_of_statement"], "met")
         self.assertTrue(result["stakeholder_metadata"]["user_confirmed"])
         self.assertEqual(result["stakeholder_metadata"]["intent_context"], self.context)
-        self.assertEqual(self.graph.get_state(self.config).next, ())
+        self.assertEqual(self.graph.get_state(self.config).next, ("goal2story_graph",))
 
     def test_parent_checkpoint_resumes_a_retry_inside_sson(self):
         from agentic_flow.capture_intent import node as capture_node

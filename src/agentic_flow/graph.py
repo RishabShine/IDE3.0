@@ -10,19 +10,22 @@ from agentic_flow.capture_intent.graph import (
     build_capture_intent
 )
 from agentic_flow.user_modelling.graph import build_user_modelling
+from agentic_flow.goal2story.graph import build_goal2story
 
 def build_ide3_chat(checkpointer=None):
 
     builder = StateGraph(AgentState) 
 
-    # Both subgraphs inherit this graph's checkpointing and thread context.
+    # All subgraphs inherit this graph's checkpointing and thread context.
     builder.add_node("capture_intent_graph", build_capture_intent())
     builder.add_node("user_modelling_graph", build_user_modelling())
+    builder.add_node("goal2story_graph", build_goal2story())
 
     builder.add_edge(START, "capture_intent_graph")
 
     builder.add_edge("capture_intent_graph", "user_modelling_graph")
-    builder.add_edge("user_modelling_graph", END)
+    builder.add_edge("user_modelling_graph", "goal2story_graph")
+    builder.add_edge("goal2story_graph", END)
     
     return builder.compile(
         checkpointer=checkpointer if checkpointer is not None else InMemorySaver()
