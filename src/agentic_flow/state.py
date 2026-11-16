@@ -10,13 +10,21 @@ class IntentCapture(TypedDict):
     attempt_number: int
 
 
+class StakeHolderRecord(TypedDict):
+    stakeholder_id: int
+    name: str
+    involvement: Literal["direct", "indirect"] | None
+    summary: str
+    justification: str
+
+
 class StakeHolderMetadata(TypedDict):
     initialized: bool
     intent_context: dict[str, Any]
     initial_context_message: str
     last_prompt_to_user: str
     previous_evaluation: dict[str, Any] | None
-    drafts: list[dict[str, Any]]
+    drafts: list[StakeHolderRecord]
     next_draft_id: int
     draft_version: int
     pending_suggestions: list[dict[str, str]]
@@ -26,7 +34,7 @@ class StakeHolderMetadata(TypedDict):
     response_feedback: str
     user_confirmed: bool
     approved_version: int | None
-    finalized_stakeholders: list[dict[str, Any]]
+    finalized_stakeholders: list[StakeHolderRecord]
 
 
 # the total agent memory state, which is a dictionary of all the states of the agent
