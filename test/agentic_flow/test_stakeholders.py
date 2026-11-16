@@ -1,6 +1,5 @@
 import unittest
 from collections import deque
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from langchain_core.messages import SystemMessage
@@ -242,66 +241,116 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertIsNone(metadata["evaluation"])
         self.assertFalse(metadata["user_confirmed"])
 
-    def test_parent_graph_runs_sson_then_stakeholders_and_ends(self):
-        from agentic_flow.capture_intent import node as capture_node
-        from agentic_flow.capture_intent.schema import IntentSSONEvaluation
+    def stub_capture_intent(self, *sson_verdicts):
+        """Patch the capture-intent evaluators: one SSON reply per verdict, then one
+        passing current-situation reply and one passing expected-benefits reply."""
+        from agentic_flow.capture_intent.context_expected_benefits_current_situation import (
+            node as context_node,
+            schema as context_schema,
+        )
+        from agentic_flow.capture_intent.sson import node as sson_node
+        from agentic_flow.capture_intent.sson.schema import SSONCriteria, SSONEvaluation
+
+        def met(criteria):
+            return dict.fromkeys(criteria.model_fields, "met")
+
+        sson, problems, benefits = StubModel(), StubModel(), StubModel()
+        sson.responses.extend(
+            SSONEvaluation(
+                is_sson_attempt=True, what="book rooms", how="self-service",
+                why="staff workload", success_measure=None,
+                criteria={
+                    name: {"verdict": verdict, "evidence": "none", "reason": "-"}
+                    for name in SSONCriteria.model_fields
+                },
+                feedback_to_user="Who needs the booking capability?",
+            )
+            for verdict in sson_verdicts
+        )
+        problems.responses.append(context_schema.CurrentSituationEvaluation(
+            is_attempt=True, current_process="Rooms are booked at the front desk.",
+            problems=[{
+                "id": None, "source": "Staff spend hours a week on bookings.",
+                "description": "Staff spend hours a week on bookings.",
+                "criteria": met(context_schema.ProblemCriteria),
+            }],
+            feedback_to_user="The problem is clear.", suggested_example=None,
+        ))
+        benefits.responses.append(context_schema.ExpectedBenefitsEvaluation(
+            is_attempt=True,
+            benefits=[{
+                "id": None, "source": "Staff spend under an hour a week on bookings.",
+                "description": "Staff spend under an hour a week on bookings.",
+                "addresses": ["Problem-1"], "measure": "under an hour a week",
+                "criteria": met(context_schema.BenefitCriteria),
+            }],
+            out_of_scope_problems=[], feedback_to_user="The benefit is clear.",
+            suggested_example=None,
+        ))
+        for module, name, model in (
+            (sson_node, "sson_evaluator", sson),
+            (context_node, "problem_evaluator", problems),
+            (context_node, "benefit_evaluator", benefits),
+        ):
+            patcher = patch.object(module, name, model)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def finish_context(self):
+        """Answer the current-situation and expected-benefits stages; return the next prompt."""
+        result = self.resume("Staff spend hours a week on bookings.")
+        self.assertIn("Problem-1", self.message(result))
+        result = self.resume("yes")
+        self.assertIn("expected benefits", self.message(result))
+        result = self.resume("Staff spend under an hour a week on bookings.")
+        self.assertIn("Benefit-1", self.message(result))
+        return self.resume("yes")
+
+    def test_parent_graph_runs_capture_intent_then_stakeholders_and_ends(self):
         from agentic_flow.graph import build_ide3_chat
 
-        sson_evaluator = StubModel()
-        sson_evaluator.responses.append(IntentSSONEvaluation(
-            evaluation_of_statement="met",
-            evaluation_of_statement_feedback="The need is clear.",
-        ))
+        self.stub_capture_intent("met")
         self.processor.responses.append(response([draft()]))
         self.evaluator.responses.append(evaluation())
         self.graph = build_ide3_chat(self.checkpointer)
 
-        with patch.object(capture_node, "base_model", SimpleNamespace(
-            with_structured_output=lambda schema: sson_evaluator
-        )):
-            result = self.start()
-            self.assertIn("Single Statement of Need", self.message(result))
-            result = self.resume("Students book rooms without staff help.")
-            self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
-            result = self.resume("Front-desk staff handle bookings and know the rules.")
-            self.assertIn("Enter APPROVE", self.message(result))
-            result = self.resume("APPROVE")
+        result = self.start()
+        self.assertIn("Single Statement of Need", self.message(result))
+        result = self.resume("Students book rooms without staff help.")
+        self.assertIn("current situation", self.message(result))
+        result = self.finish_context()
+        self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
+        result = self.resume("Front-desk staff handle bookings and know the rules.")
+        self.assertIn("Enter APPROVE", self.message(result))
+        result = self.resume("APPROVE")
 
         self.assertNotIn("__interrupt__", result)
-        self.assertEqual(result["intent_metadata"]["evaluation_of_statement"], "met")
+        self.assertTrue(result["intent_metadata"]["passed"])
+        self.assertEqual(result["captured_intent"]["benefits"][0]["addresses"], ["Problem-1"])
         self.assertTrue(result["stakeholder_metadata"]["user_confirmed"])
-        self.assertEqual(result["stakeholder_metadata"]["intent_context"], self.context)
+        # The capture phase replaces any earlier snapshot with what the user confirmed.
+        self.assertEqual(
+            result["stakeholder_metadata"]["intent_context"], result["captured_intent"]
+        )
         self.assertEqual(self.graph.get_state(self.config).next, ())
 
     def test_parent_checkpoint_resumes_a_retry_inside_sson(self):
-        from agentic_flow.capture_intent import node as capture_node
-        from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat
 
-        sson_evaluator = StubModel()
-        sson_evaluator.responses.extend([
-            IntentSSONEvaluation(
-                evaluation_of_statement="not_met",
-                evaluation_of_statement_feedback="Who needs the booking capability?",
-            ),
-            IntentSSONEvaluation(
-                evaluation_of_statement="met",
-                evaluation_of_statement_feedback="The need is clear.",
-            ),
-        ])
+        self.stub_capture_intent("not_met", "met")
         self.processor.responses.append(response([draft()]))
         self.evaluator.responses.append(evaluation())
         self.graph = build_ide3_chat(self.checkpointer)
-        with patch.object(capture_node, "base_model", SimpleNamespace(
-            with_structured_output=lambda schema: sson_evaluator
-        )):
-            self.start()
-            result = self.resume("A booking app.")
-            self.assertIn("Who needs", self.message(result))
-            result = self.resume("Students book rooms without staff help.")
-            self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
-            self.resume("Front-desk staff handle bookings and know the rules.")
-            result = self.resume("APPROVE")
+
+        self.start()
+        result = self.resume("A booking app.")
+        self.assertIn("Who needs", self.message(result))
+        result = self.resume("Students book rooms without staff help.")
+        self.assertIn("current situation", self.message(result))
+        result = self.finish_context()
+        self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
+        self.resume("Front-desk staff handle bookings and know the rules.")
+        result = self.resume("APPROVE")
         self.assertEqual(result["intent_metadata"]["attempt_number"], 2)
         self.assertEqual(len(result["stakeholder_metadata"]["finalized_stakeholders"]), 1)
 

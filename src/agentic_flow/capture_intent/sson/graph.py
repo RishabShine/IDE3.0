@@ -6,38 +6,34 @@ from langgraph.graph import (
 )
 
 from agentic_flow.state import AgentState
-from agentic_flow.capture_intent.node import (
-    capture_intent,
-    evaluate_SSON,
+from agentic_flow.capture_intent.sson.node import (
+    capture_sson,
+    evaluate_sson,
 )
 
 
-def build_capture_intent(checkpointer=None):
+def build_capture_sson(checkpointer=None):
 
     builder = StateGraph(AgentState)
 
-    builder.add_node("capture_intent", capture_intent)
+    builder.add_node("capture_sson", capture_sson)
 
-    builder.add_node("evaluate_SSON", evaluate_SSON)
+    builder.add_node("evaluate_sson", evaluate_sson)
 
-    builder.add_edge(START, "capture_intent")
+    builder.add_edge(START, "capture_sson")
 
-    builder.add_edge("capture_intent", "evaluate_SSON")
+    builder.add_edge("capture_sson", "evaluate_sson")
 
     builder.add_conditional_edges(
-        "evaluate_SSON",
-        lambda state: state["intent_metadata"]["evaluation_of_statement"],
-        {
-            "met": END,
-            "partially_met": "capture_intent",
-            "not_met": "capture_intent",
-        }
+        "evaluate_sson",
+        lambda state: state["intent_metadata"]["passed"],
+        {True: END, False: "capture_sson"},
     )
 
     return builder.compile(checkpointer=checkpointer)
 
 # Standalone use keeps its own memory; embedded use inherits the parent's.
-capture_intent_graph = build_capture_intent(checkpointer=InMemorySaver())
-# capture_intent_graph.get_graph(xray=True).draw_mermaid_png(
-#     output_file_path="agentic_flow/capture_intent/capture_intent_graph.png"
+capture_sson_graph = build_capture_sson(checkpointer=InMemorySaver())
+# capture_sson_graph.get_graph(xray=True).draw_mermaid_png(
+#     output_file_path="agentic_flow/capture_intent/sson/capture_sson_graph.png"
 # )

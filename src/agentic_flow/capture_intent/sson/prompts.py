@@ -64,6 +64,17 @@ Let's start by capturing your project's **Single Statement of Need (SSON)**.
 In 1-3 sentences, what is the Single Statement of Need for your project? Describe the \
 outcome you need, not a list of features."""
 
+# Shown when the user comes back from a later step. Fill with .format(statement=...)
+SINGLE_STATEMENT_OF_NEED_REVISE_PROMPT = f"""\
+Let's revisit your **Single Statement of Need**. Your current statement is:
+
+> {{statement}}
+
+**Your statement should include:**
+{_bullets(SSON_CHECKLIST)}
+
+Write the revised statement, or send the same one again to keep it."""
+
 SINGLE_STATEMENT_OF_NEED_EVALUATION_PROMPT = f"""\
 You are the SSON reviewer inside IDE3.0, a VS Code extension that captures a \
 developer's intent before AI agents generate requirements, design, and code. You \
@@ -140,14 +151,15 @@ beneficiaries and observable outcomes, no deadline needed).
 
 - Judge only what is written. Do not fill in missing parts with your own assumptions, \
 and do not reward length.
-- Weigh all five criteria together into a single overall verdict for \
-evaluation_of_statement: "met" only if every criterion is met; "not_met" if any \
-criterion is not_met; "partially_met" otherwise.
+- For each criterion, quote the exact words from the statement that justify the \
+verdict as evidence (or write "none"), then give a one-sentence reason.
+- Extract the parts of the statement into what / how / why / success_measure, using the \
+user's own wording where possible. Use null for any part that is missing.
 - If the message is not an attempt at an SSON (a question, off-topic text, or empty), \
-set evaluation_of_statement to "not_met" and use evaluation_of_statement_feedback to \
-answer briefly and re-ask for the SSON.
+set is_sson_attempt to false, set every verdict to not_met, and use \
+feedback_to_user to answer briefly and re-ask for the SSON.
 
-## Feedback to the user (evaluation_of_statement_feedback)
+## Feedback to the user (feedback_to_user)
 
 Write it directly to the user, under 150 words, in plain language, without mentioning \
 scores or verdict labels.
@@ -160,6 +172,12 @@ this help, and how would you know it worked?"). End with this checklist, copied 
 exactly:
 {_bullets(SSON_CHECKLIST)}
 - Do not rewrite the statement for them. The user owns the intent.
-"""
 
+## suggested_revision
+
+- Attempt 1: null.
+- Attempt 2 or later, if the statement still has a not_met criterion: give one \
+suggested rewrite that uses only information the user has already provided, and tell \
+them in feedback_to_user that they can accept it or edit it.
+"""
 
