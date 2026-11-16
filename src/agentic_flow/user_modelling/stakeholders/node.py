@@ -1,6 +1,6 @@
 import json
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from agentic_flow.core.models import base_model
 from agentic_flow.core.shared_nodes import get_user_input
@@ -33,6 +33,8 @@ def _name(value: str) -> str:
 def _turn_input(metadata) -> dict[str, str]:
     return {
         "user_feedback": metadata["latest_user_response"],
+        "last_prompt_to_user": metadata["last_prompt_to_user"],
+        "previous_evaluation": _json(metadata["previous_evaluation"]),
         "stakeholders": _json(metadata["drafts"]),
         "pending_suggestions": _json(metadata["pending_suggestions"]),
         "declined_suggestions": _json(metadata["declined_suggestions"]),
@@ -46,12 +48,9 @@ def _collect_response(metadata, message: str) -> dict:
         raise ValueError("The stakeholder response must be text.")
     return {
         **metadata,
-        "messages": [
-            *metadata["messages"],
-            AIMessage(content=message),
-            HumanMessage(content=response),
-        ],
+        "last_prompt_to_user": message,
         "latest_user_response": response,
+        "previous_evaluation": metadata["evaluation"],
         "user_confirmed": False,
         "approved_version": None,
     }
@@ -63,11 +62,12 @@ def _record(draft) -> str:
     )
 
 
-def initialize_stakeholders(state: AgentState) -> AgentState:
-    """Start the conversation once, without calling the model or reading files."""
-    if state.get("stakeholder_metadata", {}).get("initialized"):
-        return {}
+def start_stakeholders(state: AgentState) -> AgentState:
+    """Prepare reusable context and collect the first reply in a single node.
 
+    Nothing is written before interrupt(). On resume, preparing the same local
+    metadata again is safe; the node commits it together with the user's reply.
+    """
     #! full upstream context can be supplied here when its structure is ready
     # preserve all currently available intent metadata
     context = state.get("captured_intent")
@@ -77,18 +77,16 @@ def initialize_stakeholders(state: AgentState) -> AgentState:
             "intent_metadata": state.get("intent_metadata", {}),
         }
 
-    return {
-        "stakeholder_metadata": {
+    metadata = state.get("stakeholder_metadata")
+    if not metadata or not metadata.get("initialized"):
+        metadata = {
             "initialized": True,
             "intent_context": context,
-            "messages": [
-                SystemMessage(content=prompt.STAKEHOLDER_CONVERSATION_INSTRUCTIONS),
-                HumanMessage(
-                    content=prompt.STAKEHOLDER_INTENT_CONTEXT_PROMPT.format(
-                        intent_context=_json(context)
-                    )
-                ),
-            ],
+            "initial_context_message": prompt.STAKEHOLDER_INTENT_CONTEXT_PROMPT.format(
+                intent_context=_json(context)
+            ),
+            "last_prompt_to_user": "",
+            "previous_evaluation": None,
             "drafts": [],
             "next_draft_id": 1,
             "draft_version": 0,
@@ -101,13 +99,8 @@ def initialize_stakeholders(state: AgentState) -> AgentState:
             "approved_version": None,
             "finalized_stakeholders": [],
         }
-    }
-
-
-def prompt_initial_stakeholders(state: AgentState) -> AgentState:
-    """Display the starter guidance and wait for the first stakeholder list."""
     metadata = _collect_response(
-        state["stakeholder_metadata"], prompt.STAKEHOLDER_STARTER_PROMPT
+        metadata, prompt.STAKEHOLDER_STARTER_PROMPT
     )
     return {"stakeholder_metadata": metadata}
 
@@ -116,11 +109,11 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
     """Interpret the reply, then apply explicit edits and suggestion decisions."""
     metadata = state["stakeholder_metadata"]
     request = prompt.STAKEHOLDER_RESPONSE_PROMPT.format(**_turn_input(metadata))
-    # Use the same conversation, with task-specific instructions for this call.
-    # The evaluator's system message requests a different response schema.
+    # Each call gets reusable context, current records, and the latest exchange.
+    # Older turns are not retained or replayed.
     messages = [
         SystemMessage(content=prompt.STAKEHOLDER_RESPONSE_INSTRUCTIONS),
-        *[m for m in metadata["messages"] if not isinstance(m, SystemMessage)],
+        HumanMessage(content=metadata["initial_context_message"]),
         HumanMessage(content=request),
     ]
     result = StakeHolderResponse.model_validate(
@@ -194,20 +187,19 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
             "user_confirmed": False,
             "approved_version": None,
             "finalized_stakeholders": [],
-            "messages": [
-                *metadata["messages"],
-                HumanMessage(content=request),
-                AIMessage(content=result.model_dump_json()),
-            ],
         }
     }
 
 
 def evaluate_stakeholders(state: AgentState) -> AgentState:
-    """Evaluate the current drafts using the retained conversation."""
+    """Evaluate current drafts with reusable context and only the latest exchange."""
     metadata = state["stakeholder_metadata"]
     request = prompt.STAKEHOLDER_EVALUATION_PROMPT.format(**_turn_input(metadata))
-    messages = [*metadata["messages"], HumanMessage(content=request)]
+    messages = [
+        SystemMessage(content=prompt.STAKEHOLDER_EVALUATION_INSTRUCTIONS),
+        HumanMessage(content=metadata["initial_context_message"]),
+        HumanMessage(content=request),
+    ]
     result = StakeHolderEvaluation.model_validate(stakeholder_evaluator.invoke(messages))
 
     drafts = {d["stakeholder_id"]: d for d in metadata["drafts"]}
@@ -257,7 +249,6 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
             **metadata,
             "evaluation": result.model_dump(),
             "pending_suggestions": list(pending.values()),
-            "messages": [*messages, AIMessage(content=result.model_dump_json())],
         }
     }
 

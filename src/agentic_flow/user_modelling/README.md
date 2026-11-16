@@ -7,7 +7,7 @@ for testing. Personas and the Goal2Story handoff can be added later.
 The flow is:
 
 ```text
-initialize → initial input → process response → evaluate
+starter → process response → evaluate
                                   ↑               |
                                   |       needs refinement
                                   |               ↓
@@ -24,13 +24,21 @@ evaluate → all checks met, no pending suggestions → confirmation
 
 Each refinement turn uses two model calls: one interprets the user's response
 into draft changes and suggestion decisions; the other evaluates the updated
-drafts. The graph retains conversation messages and structured drafts together
-under `stakeholder_metadata`. Evaluation does not approve the draft list.
+drafts. Under `stakeholder_metadata`, the graph retains the reusable project
+context message, current drafts and decisions, the last prompt shown to the
+user, their latest reply, and the previous evaluation. There is no growing
+message history. Each model call receives task-specific instructions, the
+reusable context, and one current-state request containing that latest exchange.
+Evaluation does not approve the draft list.
 
 Supply the completed intent as a JSON-compatible dictionary in `captured_intent`.
 Its upstream structure is not fixed yet. If it is absent, initialization uses all
 available `project_context` and `intent_metadata` fields as a temporary fallback.
-Initialization does not read files or make a model call.
+The starter node prepares this context and displays the initial guidance in one
+step, without reading files or calling the model. It commits the prepared state
+when the user replies. On interrupt resume, preparing the context again is safe
+and does not append duplicate messages. The previous evaluation is initially
+empty, and the starter guidance is retained as the first prompt shown.
 
 With `src` on the Python import path and Ollama running the configured model:
 
@@ -48,7 +56,7 @@ result = user_modelling_graph.invoke(
 result = user_modelling_graph.invoke(Command(resume=user_reply), config)
 ```
 
-The default `InMemorySaver` checkpoints the conversation and drafts while the
+The default `InMemorySaver` checkpoints current drafts and the latest exchange while the
 process runs when using the exported standalone graph. The outer graph also
 uses an in-memory checkpointer, inherited by both subgraphs. The builder
 `build_user_modelling(checkpointer=...)` accepts another checkpointer when

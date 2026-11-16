@@ -107,14 +107,22 @@ class StakeHolderFlowTests(unittest.TestCase):
     def message(self, result):
         return result["__interrupt__"][0].value["prompt_to_user"]
 
-    def test_initialization_pauses_without_a_model_call(self):
+    def test_starter_pauses_without_a_model_call_and_commits_on_resume(self):
         result = self.start()
         self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
         self.assertFalse(self.processor.calls)
         self.assertFalse(self.evaluator.calls)
-        metadata = self.graph.get_state(self.config).values["stakeholder_metadata"]
+        # The combined node has not finished while waiting for the first reply.
+        self.assertNotIn("stakeholder_metadata", self.graph.get_state(self.config).values)
+        self.processor.responses.append(response([draft()]))
+        self.evaluator.responses.append(evaluation())
+        result = self.resume("Front-desk staff handle bookings.")
+        metadata = result["stakeholder_metadata"]
         self.assertEqual(metadata["intent_context"], self.context)
-        self.assertIn("Equipment loans", metadata["messages"][1].content)
+        self.assertIn("Equipment loans", metadata["initial_context_message"])
+        self.assertIsNone(metadata["previous_evaluation"])
+        self.assertEqual(metadata["last_prompt_to_user"], prompt.STAKEHOLDER_STARTER_PROMPT)
+        self.assertNotIn("messages", metadata)
 
     def test_declined_suggestion_is_not_repeated_and_approval_is_explicit(self):
         self.processor.responses.extend([
@@ -142,7 +150,7 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertEqual(metadata["declined_suggestions"][0]["reason"], "Covered elsewhere.")
         self.assertEqual(len(self.evaluator.calls), 2)
 
-    def test_history_survives_rebuilding_with_the_same_checkpointer(self):
+    def test_latest_exchange_survives_rebuilding_with_the_same_checkpointer(self):
         self.processor.responses.extend([
             response([draft(summary="", justification="")]),
             response([draft(1)]),
@@ -151,14 +159,48 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.start()
         result = self.resume("Library staff")
         self.assertIn("More detail needed", self.message(result))
+        last_prompt = self.message(result)
+        previous_evaluation = result["stakeholder_metadata"]["evaluation"]
         self.graph = build_user_modelling(self.checkpointer)
         result = self.resume("They handle bookings and explain booking exceptions.")
         metadata = result["stakeholder_metadata"]
         self.assertEqual(metadata["drafts"][0]["stakeholder_id"], 1)
-        self.assertEqual(sum(isinstance(m, SystemMessage) for m in metadata["messages"]), 1)
-        self.assertIn("Library staff", [m.content for m in metadata["messages"]])
+        self.assertEqual(metadata["last_prompt_to_user"], last_prompt)
+        self.assertEqual(metadata["previous_evaluation"], previous_evaluation)
+        self.assertEqual(metadata["latest_user_response"],
+                         "They handle bookings and explain booking exceptions.")
+        self.assertNotIn("messages", metadata)
+        self.assertIn(last_prompt, self.processor.calls[-1][-1].content)
+        self.assertIn('"detail_verdict": "not_met"', self.evaluator.calls[-1][-1].content)
         self.assertIn("Enter APPROVE", self.message(result))
         self.assertIn("Equipment loans", self.evaluator.calls[-1][1].content)
+
+    def test_model_input_does_not_accumulate_older_exchanges(self):
+        first = evaluation(detail="not_met")
+        first.provided_stakeholders[0].detail_feedback = "FIRST_EVALUATION_ONLY"
+        second = evaluation(detail="not_met")
+        second.provided_stakeholders[0].detail_feedback = "SECOND_EVALUATION_ONLY"
+        self.processor.responses.extend([
+            response([draft(summary="", justification="")]),
+            response([draft(1, justification="")]),
+            response([draft(1)]),
+        ])
+        self.evaluator.responses.extend([first, second, evaluation()])
+        self.start()
+        self.resume("Front-desk staff; initial note FIRST_USER_TURN_ONLY.")
+        self.resume("They handle bookings; second-turn clarification.")
+        result = self.resume("They know the booking rules and exceptions.")
+        self.assertIn("Enter APPROVE", self.message(result))
+        for model in (self.processor, self.evaluator):
+            self.assertEqual([len(call) for call in model.calls], [3, 3, 3])
+            self.assertIsInstance(model.calls[-1][0], SystemMessage)
+            latest = "\n".join(m.content for m in model.calls[-1])
+            self.assertNotIn("FIRST_USER_TURN_ONLY", latest)
+            self.assertNotIn("FIRST_EVALUATION_ONLY", latest)
+            self.assertIn("SECOND_EVALUATION_ONLY", latest)
+            self.assertIn("They know the booking rules and exceptions.", latest)
+        self.assertEqual(result["stakeholder_metadata"]["drafts"][0]["stakeholder_id"], 1)
+        self.assertNotIn("messages", result["stakeholder_metadata"])
 
     def test_edits_at_confirmation_require_evaluation_and_new_confirmation(self):
         self.processor.responses.extend([

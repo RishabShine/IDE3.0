@@ -1,7 +1,5 @@
 from typing import Any, Literal, NotRequired, TypedDict
 
-from langchain_core.messages import BaseMessage
-
 Verdict = Literal["met", "partially_met", "not_met"]
 
 
@@ -15,7 +13,9 @@ class IntentCapture(TypedDict):
 class StakeHolderMetadata(TypedDict):
     initialized: bool
     intent_context: dict[str, Any]
-    messages: list[BaseMessage]
+    initial_context_message: str
+    last_prompt_to_user: str
+    previous_evaluation: dict[str, Any] | None
     drafts: list[dict[str, Any]]
     next_draft_id: int
     draft_version: int
@@ -40,5 +40,5 @@ class AgentState(TypedDict):
     # Full upstream intent snapshot, once the capture phase provides it.
     captured_intent: NotRequired[dict[str, Any]]
 
-    # Stakeholder conversation and drafts, saved together by the checkpointer.
+    # Current stakeholder drafts and latest exchange, saved by the checkpointer.
     stakeholder_metadata: NotRequired[StakeHolderMetadata]
