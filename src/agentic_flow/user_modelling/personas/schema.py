@@ -6,64 +6,93 @@ Verdict = Literal["met", "not_met", "not_evaluated"]
 
 class PersonaDraft(BaseModel):
     persona_id: str
-    stakeholder_id: str
+    # Unknown until the user supplies or confirms the corresponding stakeholder.
+    stakeholder_id: str | None
     name: str
+    role: str
     status_and_trust_level: str
+    # Optional in the lecture template; an empty string is acceptable.
     demographics: str
-    # knowledge, skills, abilities
+    # Knowledge, skills, abilities.
     ksa: str
-    # goals, motives, concerns
+    # Goals, motives, concerns.
     gmc: str
     usage_patterns: str
-    varied_justification: str
+    # Generated from a passing evaluation, not required from the user.
+    varied_justification: str = ""
 
 
-# A missing ID means a new group explicitly supplied by the user. The node,
-# rather than the model, assigns its ID. Unknown draft details remain empty.
+# The node assigns Persona-1, Persona-2, etc. to new drafts. A missing
+# stakeholder reference stays unresolved rather than inventing a stakeholder.
 class PersonaDraftUpdate(BaseModel):
-    persona_id: str
-    stakeholder_id: str
+    persona_id: str | None
+    stakeholder_id: str | None
     name: str
+    role: str
     status_and_trust_level: str
     demographics: str
-    # knowledge, skills, abilities
     ksa: str
-    # goals, motives, concerns
     gmc: str
     usage_patterns: str
-    varied_justification: str
+    varied_justification: str = ""
 
 
+# Broad proposals for the user to consider, not completed persona profiles.
+class SuggestedPersona(BaseModel):
+    stakeholder_id: str
+    description: str
+    justification: str
+
+
+# Until a draft ID is assigned, match a suggestion by its stakeholder ID and
+# exact description. This distinguishes suggestions for the same stakeholder.
 class PersonaSuggestionDecision(BaseModel):
+    stakeholder_id: str
     description: str
     decision: Literal["accept", "decline"]
     reason: str
 
 
-class StakeHolderResponse(BaseModel):
+class PersonaResponse(BaseModel):
     updates: list[PersonaDraftUpdate]
-    removed_persona_ids: list[int]
+    removed_persona_ids: list[str]
     suggestion_decisions: list[PersonaSuggestionDecision]
     clarification_feedback: str
 
-# eval for stakeholders that the user has agreed on
+
 class IndividualPersonaEvaluation(BaseModel):
-    persona_id: int
-    detail_verdict: Verdict
-    detail_feedback: str
+    persona_id: str
+    # Relevance covers the stakeholder match and consistency with known intent.
+    # Missing context is not evidence of irrelevance. If relevance is not met
+    # or cannot be established, other verdicts are not_evaluated.
     relevance_verdict: Verdict
     relevance_feedback: str
-    overlap_verdict: Verdict
-    overlap_feedback: str
-    overlap_stakeholder_ids: list[int]
+    # A proposed existing stakeholder ID, not an automatically confirmed link.
+    inferred_stakeholder_id: str | None
+    name_verdict: Verdict
+    name_feedback: str
+    role_verdict: Verdict
+    role_feedback: str
+    status_and_trust_level_verdict: Verdict
+    status_and_trust_level_feedback: str
+    # Missing optional demographics can be met without inventing personal facts.
+    demographics_verdict: Verdict
+    demographics_feedback: str
+    ksa_verdict: Verdict
+    ksa_feedback: str
+    gmc_verdict: Verdict
+    gmc_feedback: str
+    usage_patterns_verdict: Verdict
+    usage_patterns_feedback: str
+    varied_verdict: Verdict
+    varied_feedback: str
+    # Explain Vivid, Actionable, Real, Identifiable, Exact, and Detailed using
+    # supplied information. Populate only on overall met, otherwise use "".
+    # The eventual node copies this to the draft after a passing evaluation.
+    varied_justification: str
     overall_verdict: Verdict
 
-# stakeholders the user potentially missed
-class SuggestedStakeHolder(BaseModel):
-    name: str
-    summary: str
-    justification: str
 
-class StakeHolderEvaluation(BaseModel):
-    provided_stakeholders: list[IndividualStakeHolderEvaluation]
-    suggested_stakeholders: list[SuggestedStakeHolder]
+class PersonaEvaluation(BaseModel):
+    provided_personas: list[IndividualPersonaEvaluation]
+    suggested_personas: list[SuggestedPersona]
