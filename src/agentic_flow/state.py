@@ -11,7 +11,7 @@ class IntentCapture(TypedDict):
 
 
 class StakeHolderRecord(TypedDict):
-    stakeholder_id: int
+    stakeholder_id: str
     name: str
     involvement: Literal["direct", "indirect"] | None
     summary: str
@@ -22,14 +22,14 @@ StakeHolderVerdict = Literal["met", "not_met", "not_evaluated"]
 
 
 class IndividualStakeHolderEvaluationRecord(TypedDict):
-    stakeholder_id: int
+    stakeholder_id: str
     detail_verdict: StakeHolderVerdict
     detail_feedback: str
     relevance_verdict: StakeHolderVerdict
     relevance_feedback: str
     overlap_verdict: StakeHolderVerdict
     overlap_feedback: str
-    overlap_stakeholder_ids: list[int]
+    overlap_stakeholder_ids: list[str]
     overall_verdict: StakeHolderVerdict
 
 
@@ -50,7 +50,7 @@ class StakeHolderMetadata(TypedDict):
     initial_context_message: str
     last_prompt_to_user: str
     drafts: list[StakeHolderRecord]
-    next_draft_id: int
+    next_draft_number: int
     draft_version: int
     pending_suggestions: list[dict[str, str]]
     declined_suggestions: list[dict[str, str]]

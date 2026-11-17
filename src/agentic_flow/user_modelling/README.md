@@ -69,8 +69,10 @@ Keep the same `thread_id` when resuming. A process restart loses the default
 in-memory checkpoints.
 
 Finalized records are available at
-`result["stakeholder_metadata"]["finalized_stakeholders"]`. Their IDs are draft
-IDs; assigning persistent artifact IDs and saving to the project remain to be
+`result["stakeholder_metadata"]["finalized_stakeholders"]`. Their draft IDs are
+strings such as `Stakeholder-1`, preserved across edits. `next_draft_number` is
+only the internal numeric counter for assigning new IDs. Assigning persistent
+artifact IDs and saving to the project remain to be
 connected. Schema or model errors raise an exception instead of approving or
 finalizing an invalid result; the last completed graph state is checkpointed.
 

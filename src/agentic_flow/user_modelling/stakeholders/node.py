@@ -78,7 +78,7 @@ def start_stakeholders(state: AgentState) -> AgentState:
             ),
             "last_prompt_to_user": "",
             "drafts": [],
-            "next_draft_id": 1,
+            "next_draft_number": 1,
             "draft_version": 0,
             "pending_suggestions": [],
             "declined_suggestions": [],
@@ -114,7 +114,7 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
     drafts = {d["stakeholder_id"]: dict(d) for d in metadata["drafts"]}
     pending = {_name(s["name"]): dict(s) for s in metadata["pending_suggestions"]}
     declined = {_name(s["name"]): dict(s) for s in metadata["declined_suggestions"]}
-    next_id = metadata["next_draft_id"]
+    next_number = metadata["next_draft_number"]
 
     removed = result.removed_stakeholder_ids
     updated = [u.stakeholder_id for u in result.updates if u.stakeholder_id is not None]
@@ -142,18 +142,19 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
         if decision.decision == "decline":
             declined[key] = {**suggestion, "reason": decision.reason}
         else:
-            drafts[next_id] = StakeHolderDraft(
-                stakeholder_id=next_id,
+            stakeholder_id = f"Stakeholder-{next_number}"
+            drafts[stakeholder_id] = StakeHolderDraft(
+                stakeholder_id=stakeholder_id,
                 involvement=None,
                 **suggestion,
             ).model_dump()
-            next_id += 1
+            next_number += 1
 
     for update in result.updates:
         stakeholder_id = update.stakeholder_id
         if stakeholder_id is None:
-            stakeholder_id = next_id
-            next_id += 1
+            stakeholder_id = f"Stakeholder-{next_number}"
+            next_number += 1
         if not update.name.strip():
             raise ValueError("A stakeholder draft must have a name.")
         record = update.model_dump()
@@ -169,7 +170,7 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
         "stakeholder_metadata": {
             **metadata,
             "drafts": current,
-            "next_draft_id": next_id,
+            "next_draft_number": next_number,
             "draft_version": metadata["draft_version"] + (current != metadata["drafts"]),
             "pending_suggestions": list(pending.values()),
             "declined_suggestions": list(declined.values()),
@@ -287,7 +288,7 @@ def prompt_stakeholder_refinement(state: AgentState) -> AgentState:
             if evaluation["overlap_verdict"] != "met":
                 feedback.append(prompt.STAKEHOLDER_OVERLAP_FEEDBACK_TEMPLATE.format(
                     related_stakeholder_ids=", ".join(
-                        map(str, evaluation["overlap_stakeholder_ids"])
+                        evaluation["overlap_stakeholder_ids"]
                     ) or "not yet established",
                     overlap_feedback=evaluation["overlap_feedback"],
                 ))
