@@ -7,7 +7,7 @@ from langchain_core.messages import SystemMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
-from agentic_flow.user_modelling.graph import build_user_modelling
+from agentic_flow.user_modelling.stakeholders.graph import build_stakeholders
 from agentic_flow.user_modelling.stakeholders import node, prompt
 from agentic_flow.user_modelling.stakeholders.schema import (
     IndividualStakeHolderEvaluation,
@@ -84,7 +84,7 @@ class StakeHolderFlowTests(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
         self.checkpointer = InMemorySaver()
-        self.graph = build_user_modelling(self.checkpointer)
+        self.graph = build_stakeholders(self.checkpointer)
         self.config = {"configurable": {"thread_id": self.id()}}
         self.context = {
             "statement": "Self-service library room booking",
@@ -165,7 +165,7 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertIn("More detail needed", self.message(result))
         last_prompt = self.message(result)
         previous_evaluation = result["stakeholder_metadata"]["evaluation"]
-        self.graph = build_user_modelling(self.checkpointer)
+        self.graph = build_stakeholders(self.checkpointer)
         result = self.resume("They handle bookings and explain booking exceptions.")
         metadata = result["stakeholder_metadata"]
         self.assertEqual(metadata["drafts"][0]["stakeholder_id"], "Stakeholder-1")
@@ -335,7 +335,7 @@ class StakeHolderFlowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires explicit approval"):
             node.finalize_stakeholders(state)
 
-    def test_parent_graph_runs_sson_then_stakeholders_and_ends(self):
+    def test_parent_graph_runs_sson_then_stakeholders_then_personas_and_ends(self):
         from agentic_flow.capture_intent import node as capture_node
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat
@@ -347,6 +347,16 @@ class StakeHolderFlowTests(unittest.TestCase):
         ))
         self.processor.responses.append(response([draft()]))
         self.evaluator.responses.append(evaluation())
+        from agentic_flow.user_modelling.personas import node as persona_node
+        from test_personas import draft as persona_draft, response as persona_response, evaluation as persona_evaluation
+        persona_processor, persona_evaluator = StubModel(), StubModel()
+        persona_processor.responses.append(persona_response([persona_draft()]))
+        persona_evaluator.responses.append(persona_evaluation())
+        for name, model in (("persona_response_processor", persona_processor),
+                            ("persona_evaluator", persona_evaluator)):
+            patcher = patch.object(persona_node, name, model)
+            patcher.start()
+            self.addCleanup(patcher.stop)
         self.graph = build_ide3_chat(self.checkpointer)
 
         with patch.object(capture_node, "base_model", SimpleNamespace(
@@ -357,6 +367,10 @@ class StakeHolderFlowTests(unittest.TestCase):
             result = self.resume("Students book rooms without staff help.")
             self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
             result = self.resume("Front-desk staff handle bookings and know the rules.")
+            self.assertIn("Enter APPROVE", self.message(result))
+            result = self.resume("APPROVE")
+            self.assertIn("Let's describe personas", self.message(result))
+            result = self.resume("Alex represents Stakeholder-1 and books rooms from a phone.")
             self.assertIn("Enter APPROVE", self.message(result))
             result = self.resume("APPROVE")
 
@@ -385,6 +399,16 @@ class StakeHolderFlowTests(unittest.TestCase):
         ])
         self.processor.responses.append(response([draft()]))
         self.evaluator.responses.append(evaluation())
+        from agentic_flow.user_modelling.personas import node as persona_node
+        from test_personas import draft as persona_draft, response as persona_response, evaluation as persona_evaluation
+        persona_processor, persona_evaluator = StubModel(), StubModel()
+        persona_processor.responses.append(persona_response([persona_draft()]))
+        persona_evaluator.responses.append(persona_evaluation())
+        for name, model in (("persona_response_processor", persona_processor),
+                            ("persona_evaluator", persona_evaluator)):
+            patcher = patch.object(persona_node, name, model)
+            patcher.start()
+            self.addCleanup(patcher.stop)
         self.graph = build_ide3_chat(self.checkpointer)
         with patch.object(capture_node, "base_model", SimpleNamespace(
             with_structured_output=lambda schema: sson_evaluator
@@ -396,6 +420,12 @@ class StakeHolderFlowTests(unittest.TestCase):
             self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
             self.resume("Front-desk staff handle bookings and know the rules.")
             result = self.resume("APPROVE")
+            self.assertIn("Let's describe personas", self.message(result))
+            self.graph = build_ide3_chat(self.checkpointer)
+            self.resume("Alex represents Stakeholder-1 and books rooms from a phone.")
+            result = self.resume("APPROVE")
+        self.assertNotIn("__interrupt__", result)
+        self.assertEqual(len(result["persona_metadata"]["finalized_personas"]), 1)
         self.assertEqual(result["intent_metadata"]["attempt_number"], 2)
         self.assertEqual(len(result["stakeholder_metadata"]["finalized_stakeholders"]), 1)
 
