@@ -57,6 +57,8 @@ Nov 2, 2026 & 1.1 & Vedant Patel: Added individual reflection and Section 3.1
 team-table row\\
 Nov 2, 2026 & 1.2 & Saumy Patel: Updated Section 4.1; completed remaining
 Section 4.2 nonfunctional tests; added Section 4.3 traceability\\
+Nov 16, 2026 & 1.3 & Vedant Patel: Updated Section 2.3 to the registered CDs
+(Wireframe Report, Usability Report)\\
 Nov 2, 2026 & 1.1 & Tyler Yue: Drafted Section 4.2 nonfunctional tests; added
 reflection and AI disclosure appendices. Modified Section 3.1, added acronym table and revision history table..\\
 \bottomrule
@@ -208,25 +210,23 @@ Statement \citep{ProblemStatement}. Both support verification and validation
 directly.
 
 \begin{itemize}
-  \item \textbf{CD-Fall: Literature Review.} A review of existing research on
-  requirements traceability, design rationale capture, program comprehension,
-  and the risk of AI-generated code drifting from its specification. For V\&V,
-  it gives the team an outside reference for what a complete and correct
-  intent model looks like. Findings will feed the SRS and design review
-  checklists (Sections 3.2 and 3.3), and the validation
-  criteria in Section 3.7.
-  \item \textbf{CD-Winter: Code Walkthroughs.} Structured walkthroughs of the
-  project's critical code, recording the process, issues found, and follow-up
-  actions. This is the team's main manual verification method for the
-  implementation (Section 3.5). It also mirrors what \progname{} automates:
-  checking that code still follows the recorded intent. Running the process by
-  hand on our own codebase shows where the tool's automated checks fall short.
+  \item \textbf{CD-Fall: Wireframe Report.} A clickable mock-up of the
+  \progname{} IDE panels, presented to the supervisor and potential users. For
+  V\&V, it is an early validation of the requirements: stakeholders walk
+  through the intended workflow before it is built, so missing or wrong
+  requirements surface during SRS and design review (Sections 3.2 and 3.3).
+  Its insights also feed the software validation in Section 3.7.
+  \item \textbf{CD-Winter: Usability Report.} A usability evaluation of the
+  built tool with developers and students, potentially in SFWRENG 2AA4. It
+  verifies the usability and humanity requirements tested in Section 4.2, and
+  shows whether developers will actually capture and review intent in
+  practice.
 \end{itemize}
 
-Both are feasible within the course timeline. The literature review is
-completed in Term 1, before most design work, so its findings are available
-when the design is reviewed. The code walkthroughs run in Term 2, once the
-critical modules are implemented, and finish before the final demo.
+Both are feasible within the course timeline. The wireframe is completed in
+Term 1, before implementation, so its findings are available for Design
+Document Revision 0. The usability evaluation runs in Term 2, once the core
+workflow is implemented, and finishes before the final demo.
 
 \subsection{Relevant Documentation}
 

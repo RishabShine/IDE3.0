@@ -1,0 +1,610 @@
+\documentclass{article}
+
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[round]{natbib}
+\usepackage[margin=1in]{geometry}
+
+\input{../../Comments.text}
+\input{../../Common.text}
+
+\title{Wireframe Report (CD-Fall)\\\progname}
+\author{\authname}
+\date{}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\begin{document}
+
+\maketitle
+
+\begin{table}[hp]
+\caption{Revision History} \label{TblRevisionHistory}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
+\midrule
+Nov 16, 26 & Vedant Patel & Initial version: clickable prototype, screen
+descriptions, requirement and module mapping, feedback session plan\\
+... & ... & ...\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+This report is the team's fall Custom Document (CD-Fall). The course asks for a
+mock-up of the user interface that can be used to explore the requirements and
+design with stakeholders, and for a discussion of what was learned by showing
+it to them.
+
+\progname{} runs inside the developer's IDE. It captures the developer's intent
+before an AI coding assistant writes code, has the developer approve that
+intent, records it with its rationale in a versioned intent model, and checks
+later AI-generated changes against it \citep{SRS}. Almost all of this happens
+through a small number of IDE panels, so the user interface is where most of
+the product's value is either delivered or lost.
+
+The mock-up is a \textbf{clickable prototype} with six screens that follow one
+request from start to finish. It is built in HTML and CSS because the real
+\progname{} panels will be IDE webviews, which use the same technology, so the
+prototype can show realistic layout, density, and interaction. Screenshots of
+every screen are included in this report, so it can be read without opening the
+prototype.
+
+\subsection{How to Open the Prototype}
+
+The prototype is a single self-contained file with no external dependencies:
+
+\begin{center}
+\texttt{docs/CDs/Wireframe/prototype/index.html}
+\end{center}
+
+Open it in any modern browser. The side bar moves between screens, and each
+screen also has its own address (for example \texttt{index.html\#trace}). The
+buttons work: stories can be approved, edited, and rejected; stakeholders can be
+added or declined; and the approval gate only unlocks once every story has a
+decision. All project data shown is an invented example.
+
+\section{Scope and Approach}
+
+\subsection{Users and Scenario}
+
+The prototype is organised around the three personas in the SRS
+\citep[Section~2.5]{SRS}:
+
+\begin{itemize}
+  \item \textbf{Priya, AI-assisted developer} (key user). She captures intent,
+  reviews stakeholders and stories, and approves the set before generation
+  (Screens 1 to 4).
+  \item \textbf{Sam, new team member} (secondary user). He uses the trace view
+  to find out why a piece of code exists before he changes it (Screen 5).
+  \item \textbf{Daniel, technical lead} (secondary user). He reviews an AI
+  change against the intent model before it is merged (Screen 6).
+\end{itemize}
+
+All six screens use one example so the flow can be followed end to end. Priya
+works on a university course-registration system and asks for a waitlist:
+\emph{``Add a waitlist so students can get into a full section when someone
+drops.''} The example was chosen because it is easy to explain to any
+stakeholder, it has real ambiguity for intent capture to resolve (automatic
+enrolment or a timed offer, and in what order), and it has a quality constraint
+(first come, first served) that a later AI change can plausibly violate.
+
+\subsection{Fidelity}
+
+The prototype is \emph{mid-fidelity}. Layout, content, and workflow are
+deliberate and close to what the team intends to build. Visual styling is a
+neutral dark IDE theme and is not final. The team chose this level because the
+questions for stakeholders are about workflow and information (what is shown,
+in what order, and what the developer must decide), not about colour or
+branding.
+
+\subsection{Out of Scope}
+
+The following are not covered by this prototype and are left for the Design
+Document Revision~0 and the winter Usability Report:
+
+\begin{itemize}
+  \item settings, onboarding, and first-run setup;
+  \item error and offline states (for example, a failed connection to the
+  language model service);
+  \item managing several requests at once, and conflicts between them;
+  \item the stretch goals in the Problem Statement, such as UML synchronisation
+  and rationale reconstruction.
+\end{itemize}
+
+\section{Design Principles from the SRS}
+
+The look-and-feel, usability, and accessibility requirements in the SRS
+\citep[Sections~10 and 11]{SRS} were treated as design constraints for every
+screen. Table~\ref{TblPrinciples} shows how the prototype responds to each one.
+
+\begin{longtable}{L{1.4cm}L{5.6cm}L{8.2cm}}
+\caption{SRS interface requirements and how the prototype addresses them}
+\label{TblPrinciples}\\
+\toprule
+\textbf{Req.} & \textbf{Summary} & \textbf{How the prototype addresses it}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Req.} & \textbf{Summary} & \textbf{How the prototype addresses it}\\
+\midrule
+\endhead
+AR1, ACCR1 & Integrate with the host IDE; no separate application &
+\progname{} adds one activity-bar entry, one side bar, editor tabs, and a status
+bar item. There is no separate window. \\
+AR2, SR2 & Consistent visual structure across views &
+Every screen uses the same header (title, persona tag, one-line purpose), cards,
+status pills, and button styles. \\
+SR1, ACCR2 & Match host IDE look and interaction patterns &
+Standard IDE regions (activity bar, side bar, tabs, status bar) and ordinary
+buttons are used, so host keyboard and screen-reader support still applies. \\
+EUR1 & Simple workflow to submit, review, refine, and decide &
+A six-step stepper in the side bar shows the whole workflow and where the
+developer is in it. \\
+EUR2 & Show the actions available at each stage &
+Each screen ends with its decision buttons. Buttons that cannot be used yet are
+disabled with a reason shown next to them (for example, ``Decide every story to
+continue''). \\
+EUR3 & Make traceability easy to find &
+Screen~5 is a dedicated trace view: pick a requirement, see its code, tests,
+contracts, rationale, and origin. \\
+LR1, LR2 & Easy to learn with minimal instruction &
+Intent capture is a conversation with suggested answers, so the first step needs
+no training. Every screen states its purpose in one sentence. \\
+UPR1 & Use software engineering terms; hide internals &
+The screens use ``requirement'', ``stakeholder'', ``user story'', and
+``contract''. Agent and graph internals are never shown. \\
+UPR2 & Do not ask for what can be found in the workspace &
+Stakeholders are drafted from the intent and the existing model. The developer
+edits a draft instead of filling in a blank form. \\
+\bottomrule
+\end{longtable}
+
+\section{Screens}
+
+Each subsection below describes one screen: its purpose, its main elements, the
+functional requirements it supports, and the MG modules behind it
+\citep{MG}. Two modules are involved in every screen. The \textbf{Host IDE
+Interface} module provides the side bar, tabs, and status bar, and the
+\textbf{Review Panel} module presents proposals and collects decisions.
+
+\subsection{Screen 1: Capture Intent}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/intent-partial.png}
+  \caption{Capture Intent, first attempt. The request is restated and judged
+  ``Partially met'', with the open decisions listed and suggested answers.}
+  \label{FigIntentPartial}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/intent-met.png}
+  \caption{Capture Intent, second attempt. The clarified statement is judged
+  ``Met'', and ``first come, first served'' is recorded as a quality constraint.}
+  \label{FigIntentMet}
+\end{figure}
+
+\paragraph{Purpose.} Turn a one-line request into a single, clear statement of
+intent before any planning starts.
+
+\paragraph{Main elements.}
+\begin{itemize}
+  \item The developer's request, in their own words.
+  \item The tool's restatement as a single intent statement, with a verdict of
+  \emph{Met}, \emph{Partially met}, or \emph{Not met}, and the specific
+  decisions that are still open. These match the \texttt{IntentCapture} state in
+  the proof-of-concept code, including the attempt counter.
+  \item Suggested answers as one-click chips, plus a free-text reply.
+  \item Once met, an explicit ``Accept intent and continue'' step.
+\end{itemize}
+
+\paragraph{Requirements and modules.} FR1 (accept a natural-language request)
+and FR2 (extract structure through iterative interaction). Intent Capture and
+Elicitation Engine modules.
+
+\subsection{Screen 2: Stakeholders}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/stakeholders.png}
+  \caption{Stakeholders. A drafted list on the left, suggestions to add or
+  decline on the right, and earlier declined suggestions kept for reference.}
+  \label{FigStakeholders}
+\end{figure}
+
+\paragraph{Purpose.} Agree on who is affected by the feature, so the user
+stories that follow cover every relevant role.
+
+\paragraph{Main elements.}
+\begin{itemize}
+  \item The approved intent, repeated at the top for context.
+  \item A versioned draft of stakeholders, each with a one-line role.
+  \item Suggestions found by checking who supplies, uses, or is constrained by
+  the feature, following the approach of \citet{Sharp1999}. Each can be added or
+  declined.
+  \item A list of declined suggestions, so the tool does not suggest them again
+  and the reason is visible later.
+\end{itemize}
+
+\paragraph{Requirements and modules.} Supports FR2 and FR3. Elicitation Engine,
+Intent Model Store, and Review Panel modules. The draft, suggestion, and
+decline structure mirrors \texttt{StakeHolderMetadata} in the proof-of-concept
+code.
+
+\subsection{Screen 3: Goals and User Stories}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/stories.png}
+  \caption{Goals and User Stories, part-way through review. Two stories are
+  approved, one is being edited, and two are still pending. Quality checks flag
+  possible problems.}
+  \label{FigStories}
+\end{figure}
+
+\paragraph{Purpose.} Review each proposed user story and decide whether it
+becomes a requirement.
+
+\paragraph{Main elements.}
+\begin{itemize}
+  \item Stories grouped under the goal they serve, in the standard ``As a \ldots,
+  I want to \ldots, so that \ldots'' form.
+  \item For each story, \emph{where it came from} (a quote from the request, a
+  clarification, or a stakeholder) and its \emph{rationale}. These are recorded
+  in the intent model on approval (FR11).
+  \item Quality checks based on the Quality User Story framework
+  \citep{Lucassen2016}: atomic, well-formed, and unambiguous, plus conflicts with
+  existing constraints. Flags are advisory; the developer decides.
+  \item Approve, Edit, and Reject on every story, with a progress bar. Editing
+  opens the story text in place.
+\end{itemize}
+
+\paragraph{Requirements and modules.} FR3 (draft proposal), FR4 (review before
+generation), FR5 (approve, edit, or reject), FR6 (amend individual items while
+pending). Review Panel, Elicitation Engine, and Intent Model Store modules.
+
+\subsection{Screen 4: Approval Gate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/gate.png}
+  \caption{Approval Gate. Every story is decided, but generation stays locked
+  until the developer releases the approved set. The compiled contract and the
+  exact instruction to the assistant are shown before release.}
+  \label{FigGate}
+\end{figure}
+
+\paragraph{Purpose.} Make the moment of release explicit. Nothing is generated
+until the developer approves the full set.
+
+\paragraph{Main elements.}
+\begin{itemize}
+  \item A lock banner that states why generation is blocked and what unblocks it.
+  The same state is always visible in the status bar on every screen.
+  \item The approved set, including rejected items, so the developer sees what
+  will \emph{not} be built.
+  \item A preview of a contract compiled from the approved requirements, written
+  as JML pre- and postconditions in the style of design by contract
+  \citep{Meyer1992}.
+  \item The exact instruction that will be sent to the coding assistant.
+\end{itemize}
+
+\paragraph{Requirements and modules.} FR7 (block generation until approval),
+FR8 (communicate the decision to the assistant), FR12 (compile into executable
+checks). Approval Gate, Contract Compiler, and Coding Assistant Adapter modules.
+
+\subsection{Screen 5: Trace View}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/trace.png}
+  \caption{Trace View. Sam selects REQ-3 and sees why it exists, the request
+  that started it, the code, contract, and tests that implement it, and its
+  history. REQ-4 is flagged as missing a test.}
+  \label{FigTrace}
+\end{figure}
+
+\paragraph{Purpose.} Answer ``why does this code exist?'' without asking the
+original developer.
+
+\paragraph{Main elements.}
+\begin{itemize}
+  \item A tree of the intent model: goals, then requirements and quality
+  constraints.
+  \item For the selected requirement: its rationale, the original request and
+  clarification in quotes, who made it and when, and its links to code,
+  contracts, and tests with their status.
+  \item Missing links are flagged in the tree and in the detail view, with an
+  action to request a fix.
+  \item A history of the requirement from proposal to approval to linking.
+\end{itemize}
+
+\paragraph{Requirements and modules.} FR9 (versioned intent model with trace
+links), FR11 (rationale and originating request), EUR3. Traceability Manager
+and Intent Model Store modules.
+
+\subsection{Screen 6: Verification Report}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/verify.png}
+  \caption{Verification Report. An AI change that prioritises upper-year students
+  violates NFR-1 (first come, first served). The failing contract, the diff, and
+  the recorded rationale are shown together.}
+  \label{FigVerify}
+\end{figure}
+
+\paragraph{Purpose.} Let a reviewer see, before merging, whether an AI change
+still satisfies the recorded intent.
+
+\paragraph{Main elements.}
+\begin{itemize}
+  \item A summary of the change and the number of items violated.
+  \item A table of results per requirement: \emph{Violated}, \emph{Satisfied},
+  \emph{Changed} (the behaviour still matches the text but its meaning changed),
+  and \emph{Not touched}. Each result shows its evidence (a failing contract or
+  test).
+  \item The trace-linked lines of the diff, next to the rationale on record for
+  the violated constraint.
+  \item Three decisions: reject the change, return it to the assistant with the
+  violations, or propose changing the requirement. Changing a requirement goes
+  back through review and approval; it is never changed silently by code.
+\end{itemize}
+
+\paragraph{Requirements and modules.} FR10 (check changes against the intent
+model). Contract Verifier and Verification Report modules. As the MG requires,
+the report states what was checked and never shows an infrastructure failure as
+a pass.
+
+\section{End-to-End Walkthrough}
+
+The six screens form one flow for the waitlist example:
+
+\begin{enumerate}
+  \item Priya types the request. \progname{} restates it and marks it
+  \emph{Partially met}, because it does not say whether students are enrolled
+  automatically or offered a seat, or in what order. She picks ``Offer seat,
+  24h to accept, first come first served''. The intent is now \emph{Met}, and
+  ``first come, first served'' is recorded as NFR-1 with her answer as its
+  rationale.
+  \item \progname{} drafts four stakeholders. Priya adds Accessibility services
+  and declines Student financial services, then confirms.
+  \item Five user stories are proposed under two goals. Priya approves four,
+  edits US-4 to name the reminder channel, and rejects US-5 (a registrar
+  override) because it conflicts with NFR-1.
+  \item With every story decided, the gate shows the approved set, the compiled
+  contract, and the instruction. Priya releases it, and the assistant generates
+  the code.
+  \item Weeks later, Sam finds \texttt{offerSeat()} and wonders why it ignores
+  year of study. The trace view shows REQ-3, the registrar policy behind it, and
+  Priya's original request.
+  \item An assistant session later proposes prioritising upper-year students.
+  The verification report shows that NFR-1 and REQ-3 are violated, with the
+  failing contract and the rationale. Daniel returns the change to the
+  assistant.
+\end{enumerate}
+
+\section{Stakeholder Feedback}
+
+The course requires this report to discuss the insights gained by presenting the
+mock-up to the client, stakeholders, or potential users. This section records
+that session.
+
+\subsection{Method}
+
+\paragraph{Participants.}
+\todo{List who the prototype was shown to and their role, for example Dr.\
+Istvan David (supervisor), Lucas Dutton (TA), a SFWRENG 2AA4 student, or a
+developer who uses AI assistants. Do not list anyone who did not take part.}
+
+\paragraph{Format.} Each session takes about 15 minutes. The participant is
+given the scenario in one sentence, then completes the three tasks in
+Appendix~\ref{AppScript} while thinking aloud. A team member notes where they
+hesitate or misread something, then asks the follow-up questions. The team
+member does not explain the screens unless the participant is stuck for more
+than about 30 seconds, and records any explanation that was needed.
+
+\paragraph{Date and setting.}
+\todo{Date, in person or online, and which team member ran the session.}
+
+\subsection{Results}
+
+\todo{Summarise what each participant did and said: which tasks they completed
+without help, where they got stuck, and their answers to the follow-up
+questions. Quote them where possible.}
+
+\subsection{Insights and Resulting Changes}
+
+\todo{Fill in one row per insight. Remove the example row. Each insight should
+lead to a change, a decision to keep the current design (with the reason), or an
+open question for the winter Usability Report.}
+
+\begin{longtable}{L{4.2cm}L{2.4cm}L{5.2cm}L{3.0cm}}
+\caption{Insights from the feedback sessions}\label{TblInsights}\\
+\toprule
+\textbf{Insight} & \textbf{Source} & \textbf{Change or decision} &
+\textbf{Affected module}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Insight} & \textbf{Source} & \textbf{Change or decision} &
+\textbf{Affected module}\\
+\midrule
+\endhead
+\emph{Example: participant did not notice the status-bar lock} &
+\emph{Participant 1} & \emph{Show the lock banner on the Stories screen too} &
+\emph{Review Panel} \\
+\bottomrule
+\end{longtable}
+
+\section{Open Design Questions}
+
+The team does not yet have answers to the following questions. They are the main
+reason for the feedback sessions, and they map to the follow-up questions in
+Appendix~\ref{AppScript}.
+
+\begin{enumerate}
+  \item \textbf{Conversation or form for intent capture?} A conversation is
+  easier to start, but a form may be faster for experienced users. The
+  prototype uses a conversation with one-click suggested answers as a
+  compromise.
+  \item \textbf{How much review is too much?} Approving five stories one by one
+  is thorough but slow. The SRS persona Priya will only use \progname{} if
+  review is faster than explaining the feature again later. An ``approve all
+  unflagged'' action may be needed.
+  \item \textbf{Should contracts be shown to the developer?} The JML preview
+  makes the gate concrete, but some developers may not read JML. It could be
+  hidden behind a toggle.
+  \item \textbf{Are quality flags helpful or noise?} Flags such as ``Atomic? Two
+  behaviours'' may help, or may be ignored after the first few.
+  \item \textbf{Is ``Changed'' a useful verification result?} It covers changes
+  that pass the checks but alter the meaning of a requirement. It may be
+  confusing next to plain pass and fail.
+\end{enumerate}
+
+\section{Alignment with the Design Document}
+
+The Module Guide states that wireframe exploration of the IDE surfaces is the
+subject of this report, and that its insights should be aligned with the Review
+Panel and Host IDE Interface modules \citep{MG}. Table~\ref{TblModules}
+summarises which modules each screen depends on. Insights from
+Table~\ref{TblInsights} that affect these modules will be carried into the MG and
+MIS for Design Document Revision~0.
+
+\begin{table}[H]
+\centering
+\caption{Screens and the MG modules behind them}
+\label{TblModules}
+\begin{tabular}{lL{11cm}}
+\toprule
+\textbf{Screen} & \textbf{Modules}\\
+\midrule
+All screens & Host IDE Interface, Review Panel, Workflow Controller\\
+1 Capture Intent & Intent Capture, Elicitation Engine\\
+2 Stakeholders & Elicitation Engine, Intent Model Store\\
+3 Goals and Stories & Elicitation Engine, Intent Model Store\\
+4 Approval Gate & Approval Gate, Contract Compiler, Coding Assistant Adapter\\
+5 Trace View & Traceability Manager, Intent Model Store\\
+6 Verification Report & Contract Verifier, Verification Report, Traceability Manager\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Limitations and Next Steps}
+
+\begin{itemize}
+  \item The prototype uses invented data and fixed responses. It shows the
+  intended workflow, not the quality of the real language-model output, which
+  will be judged in the proof-of-concept demonstration.
+  \item The visual style is a placeholder. The final panels will use the host
+  IDE's theme, as SR1 requires.
+  \item Feedback from a small number of sessions is indicative only. The winter
+  CD, the Usability Report, will test the built tool with more participants and
+  measurable tasks, as planned in the VnV Plan \citep{VnVPlan}.
+  \item Screens 1 to 3 match the proof-of-concept scope and will be built first.
+  Screens 4 to 6 guide Revision~0 of the design.
+\end{itemize}
+
+\newpage
+
+\appendix
+
+\section{Feedback Session Script} \label{AppScript}
+
+\paragraph{Introduction (read to the participant).}
+``This is a mock-up of a tool that runs inside your code editor. Before an AI
+assistant writes code, it helps you pin down what you actually want, records
+why, and later checks the AI's changes against it. The data is made up. Please
+think aloud as you go. We are testing the design, not you.''
+
+\paragraph{Scenario.}
+``You are a developer on a course-registration system. You want to add a
+waitlist for full sections.''
+
+\paragraph{Tasks.}
+\begin{enumerate}
+  \item Starting from Capture Intent, get the tool to accept your waitlist
+  request and continue to the user stories. Approve the stories you agree with
+  and reject any you do not. Get to the point where the AI is allowed to start.
+  \item You are new to the team and find \texttt{offerSeat()} in the code. Find
+  out why it offers seats in join order.
+  \item You are reviewing an AI change. Decide whether it can be merged, and
+  explain why.
+\end{enumerate}
+
+\paragraph{Follow-up questions.}
+\begin{enumerate}
+  \item At any point, were you unsure what to do next? Where?
+  \item Would you answer the clarifying questions in Capture Intent, or skip them?
+  Would you rather type or pick an answer?
+  \item Is reviewing each user story worth the time? What would make it faster?
+  \item Did the contract preview on the Approval Gate help, or would you hide it?
+  \item On the Verification Report, was it clear why the change failed? What
+  would you do next?
+  \item What one thing would stop you from using this tool on a real project?
+\end{enumerate}
+
+\section{Regenerating the Screenshots}
+
+The figures in this report are screenshots of the prototype at 1440 pixels wide.
+Some screens are opened in a preset state using a query string:
+
+\begin{itemize}
+  \item \texttt{index.html\#intent} and \texttt{index.html?demo=met\#intent}
+  \item \texttt{index.html\#stakeholders}
+  \item \texttt{index.html?demo=partial\#stories}
+  \item \texttt{index.html?demo=decided\#gate}
+  \item \texttt{index.html\#trace} and \texttt{index.html\#verify}
+\end{itemize}
+
+Any headless browser can capture them, for example
+\texttt{chrome --headless --window-size=1440,900 --screenshot=out.png
+"file:///.../index.html\#trace"}.
+
+\section{Generative AI Use Disclosure}
+
+\subsection{AI Tools Used}
+
+\begin{itemize}
+  \item Claude Opus 5.5 (in Claude Code)
+\end{itemize}
+
+\subsection{How and Where Used}
+
+\begin{itemize}
+  \item \textbf{Prototype.} The HTML prototype was generated with Claude from
+  the SRS, the Module Guide, and the proof-of-concept state definitions, then
+  reviewed and adjusted by the team.
+  \item \textbf{Report draft.} Sections 1 to 5 and 7 to 9 were drafted with
+  Claude and revised by the team member responsible for this CD.
+  \item \textbf{Not AI-generated.} The stakeholder feedback in Section~6 comes
+  only from real sessions with the participants listed there.
+\end{itemize}
+
+\subsection{Verification of AI-Generated Content}
+
+Every requirement and module reference in this report was checked against the
+current SRS and MG. The team is responsible for the accuracy and completeness of
+the submitted document, regardless of whether material was generated by a human
+or an AI system.
+
+\newpage
+
+\bibliographystyle{plainnat}
+\bibliography{WireframeReport}
+
+\end{document}

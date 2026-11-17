@@ -4,6 +4,19 @@
     "docs/CDs/MLReport/custom.bib",
     "docs/CDs/MLReport/main.tex"
   ],
+  "docs/CDs/Wireframe/WireframeReport.tex": [
+    "docs/CDs/Wireframe/WireframeReport.bib",
+    "docs/CDs/Wireframe/WireframeReport.tex",
+    "docs/CDs/Wireframe/figures/gate.png",
+    "docs/CDs/Wireframe/figures/intent-met.png",
+    "docs/CDs/Wireframe/figures/intent-partial.png",
+    "docs/CDs/Wireframe/figures/stakeholders.png",
+    "docs/CDs/Wireframe/figures/stories.png",
+    "docs/CDs/Wireframe/figures/trace.png",
+    "docs/CDs/Wireframe/figures/verify.png",
+    "docs/Comments.text",
+    "docs/Common.text"
+  ],
   "docs/Checklists/Code-Checklist.tex": [
     "docs/Checklists/Code-Checklist.tex",
     "docs/Comments.text"
