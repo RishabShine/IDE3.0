@@ -202,9 +202,9 @@ invent information where the captured context leaves something unresolved.
 
 Each turn also supplies the current drafts, outstanding and declined
 suggestions, the last prompt shown to the user, their latest response, and the
-previous evaluation. On the first turn, the last prompt is the starter guidance
-and the previous evaluation is null. There are no earlier conversation messages.
-The current drafts and decision records are authoritative. The previous
+most recent completed evaluation. On the first turn, the last prompt is the
+starter guidance and the evaluation is null. There are no earlier conversation
+messages. The current drafts and decision records are authoritative. The
 evaluation explains what the user was responding to, not the status of the
 updated drafts. Evaluate the current records again rather than copying it.
 
@@ -403,10 +403,10 @@ Last prompt shown to the user (starter guidance on the first turn):
 {last_prompt_to_user}
 </last_prompt_to_user>
 
-Previous evaluation, before this response was processed (null on the first turn):
-<previous_evaluation>
-{previous_evaluation}
-</previous_evaluation>
+Most recent completed evaluation (null on the first turn; may describe older drafts):
+<latest_evaluation>
+{evaluation}
+</latest_evaluation>
 
 Latest user response:
 <user_feedback>
@@ -453,7 +453,7 @@ Stakeholder definition:
 
 The input provides reusable project context, current drafts, outstanding and
 declined suggestions, the last prompt shown to the user, their latest response,
-and the previous evaluation. No earlier conversation messages are available.
+and the most recent completed evaluation. No earlier conversation messages are available.
 On the first turn the last prompt is starter guidance and the evaluation is
 null. Interpret references such as "the second suggestion" against the actual
 last prompt, and preserve compatible information in the current draft records.
@@ -498,9 +498,9 @@ StakeHolderResponse structure specified by the response-processing instructions.
 <last_prompt_to_user>
 {last_prompt_to_user}
 </last_prompt_to_user>
-<previous_evaluation>
-{previous_evaluation}
-</previous_evaluation>
+<latest_evaluation>
+{evaluation}
+</latest_evaluation>
 <current_drafts>
 {stakeholders}
 </current_drafts>

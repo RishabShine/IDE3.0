@@ -18,18 +18,44 @@ class StakeHolderRecord(TypedDict):
     justification: str
 
 
+StakeHolderVerdict = Literal["met", "not_met", "not_evaluated"]
+
+
+class IndividualStakeHolderEvaluationRecord(TypedDict):
+    stakeholder_id: int
+    detail_verdict: StakeHolderVerdict
+    detail_feedback: str
+    relevance_verdict: StakeHolderVerdict
+    relevance_feedback: str
+    overlap_verdict: StakeHolderVerdict
+    overlap_feedback: str
+    overlap_stakeholder_ids: list[int]
+    overall_verdict: StakeHolderVerdict
+
+
+class SuggestedStakeHolderRecord(TypedDict):
+    name: str
+    summary: str
+    justification: str
+
+
+# Dictionary form of the full StakeHolderEvaluation Pydantic response.
+class StakeHolderEvaluationRecord(TypedDict):
+    provided_stakeholders: list[IndividualStakeHolderEvaluationRecord]
+    suggested_stakeholders: list[SuggestedStakeHolderRecord]
+
+
 class StakeHolderMetadata(TypedDict):
     initialized: bool
-    intent_context: dict[str, Any]
     initial_context_message: str
     last_prompt_to_user: str
-    previous_evaluation: dict[str, Any] | None
     drafts: list[StakeHolderRecord]
     next_draft_id: int
     draft_version: int
     pending_suggestions: list[dict[str, str]]
     declined_suggestions: list[dict[str, str]]
-    evaluation: dict[str, Any] | None
+    evaluation: StakeHolderEvaluationRecord | None
+    evaluated_draft_version: int | None
     latest_user_response: str
     response_feedback: str
     user_confirmed: bool

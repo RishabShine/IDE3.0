@@ -26,18 +26,22 @@ Each refinement turn uses two model calls: one interprets the user's response
 into draft changes and suggestion decisions; the other evaluates the updated
 drafts. Under `stakeholder_metadata`, the graph retains the reusable project
 context message, current drafts and decisions, the last prompt shown to the
-user, their latest reply, and the previous evaluation. There is no growing
+user, their latest reply, and the most recent completed evaluation. There is no growing
 message history. Each model call receives task-specific instructions, the
 reusable context, and one current-state request containing that latest exchange.
+The single evaluation record is replaced after each successful evaluation.
+Its draft-version marker prevents old verdicts from approving edited drafts.
 Evaluation does not approve the draft list.
 
-Supply the completed intent as a JSON-compatible dictionary in `captured_intent`.
-Its upstream structure is not fixed yet. If it is absent, initialization uses all
-available `project_context` and `intent_metadata` fields as a temporary fallback.
+Upstream intent integration is pending. The starter currently uses an empty
+context placeholder marked `REPLACE WITH ACTUAL INTENT DATA WHEN MERGED`.
+Once merged, select the needed intent fields directly from `AgentState` to
+prepare the context message. No separate raw intent copy is kept in stakeholder
+metadata. The `captured_intent` input below is reserved for that integration.
 The starter node prepares this context and displays the initial guidance in one
 step, without reading files or calling the model. It commits the prepared state
 when the user replies. On interrupt resume, preparing the context again is safe
-and does not append duplicate messages. The previous evaluation is initially
+and does not append duplicate messages. The evaluation is initially
 empty, and the starter guidance is retained as the first prompt shown.
 
 With `src` on the Python import path and Ollama running the configured model:

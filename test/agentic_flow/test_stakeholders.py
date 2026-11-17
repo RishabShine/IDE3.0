@@ -118,9 +118,13 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.evaluator.responses.append(evaluation())
         result = self.resume("Front-desk staff handle bookings.")
         metadata = result["stakeholder_metadata"]
-        self.assertEqual(metadata["intent_context"], self.context)
-        self.assertIn("Equipment loans", metadata["initial_context_message"])
-        self.assertIsNone(metadata["previous_evaluation"])
+        self.assertNotIn("intent_context", metadata)
+        self.assertIn("<captured_intent>\n{}\n</captured_intent>",
+                      metadata["initial_context_message"])
+        self.assertNotIn("previous_evaluation", metadata)
+        self.assertIn("<latest_evaluation>\nnull\n</latest_evaluation>",
+                      self.processor.calls[0][-1].content)
+        self.assertEqual(metadata["evaluated_draft_version"], metadata["draft_version"])
         self.assertEqual(metadata["last_prompt_to_user"], prompt.STAKEHOLDER_STARTER_PROMPT)
         self.assertNotIn("messages", metadata)
 
@@ -166,14 +170,18 @@ class StakeHolderFlowTests(unittest.TestCase):
         metadata = result["stakeholder_metadata"]
         self.assertEqual(metadata["drafts"][0]["stakeholder_id"], 1)
         self.assertEqual(metadata["last_prompt_to_user"], last_prompt)
-        self.assertEqual(metadata["previous_evaluation"], previous_evaluation)
+        self.assertNotIn("previous_evaluation", metadata)
+        self.assertNotEqual(metadata["evaluation"], previous_evaluation)
+        self.assertEqual(metadata["evaluation"]["provided_stakeholders"][0]["overall_verdict"],
+                         "met")
         self.assertEqual(metadata["latest_user_response"],
                          "They handle bookings and explain booking exceptions.")
         self.assertNotIn("messages", metadata)
         self.assertIn(last_prompt, self.processor.calls[-1][-1].content)
         self.assertIn('"detail_verdict": "not_met"', self.evaluator.calls[-1][-1].content)
         self.assertIn("Enter APPROVE", self.message(result))
-        self.assertIn("Equipment loans", self.evaluator.calls[-1][1].content)
+        self.assertEqual(self.evaluator.calls[-1][1].content,
+                         metadata["initial_context_message"])
 
     def test_model_input_does_not_accumulate_older_exchanges(self):
         first = evaluation(detail="not_met")
@@ -284,6 +292,27 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertIsNone(metadata["evaluation"])
         self.assertFalse(metadata["user_confirmed"])
 
+    def test_failed_reevaluation_keeps_feedback_but_cannot_finalize_edited_drafts(self):
+        self.processor.responses.extend([
+            response([draft()]),
+            response([draft(1, summary="Handle bookings and cancellations.")]),
+        ])
+        self.evaluator.responses.extend([evaluation(), evaluation(ids=())])
+        self.start()
+        result = self.resume("Front-desk staff handle bookings.")
+        last_evaluation = result["stakeholder_metadata"]["evaluation"]
+        with self.assertRaisesRegex(ValueError, "each current draft exactly once"):
+            self.resume("Add cancellations to stakeholder 1.")
+        state = self.graph.get_state(self.config).values
+        metadata = state["stakeholder_metadata"]
+        self.assertEqual(metadata["evaluation"], last_evaluation)
+        self.assertNotIn("previous_evaluation", metadata)
+        self.assertEqual(metadata["evaluated_draft_version"], 1)
+        self.assertEqual(metadata["draft_version"], 2)
+        self.assertFalse(node.stakeholders_ready(state))
+        with self.assertRaisesRegex(ValueError, "requires explicit approval"):
+            node.finalize_stakeholders(state)
+
     def test_parent_graph_runs_sson_then_stakeholders_and_ends(self):
         from agentic_flow.capture_intent import node as capture_node
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
@@ -312,7 +341,8 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertNotIn("__interrupt__", result)
         self.assertEqual(result["intent_metadata"]["evaluation_of_statement"], "met")
         self.assertTrue(result["stakeholder_metadata"]["user_confirmed"])
-        self.assertEqual(result["stakeholder_metadata"]["intent_context"], self.context)
+        self.assertNotIn("intent_context", result["stakeholder_metadata"])
+        self.assertEqual(result["captured_intent"], self.context)
         self.assertEqual(self.graph.get_state(self.config).next, ())
 
     def test_parent_checkpoint_resumes_a_retry_inside_sson(self):

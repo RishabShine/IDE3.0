@@ -34,7 +34,7 @@ def _turn_input(metadata) -> dict[str, str]:
     return {
         "user_feedback": metadata["latest_user_response"],
         "last_prompt_to_user": metadata["last_prompt_to_user"],
-        "previous_evaluation": _json(metadata["previous_evaluation"]),
+        "evaluation": _json(metadata["evaluation"]),
         "stakeholders": _json(metadata["drafts"]),
         "pending_suggestions": _json(metadata["pending_suggestions"]),
         "declined_suggestions": _json(metadata["declined_suggestions"]),
@@ -50,7 +50,6 @@ def _collect_response(metadata, message: str) -> dict:
         **metadata,
         "last_prompt_to_user": message,
         "latest_user_response": response,
-        "previous_evaluation": metadata["evaluation"],
         "user_confirmed": False,
         "approved_version": None,
     }
@@ -68,31 +67,23 @@ def start_stakeholders(state: AgentState) -> AgentState:
     Nothing is written before interrupt(). On resume, preparing the same local
     metadata again is safe; the node commits it together with the user's reply.
     """
-    #! full upstream context can be supplied here when its structure is ready
-    # preserve all currently available intent metadata
-    context = state.get("captured_intent")
-    if context is None:
-        context = {
-            "project_context": state.get("project_context", ""),
-            "intent_metadata": state.get("intent_metadata", {}),
-        }
+    context = {}  #! REPLACE WITH ACTUAL INTENT DATA WHEN MERGED
 
     metadata = state.get("stakeholder_metadata")
     if not metadata or not metadata.get("initialized"):
         metadata = {
             "initialized": True,
-            "intent_context": context,
             "initial_context_message": prompt.STAKEHOLDER_INTENT_CONTEXT_PROMPT.format(
                 intent_context=_json(context)
             ),
             "last_prompt_to_user": "",
-            "previous_evaluation": None,
             "drafts": [],
             "next_draft_id": 1,
             "draft_version": 0,
             "pending_suggestions": [],
             "declined_suggestions": [],
             "evaluation": None,
+            "evaluated_draft_version": None,
             "latest_user_response": "",
             "response_feedback": "",
             "user_confirmed": False,
@@ -182,7 +173,8 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
             "draft_version": metadata["draft_version"] + (current != metadata["drafts"]),
             "pending_suggestions": list(pending.values()),
             "declined_suggestions": list(declined.values()),
-            "evaluation": None,
+            # Keep the latest completed evaluation to interpret this reply.
+            # Its version prevents using old verdicts to approve edited drafts.
             "response_feedback": result.clarification_feedback,
             "user_confirmed": False,
             "approved_version": None,
@@ -248,6 +240,7 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
         "stakeholder_metadata": {
             **metadata,
             "evaluation": result.model_dump(),
+            "evaluated_draft_version": metadata["draft_version"],
             "pending_suggestions": list(pending.values()),
         }
     }
@@ -260,6 +253,7 @@ def stakeholders_ready(state: AgentState) -> bool:
     if (
         not metadata["drafts"] or not evaluation
         or metadata["pending_suggestions"] or metadata["response_feedback"]
+        or metadata["evaluated_draft_version"] != metadata["draft_version"]
     ):
         return False
     results = evaluation["provided_stakeholders"]
