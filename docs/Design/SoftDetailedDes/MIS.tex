@@ -45,7 +45,6 @@ urlcolor=cyan
 Nov 13, 2026 & 0.1 & Tyler Yue: Drafted Rev~-1 and ensured MIS syntax for all leaf modules
 aligned with the Module Guide.\\
 Nov 13, 2026 & 0.2 & Tyler Yue: Edited the Rev~-1 to ensure it is aligned with the rubric and the Module Guide.\\
-Nov 16, 2026 & 0.3 & Vedant Patel: Added reflection appendix with individual reflection.\\
 \bottomrule
 \end{tabularx}
 
@@ -1036,9 +1035,6 @@ None.
   \item \textbf{Rubric review.} Used to evaluate the document against the
     Design Documentation rubric and to suggest areas of improvement, which
     the author then accepted, revised, or rejected.
-  \item \textbf{Reflection.} Vedant Patel's reflection answers were drafted
-    with Claude from his own account of the deliverable, then reviewed and
-    edited by him.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}
@@ -1062,128 +1058,9 @@ the document.
 
 \section{Appendix --- Reflection}
 
-The information in this section will be used to evaluate the team members on the
-graduate attribute of Problem Analysis and Design.
-
-\input{../../Reflection.text}
-
-\begin{enumerate}
-  \item What went well while writing this deliverable?
-
-  \textbf{Vedant Patel:}
-
-  Having the Module Guide and MIS drafted early, on November 13, let the rest of
-  us work on the proof of concept and the Wireframe Report in parallel instead
-  of waiting on the design. Building the wireframe was also a useful check on
-  the design. Every screen had to be backed by a module, so I could confirm that
-  the Review Panel, Approval Gate, Traceability Manager, and Verification Report
-  modules covered everything a developer actually sees. The proof-of-concept
-  code helped in the same way: the intent capture and stakeholder states I
-  worked with in the Goal2Story stage matched the data the Elicitation Engine
-  and Intent Model Store are specified to hold.
-
-  \item What pain points did you experience during this deliverable, and how
-    did you resolve them?
-
-  \textbf{Vedant Patel:}
-
-  The biggest pain point was confusion over which custom document we owed. Our
-  Problem Statement and VnV Plan said the fall CD was a Literature Review, but
-  the course roster, which is the official record, listed a Wireframe Report.
-  We only noticed the mismatch close to the deadline. I resolved it by checking
-  the course repository directly, confirming the registered CDs and the due
-  date, and updating our documents to match. A second pain point was our build
-  pipeline. Merges to main kept failing, and we found that the CI could not push
-  the generated PDFs because of a branch protection rule, so the published PDFs
-  were out of date. Knowing the cause meant we could plan a fix instead of
-  guessing. The lesson for me is to check the official source for requirements
-  and deadlines early, not our own copies of them.
-
-  \item Which of your design decisions stemmed from speaking to your client(s)
-  or a proxy (e.g. your peers, stakeholders, potential users)? For those that
-  were not, why, and where did they come from?
-
-  \textbf{Vedant Patel:}
-
-  The clearest input from proxies this round came from showing the wireframe to
-  classmates. They found the screens text heavy and wanted an introduction
-  explaining what the tool is for and how to use it. Both points affect the
-  Review Panel and Host IDE Interface modules: the Review Panel should lead with
-  the decision the developer has to make, and the Host IDE Interface needs a
-  first-run walkthrough. Most other design decisions came from the SRS, which
-  was itself based on the project description from our supervisor. For
-  example, the Approval Gate exists because the SRS requires that no code is
-  generated before the developer approves the requirements (FR7). We relied on
-  the SRS because it already captured what our stakeholders asked for, and
-  there was not time to validate every module directly with users before Rev~-1.
-
-  \item While creating the design doc, what parts of your other documents (e.g.
-  requirements, hazard analysis, etc), it any, needed to be changed, and why?
-
-  \textbf{Vedant Patel:}
-
-  The custom document sections of the Problem Statement and the VnV Plan had to
-  change from Literature Review and Code Walkthroughs to Wireframe Report and
-  Usability Report, so they matched what the team registered with the course.
-  I also corrected the proof-of-concept dates in the SRS schedule constraints,
-  which listed November 30 to December 3 instead of the course window of
-  November 23 to December 4. Neither change affected the requirements
-  themselves, but both would have misled a reader about our plan.
-
-  \item What are the limitations of your solution?  Put another way, given
-  unlimited resources, what could you do to make the project better? (LO\_ProbSolutions)
-
-  \textbf{Vedant Patel:}
-
-  Our design depends heavily on the quality of the language model output. If
-  the Elicitation Engine proposes poor stakeholders or user stories, the
-  developer has to catch it during review, and the classmate feedback suggests
-  that review already feels text heavy. Traceability is also only as good as the
-  coding assistant's report of which files it changed, and verification only
-  covers what the compiled contracts can express, which for now means Java with
-  JML. With unlimited resources I would run proper user studies with developers
-  who use AI assistants daily, support more languages and IDEs, add automatic
-  link recovery as a backup when the assistant's report is incomplete, and
-  measure how much time the review steps really cost compared with the time
-  they save later.
-
-  \item Give a brief overview of other design solutions you considered.  What
-  are the benefits and tradeoffs of those other designs compared with the chosen
-  design?  From all the potential options, why did you select the documented design?
-  (LO\_Explores)
-
-  \textbf{Vedant Patel:}
-
-  One alternative was to recover traceability after the fact, by analysing code
-  and documents to guess which requirement each piece of code implements. That
-  needs nothing from the developer up front, but the links are only guesses and
-  the reasons behind a decision cannot be recovered at all. We chose to record
-  links and rationale at the moment the developer approves a requirement,
-  because that is when the information exists. For the interface, I compared a
-  standalone web application with panels inside the IDE. A web app would be
-  easier to build, but the SRS requires the tool to work inside the IDE without
-  a separate interface (ACCR1), and developers are less likely to switch
-  windows mid-task. For intent capture, I compared a structured form with a
-  conversation. A form is faster for experienced users, but a conversation with
-  suggested answers is easier to start with, so the wireframe uses that. In the
-  proof of concept we also split elicitation into separate stages (capture
-  intent, stakeholders, goals to user stories) instead of one large prompt,
-  because each stage can be checked and approved on its own, which matches the
-  modular structure in the Module Guide.
-
-  \item (After you have implemented another team's module, which means this
-  isn't filled in until after the original deadline). What did you learn by
-  implementing another team's module? Were all the details you needed in the
-  documentation, or did you need to make assumptions, or ask the other team
-  questions?  If your team also had another team implement one of your modules,
-  what was this experience like?  Are there things in your documentation you
-  could have changed to make the process go more smoothly for when an
-  ``outsider'' completes some of the implementation?
-
-  To be completed after implementing another team's module, as scheduled for
-  Design Document Revision~0.
-
-\end{enumerate}
+Not required for Design Documentation Revision~-1. This appendix will be
+completed for Revision~0, including the reflection after implementing another
+team's module.
 
 \bibliographystyle{plainnat}
 \bibliography{../../../refs/References}
