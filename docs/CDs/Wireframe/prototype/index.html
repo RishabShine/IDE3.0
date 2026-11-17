@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDE3.0 Wireframe</title>
+<!--
+  IDE3.0 Wireframe Report (CD-Fall) - clickable prototype.
+  Self-contained: no external scripts, fonts, or images, so it opens offline.
+  Each screen has its own URL hash (#intent, #stakeholders, #stories, #gate,
+  #trace, #verify) so screenshots for the report can be taken per screen.
+  All project data shown is an invented example scenario.
+-->
+<style>
+  :root {
+    --bg: #1e1f22;
+    --panel: #25262b;
+    --panel-2: #2c2d33;
+    --sidebar: #212226;
+    --activity: #18191c;
+    --border: #3a3b42;
+    --text: #e4e4e7;
+    --muted: #9b9ca5;
+    --faint: #6d6e78;
+    --accent: #5b9cf5;
+    --accent-weak: rgba(91, 156, 245, 0.14);
+    --ok: #4fb67d;
+    --ok-weak: rgba(79, 182, 125, 0.14);
+    --warn: #e0a447;
+    --warn-weak: rgba(224, 164, 71, 0.14);
+    --bad: #e3625f;
+    --bad-weak: rgba(227, 98, 95, 0.14);
+    --code: #1a1b1e;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.5 var(--sans);
+    overflow: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .app { display: grid; grid-template-rows: 30px 1fr 24px; height: 100vh; }
+
+  /* Title bar */
+  .titlebar {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--activity); border-bottom: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; position: relative;
+  }
+  .titlebar .dots { position: absolute; left: 12px; display: flex; gap: 7px; }
+  .titlebar .dots span { width: 11px; height: 11px; border-radius: 50%; background: #3c3d44; }
+  .titlebar .tag {
+    position: absolute; right: 12px; font-size: 11px; color: var(--faint);
+    border: 1px dashed var(--border); padding: 0 8px; border-radius: 4px;
+  }
+
+  .body { display: grid; grid-template-columns: 48px 272px 1fr; min-height: 0; }
+
+  /* Activity bar */
+  .activity {
+    background: var(--activity); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; padding-top: 8px; gap: 4px;
+  }
+  .activity .ico {
+    width: 36px; height: 36px; border-radius: 6px; display: grid; place-items: center;
+    color: var(--faint); border-left: 2px solid transparent;
+  }
+  .activity .ico.on { color: var(--text); border-left-color: var(--accent); background: var(--panel); border-radius: 0 6px 6px 0; }
+  .activity svg { width: 20px; height: 20px; }
+
+  /* Side bar */
+  .sidebar { background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  .side-head {
+    padding: 10px 14px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); display: flex; justify-content: space-between; align-items: center;
+  }
+  .side-head b { color: var(--text); font-weight: 600; letter-spacing: 0.04em; }
+  .section-label { padding: 12px 14px 6px; font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; }
+  .steps { list-style: none; margin: 0; padding: 0 8px; }
+  .steps li button {
+    width: 100%; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px;
+    background: none; border: 0; border-radius: 5px; padding: 7px 8px; text-align: left;
+  }
+  .steps li button:hover { background: var(--panel); }
+  .steps li button.on { background: var(--accent-weak); }
+  .steps .num {
+    width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 11px; border: 1px solid var(--border); color: var(--muted);
+  }
+  .steps .done .num { background: var(--ok); border-color: var(--ok); color: #0d1f15; }
+  .steps .cur .num { border-color: var(--accent); color: var(--accent); }
+  .steps .name { font-size: 13px; }
+  .steps .sub { display: block; font-size: 11px; color: var(--faint); }
+  .steps .badge { font-size: 10px; padding: 1px 6px; border-radius: 9px; background: var(--panel-2); color: var(--muted); }
+  .steps .badge.warn { background: var(--warn-weak); color: var(--warn); }
+  .steps .badge.bad { background: var(--bad-weak); color: var(--bad); }
+  .steps .badge.ok { background: var(--ok-weak); color: var(--ok); }
+  .divider { height: 1px; background: var(--border); margin: 10px 14px; }
+  .model-sum { padding: 0 14px; display: grid; grid-template-columns: 1fr auto; row-gap: 4px; color: var(--muted); font-size: 12px; }
+  .model-sum b { color: var(--text); font-weight: 600; text-align: right; }
+  .side-foot { margin-top: auto; padding: 10px 14px; font-size: 11px; color: var(--faint); border-top: 1px solid var(--border); }
+
+  /* Editor area */
+  .editor { display: grid; grid-template-rows: 35px 1fr; min-width: 0; min-height: 0; }
+  .tabs { display: flex; background: var(--sidebar); border-bottom: 1px solid var(--border); }
+  .tab { padding: 0 14px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); border-right: 1px solid var(--border); }
+  .tab.on { background: var(--bg); color: var(--text); border-top: 1px solid var(--accent); }
+  .tab .x { color: var(--faint); }
+  .view { overflow: auto; padding: 22px 28px 40px; }
+  .screen { display: none; max-width: 1060px; }
+  .screen.on { display: block; }
+  h1 { font-size: 18px; margin: 0 0 4px; font-weight: 600; }
+  .lede { color: var(--muted); margin: 0 0 18px; }
+  .persona { display: inline-flex; gap: 6px; align-items: center; font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; margin-left: 8px; vertical-align: 2px; }
+  h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+  .row { display: flex; gap: 14px; }
+  .row > * { flex: 1; min-width: 0; }
+  .muted { color: var(--muted); }
+  .faint { color: var(--faint); }
+  .small { font-size: 12px; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+
+  .btn {
+    border: 1px solid var(--border); background: var(--panel-2); border-radius: 5px;
+    padding: 5px 12px; font-size: 12px;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #0b1830; font-weight: 600; }
+  .btn.primary:disabled { background: var(--panel-2); border-color: var(--border); color: var(--faint); cursor: not-allowed; }
+  .btn.ok { color: var(--ok); }
+  .btn.bad { color: var(--bad); }
+  .btn.sel-ok { background: var(--ok-weak); border-color: var(--ok); color: var(--ok); }
+  .btn.sel-bad { background: var(--bad-weak); border-color: var(--bad); color: var(--bad); }
+  .btn.sel-edit { background: var(--warn-weak); border-color: var(--warn); color: var(--warn); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px; border: 1px solid transparent; white-space: nowrap; }
+  .pill.ok { background: var(--ok-weak); color: var(--ok); }
+  .pill.warn { background: var(--warn-weak); color: var(--warn); }
+  .pill.bad { background: var(--bad-weak); color: var(--bad); }
+  .pill.info { background: var(--accent-weak); color: var(--accent); }
+  .pill.neutral { background: var(--panel-2); color: var(--muted); }
+
+  /* Chat */
+  .chat { display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 82%; padding: 10px 14px; border-radius: 8px; }
+  .msg.dev { align-self: flex-end; background: var(--accent-weak); border: 1px solid rgba(91,156,245,0.35); }
+  .msg.sys { align-self: flex-start; background: var(--panel); border: 1px solid var(--border); }
+  .msg .who { font-size: 11px; color: var(--faint); margin-bottom: 4px; }
+  .intent-box { border-left: 3px solid var(--accent); background: var(--panel-2); padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  .verdict { display: flex; gap: 8px; align-items: center; margin: 8px 0 4px; }
+  .composer { margin-top: 14px; display: flex; gap: 8px; }
+  .composer .input {
+    flex: 1; background: var(--code); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; color: var(--faint);
+  }
+  .quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .quick .btn { border-radius: 14px; }
+
+  /* Lists */
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+  .item .t { font-weight: 600; }
+  .item .d { color: var(--muted); font-size: 12px; }
+  .item.declined { opacity: 0.55; }
+  .item.declined .t { text-decoration: line-through; }
+
+  .story { background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; margin-bottom: 10px; }
+  .story.approved { border-color: rgba(79,182,125,0.55); }
+  .story.rejected { border-color: rgba(227,98,95,0.55); opacity: 0.7; }
+  .story.editing { border-color: rgba(224,164,71,0.6); }
+  .story-head { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+  .story-id { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+  .story-text { font-size: 13.5px; }
+  .story-text em { color: var(--muted); font-style: normal; }
+  .story-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; font-size: 12px; }
+  .story-meta .lab { color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .checks { display: flex; gap: 6px; flex-wrap: wrap; }
+  .edit-area { display: none; margin: 8px 0; }
+  .story.editing .edit-area { display: block; }
+  .edit-area .input { background: var(--code); border: 1px solid var(--warn); border-radius: 6px; padding: 8px 10px; font-size: 13px; }
+  .goal-head { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 8px; }
+  .goal-head:first-child { margin-top: 0; }
+  .goal-id { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .progress { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; margin: 6px 0 2px; }
+  .progress > div { height: 100%; background: var(--ok); width: 0; transition: width 0.2s; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--faint); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.mono { white-space: nowrap; }
+
+  pre.code { background: var(--code); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin: 0; font: 12px/1.55 var(--mono); color: #cfd0d6; overflow-x: auto; }
+  .k { color: #c792ea; } .c { color: var(--faint); } .s { color: #a5d6a7; } .j { color: #e0a447; }
+  .add { color: var(--ok); } .del { color: var(--bad); }
+
+  .lock { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 14px; }
+  .lock.locked { background: var(--warn-weak); border-color: rgba(224,164,71,0.5); }
+  .lock.open { background: var(--ok-weak); border-color: rgba(79,182,125,0.5); }
+  .lock svg { width: 28px; height: 28px; flex: none; }
+  .lock .big { font-size: 15px; font-weight: 600; }
+
+  /* Trace */
+  .trace { display: grid; grid-template-columns: 300px 1fr; gap: 14px; }
+  .tree { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 8px; font-size: 12.5px; }
+  .tree .node { display: flex; gap: 6px; align-items: center; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 0; background: none; width: 100%; text-align: left; }
+  .tree .node:hover { background: var(--panel-2); }
+  .tree .node.on { background: var(--accent-weak); }
+  .tree .lvl1 { padding-left: 22px; } .tree .lvl2 { padding-left: 38px; }
+  .tree .tid { font-family: var(--mono); font-size: 11px; color: var(--accent); min-width: 48px; }
+  .tree .gid { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 30px; }
+  .warn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); margin-left: auto; flex: none; }
+  .link-row { display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+  .link-row:last-child { border-bottom: 0; }
+  .kind { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+  .quote { border-left: 3px solid var(--border); padding: 4px 0 4px 12px; color: var(--muted); margin: 6px 0; }
+  .timeline { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .timeline li { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 4px 0; color: var(--muted); }
+  .timeline li b { color: var(--text); font-weight: 500; }
+
+  /* Status bar */
+  .status { display: flex; align-items: center; gap: 16px; padding: 0 12px; font-size: 11.5px; background: var(--accent); color: #0b1830; }
+  .status.locked { background: #b9822f; color: #1d1405; }
+  .status.open { background: #3f9466; color: #06170e; }
+  .status .grow { flex: 1; }
+
+  /* Toast */
+  .toast { position: fixed; right: 20px; bottom: 36px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 12px; opacity: 0; transform: translateY(6px); transition: all 0.2s; pointer-events: none; max-width: 360px; }
+  .toast.show { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <div class="dots"><span></span><span></span><span></span></div>
+    course-registration &middot; Workspace
+    <div class="tag">Wireframe prototype &middot; example data</div>
+  </div>
+
+  <div class="body">
+    <!-- Activity bar: host IDE chrome, IDE3.0 adds one entry (AR1, ACCR1) -->
+    <nav class="activity" aria-label="Activity bar">
+      <div class="ico" title="Explorer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h7l2 2h7v14H4z"/></svg></div>
+      <div class="ico" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></div>
+      <div class="ico" title="Source control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 4-6 3-12 7"/></svg></div>
+      <div class="ico on" title="IDE3.0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8.3M18 8l-5 8.3"/></svg></div>
+    </nav>
+
+    <!-- IDE3.0 side bar: workflow stepper + intent model summary (EUR2) -->
+    <aside class="sidebar">
+      <div class="side-head"><b>IDE3.0</b><span>Intent workflow</span></div>
+      <div class="section-label">Current request</div>
+      <ul class="steps" id="steps"></ul>
+      <div class="divider"></div>
+      <div class="section-label">Intent model</div>
+      <div class="model-sum">
+        <span>Goals</span><b>2</b>
+        <span>Approved requirements</span><b id="sumApproved">0</b>
+        <span>Trace links</span><b>14</b>
+        <span>Links missing</span><b id="sumMissing" style="color:var(--warn)">1</b>
+        <span>Version</span><b>v7</b>
+      </div>
+      <div class="side-foot">Stored in <span class="mono">.ide3/intent-model.json</span>, versioned with Git</div>
+    </aside>
+
+    <main class="editor">
+      <div class="tabs">
+        <div class="tab"><span class="mono">WaitlistService.java</span><span class="x">&times;</span></div>
+        <div class="tab on" id="tabTitle">IDE3.0: Capture Intent <span class="x">&times;</span></div>
+      </div>
+      <div class="view" id="view">
+
+        <!-- ============ 1. CAPTURE INTENT ============ -->
+        <section class="screen" id="s-intent" data-title="Capture Intent">
+          <h1>Capture intent <span class="persona">Priya, developer</span></h1>
+          <p class="lede">Describe what you want built. IDE3.0 restates it as one intent statement and checks that it is clear enough to plan from before anything else happens.</p>
+
+          <div class="chat" id="chat">
+            <div class="msg dev">
+              <div class="who">You &middot; 2:14 PM</div>
+              Add a waitlist so students can get into a full section when someone drops.
+            </div>
+            <div class="msg sys">
+              <div class="who">IDE3.0 &middot; attempt 1 of 3</div>
+              Here is how I understood your request:
+              <div class="intent-box">Students can join a waitlist for a full course section and are enrolled when a seat opens.</div>
+              <div class="verdict"><span class="pill warn">Partially met</span><span class="small muted">The intent is clear, but two decisions are still open.</span></div>
+              <ul class="small" style="margin:6px 0 0 0;padding-left:18px;color:var(--muted)">
+                <li>When a seat opens, is the student enrolled automatically, or offered the seat to accept?</li>
+                <li>In what order are waitlisted students considered?</li>
+              </ul>
+              <div class="quick">
+                <button class="btn" data-quick="Offer the seat, 24 hours to accept, first come first served">Offer seat, 24h to accept, first come first served</button>
+                <button class="btn" data-quick="Enroll automatically, in join order">Enroll automatically, in join order</button>
+                <button class="btn" data-quick="other">Answer in my own words</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="composer">
+            <div class="input" id="composer">Reply, or pick an answer above...</div>
+            <button class="btn" id="btnRefine">Send</button>
+          </div>
+
+          <div class="card" style="margin-top:18px">
+            <h2>What happens next</h2>
+            <div class="small muted">Once the intent is met, IDE3.0 drafts the stakeholders and user stories for review. Nothing is sent to the coding assistant until you approve them.</div>
+          </div>
+        </section>
+
+        <!-- ============ 2. STAKEHOLDERS ============ -->
+        <section class="screen" id="s-stakeholders" data-title="Stakeholders">
+          <h1>Stakeholders <span class="persona">Priya, developer</span></h1>
+          <p class="lede">Who is affected by this feature. IDE3.0 drafted this list from your intent and the project's existing model. Edit it, then confirm.</p>
+
+          <div class="intent-box" style="margin-bottom:16px">
+            <span class="small faint">Approved intent:</span><br>
+            Students can join a waitlist for a full section. When a seat opens, it is offered to the earliest waitlisted student, who has 24 hours to accept.
+          </div>
+
+          <div class="row">
+            <div class="card">
+              <h2>Draft v2 <span class="pill neutral" style="margin-left:6px">4 stakeholders</span></h2>
+              <div class="list" id="shList">
+                <div class="item"><div><div class="t">Student</div><div class="d">Joins the waitlist, receives and accepts seat offers. Primary user.</div></div><span class="pill info">Primary</span></div>
+                <div class="item"><div><div class="t">Registrar's office</div><div class="d">Owns enrolment policy: offer window, waitlist caps, overrides.</div></div><span class="pill neutral">Policy owner</span></div>
+                <div class="item"><div><div class="t">Instructor</div><div class="d">Sees the waitlist for their section; cannot reorder it.</div></div><span class="pill neutral">Viewer</span></div>
+                <div class="item"><div><div class="t">Notification service</div><div class="d">Existing system that sends the offer email and expiry reminder.</div></div><span class="pill neutral">External system</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Suggested by IDE3.0</h2>
+              <div class="small muted" style="margin-bottom:10px">Found by checking who supplies, uses, or is constrained by the feature.</div>
+              <div class="list" id="shSuggest">
+                <div class="item" data-sh="acc">
+                  <div><div class="t">Accessibility services</div><div class="d">Students with accommodations may need a longer offer window.</div></div>
+                  <div class="actions"><button class="btn ok" data-sh-act="add">Add</button><button class="btn" data-sh-act="decline">Decline</button></div>
+                </div>
+                <div class="item" data-sh="fin">
+                  <div><div class="t">Student financial services</div><div class="d">Enrolment changes can affect tuition holds and payment deadlines.</div></div>
+                  <div class="actions"><button class="btn ok" data-sh-act="add">Add</button><button class="btn" data-sh-act="decline">Decline</button></div>
+                </div>
+              </div>
+              <div class="section-label" style="padding-left:0">Declined</div>
+              <div class="list" id="shDeclined">
+                <div class="item declined"><div><div class="t">Teaching assistants</div><div class="d">Declined in v1: no waitlist role.</div></div><span class="pill neutral">v1</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="btnConfirmSh">Confirm stakeholders</button>
+            <span class="small faint" id="shNote">Confirming saves draft v2 and moves on to goals and user stories.</span>
+          </div>
+        </section>
+
+        <!-- ============ 3. GOALS AND USER STORIES ============ -->
+        <section class="screen" id="s-stories" data-title="Goals and User Stories">
+          <h1>Goals and user stories <span class="persona">Priya, developer</span></h1>
+          <p class="lede">Each story is a proposal. Approve, edit, or reject it. Only approved stories become requirements in the intent model.</p>
+
+          <div class="card" style="padding:10px 16px">
+            <div class="row" style="align-items:center">
+              <div><b id="decidedCount">0 of 5</b> <span class="muted">decided</span>
+                <div class="progress"><div id="progressBar"></div></div>
+              </div>
+              <div class="small muted" style="flex:2">Quality checks flag stories that are not atomic, well-formed, or unambiguous. A flagged story can still be approved.</div>
+            </div>
+          </div>
+
+          <div id="storyList"></div>
+
+          <div class="actions" style="margin-top:6px">
+            <button class="btn primary" id="btnToGate" disabled>Review approved set</button>
+            <span class="small faint" id="storiesNote">Decide every story to continue.</span>
+          </div>
+        </section>
+
+        <!-- ============ 4. APPROVAL GATE ============ -->
+        <section class="screen" id="s-gate" data-title="Approval Gate">
+          <h1>Approval gate <span class="persona">Priya, developer</span></h1>
+          <p class="lede">The coding assistant is blocked from writing code for this request until the approved set is released.</p>
+
+          <div class="lock locked" id="lockBox">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" id="lockIcon"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            <div>
+              <div class="big" id="lockTitle">Generation locked</div>
+              <div class="small" id="lockSub">Release the approved set to let the assistant start.</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="card">
+              <h2>Approved set (proposal v3)</h2>
+              <table>
+                <thead><tr><th>ID</th><th>Requirement</th><th>Status</th></tr></thead>
+                <tbody id="gateTable"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h2>Compiled contract preview</h2>
+              <div class="small muted" style="margin-bottom:8px">Generated from REQ-3 and NFR-1. The assistant's code must satisfy it.</div>
+<pre class="code"><span class="c">// REQ-3, NFR-1: offer the freed seat in join order</span>
+<span class="j">/*@ requires</span> section.isFull() == false;
+<span class="j">  @ requires</span> !waitlist.isEmpty();
+<span class="j">  @ ensures</span> \result == \old(waitlist.earliestEligible());
+<span class="j">  @ ensures</span> \result.offerExpiresAt() ==
+<span class="j">  @</span>         now().plusHours(policy.offerWindow());
+<span class="j">  @*/</span>
+<span class="k">Offer</span> offerSeat(<span class="k">Section</span> section);</pre>
+              <div class="small faint" style="margin-top:8px">Checked with OpenJML and the JUnit tests in the Verify step.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Instruction sent to the assistant</h2>
+<pre class="code" id="instr">Implement exactly REQ-1, REQ-2, REQ-3, REQ-4 and NFR-1 from intent model v7.
+Do not implement US-5 (rejected: out of scope for this release).
+Every new public method must satisfy its compiled contract.
+Report the files and tests you changed so IDE3.0 can link them.</pre>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary" id="btnRelease">Release to assistant</button>
+            <button class="btn" data-go="stories">Back to stories</button>
+          </div>
+        </section>
+
+        <!-- ============ 5. TRACE VIEW ============ -->
+        <section class="screen" id="s-trace" data-title="Trace View">
+          <h1>Trace view <span class="persona">Sam, new team member</span></h1>
+          <p class="lede">Why does this code exist? Pick any requirement to see where it came from and what implements and tests it.</p>
+
+          <div class="trace">
+            <div class="tree" id="tree">
+              <div class="section-label" style="padding:4px 8px 8px">Intent model v7</div>
+              <button class="node" data-node="G1"><span class="gid">G1</span>Fill freed seats fairly</button>
+              <button class="node lvl1" data-node="REQ-1"><span class="tid">REQ-1</span>Join waitlist</button>
+              <button class="node lvl1 on" data-node="REQ-3"><span class="tid">REQ-3</span>Offer seat in order</button>
+              <button class="node lvl1" data-node="NFR-1"><span class="tid">NFR-1</span>First come, first served</button>
+              <button class="node" data-node="G2"><span class="gid">G2</span>Keep students informed</button>
+              <button class="node lvl1" data-node="REQ-2"><span class="tid">REQ-2</span>See waitlist position</button>
+              <button class="node lvl1" data-node="REQ-4"><span class="tid">REQ-4</span>Offer expiry reminder <span class="warn-dot" title="Missing test link"></span></button>
+            </div>
+
+            <div id="traceDetail"></div>
+          </div>
+        </section>
+
+        <!-- ============ 6. VERIFICATION REPORT ============ -->
+        <section class="screen" id="s-verify" data-title="Verification Report">
+          <h1>Verification report <span class="persona">Daniel, technical lead</span></h1>
+          <p class="lede">A change from the coding assistant, checked against the intent model before it can be merged.</p>
+
+          <div class="card">
+            <div class="row" style="align-items:center">
+              <div>
+                <div class="small faint">Change</div>
+                <div><b>"Prioritise upper-year students on the waitlist"</b></div>
+                <div class="small muted">Assistant session 14 &middot; 2 files &middot; branch <span class="mono">waitlist-priority</span></div>
+              </div>
+              <div style="flex:none"><span class="pill bad" style="font-size:12px;padding:3px 12px">2 items violated</span></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="card" style="flex:1.25">
+              <h2>Checks against intent model v7</h2>
+              <table>
+                <thead><tr><th>Item</th><th>Result</th><th>Evidence</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="story-id">NFR-1</span><br>First come, first served</td><td><span class="pill bad">Violated</span></td><td class="small">Contract <span class="mono">offerSeat</span>: <span class="mono">\result == earliestEligible()</span> fails when an upper-year student joined later. Test <span class="mono">offersInJoinOrder</span> fails.</td></tr>
+                  <tr><td><span class="story-id">REQ-3</span><br>Offer seat in order</td><td><span class="pill bad">Violated</span></td><td class="small">Depends on NFR-1.</td></tr>
+                  <tr><td><span class="story-id">REQ-1</span><br>Join waitlist</td><td><span class="pill ok">Satisfied</span></td><td class="small">4 of 4 tests pass. Contract holds.</td></tr>
+                  <tr><td><span class="story-id">REQ-2</span><br>See waitlist position</td><td><span class="pill warn">Changed</span></td><td class="small">Position is no longer join order. Behaviour still matches the text, but the meaning changed.</td></tr>
+                  <tr><td><span class="story-id">REQ-4</span><br>Offer expiry reminder</td><td><span class="pill neutral">Not touched</span></td><td class="small">No linked code changed.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h2>Diff (trace-linked lines)</h2>
+<pre class="code"><span class="c">WaitlistService.java  REQ-3, NFR-1</span>
+  public Offer offerSeat(Section s) {
+<span class="del">-   Entry next = waitlist.earliestEligible();</span>
+<span class="add">+   Entry next = waitlist.stream()</span>
+<span class="add">+     .filter(Entry::isEligible)</span>
+<span class="add">+     .max(byYearThenJoinTime)</span>
+<span class="add">+     .orElseThrow();</span>
+    return offers.create(next, policy);
+  }</pre>
+              <div class="small muted" style="margin-top:10px">Rationale on record for NFR-1:</div>
+              <div class="quote small">"Registrar policy: seats are offered strictly in the order students joined."</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>What do you want to do?</h2>
+            <div class="actions" id="verifyActions">
+              <button class="btn bad" data-v="reject">Reject change</button>
+              <button class="btn" data-v="return">Return to assistant with violations</button>
+              <button class="btn" data-v="propose">Propose changing NFR-1</button>
+            </div>
+            <div class="small faint" style="margin-top:8px" id="verifyNote">Changing a requirement goes back through review and approval. It is never changed silently by code.</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <footer class="status locked" id="statusBar">
+    <span>&#9675; IDE3.0</span>
+    <span id="statusText">Generation locked: approval pending</span>
+    <span class="grow"></span>
+    <span>Intent model v7</span>
+    <span>Java</span>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var SCREENS = [
+    { id: "intent", name: "Capture intent", sub: "FR1, FR2" },
+    { id: "stakeholders", name: "Stakeholders", sub: "Who is affected" },
+    { id: "stories", name: "Goals and user stories", sub: "FR3 to FR6" },
+    { id: "gate", name: "Approval gate", sub: "FR7, FR8, FR12" },
+    { id: "trace", name: "Trace view", sub: "FR9, FR11" },
+    { id: "verify", name: "Verification report", sub: "FR10" }
+  ];
+
+  var state = {
+    intentMet: false,
+    shConfirmed: false,
+    released: false,
+    stories: [
+      { id: "US-1", goal: "G1", req: "REQ-1", role: "student", want: "join the waitlist for a full section", why: "I can get a seat if one opens",
+        source: "\"so students can get into a full section\"", rationale: "Core of the request.", checks: [["ok", "Atomic"], ["ok", "Well-formed"], ["ok", "Unambiguous"]], status: "pending" },
+      { id: "US-2", goal: "G2", req: "REQ-2", role: "student", want: "see my position on the waitlist", why: "I can decide whether to keep waiting or pick another section",
+        source: "Inferred from stakeholder: Student", rationale: "Students cannot plan without it.", checks: [["ok", "Atomic"], ["ok", "Well-formed"], ["ok", "Unambiguous"]], status: "pending" },
+      { id: "US-3", goal: "G1", req: "REQ-3", role: "student", want: "be offered a freed seat in the order I joined, with 24 hours to accept", why: "the process is fair and I am not enrolled in something I no longer want",
+        source: "Clarification, attempt 2", rationale: "Registrar policy: seats are offered strictly in join order.", checks: [["warn", "Atomic? Two behaviours"], ["ok", "Well-formed"], ["ok", "Unambiguous"]], status: "pending" },
+      { id: "US-4", goal: "G2", req: "REQ-4", role: "student", want: "get a reminder 4 hours before my seat offer expires", why: "I do not lose the seat by missing an email",
+        source: "Stakeholder: Notification service", rationale: "Offers expire; a missed offer is the most likely complaint.", checks: [["ok", "Atomic"], ["ok", "Well-formed"], ["warn", "Unambiguous? Which channel"]], status: "pending" },
+      { id: "US-5", goal: "G1", req: "REQ-5", role: "registrar", want: "move a student to the top of a waitlist", why: "I can handle special cases",
+        source: "Stakeholder: Registrar's office", rationale: "Requested override; conflicts with NFR-1 unless audited.", checks: [["ok", "Atomic"], ["ok", "Well-formed"], ["bad", "Conflicts with NFR-1"]], status: "pending" }
+    ]
+  };
+
+  var TRACE = {
+    "REQ-3": {
+      title: "Offer a freed seat to the earliest eligible waitlisted student, with 24 hours to accept",
+      story: "US-3", goal: "G1 Fill freed seats fairly", version: "v7",
+      rationale: "Registrar policy: seats are offered strictly in the order students joined. A timed offer avoids enrolling students who have since changed plans.",
+      request: "Add a waitlist so students can get into a full section when someone drops.",
+      clarification: "Offer the seat, 24 hours to accept, first come first served.",
+      who: "Priya, Nov 10, 2:14 PM",
+      links: [
+        ["Code", "WaitlistService.java : offerSeat()", "ok", "Linked"],
+        ["Code", "OfferRepository.java : create()", "ok", "Linked"],
+        ["Contract", "offerSeat requires / ensures (JML)", "ok", "Holds"],
+        ["Test", "WaitlistServiceTest : offersInJoinOrder", "ok", "Passing"],
+        ["Test", "WaitlistServiceTest : offerExpiresAfterWindow", "ok", "Passing"]
+      ],
+      history: [["Nov 10", "Proposed as US-3 (attempt 2 clarification)"], ["Nov 10", "Edited by Priya: added \"eligible\""], ["Nov 10", "Approved, became REQ-3"], ["Nov 12", "Linked to 2 files and 2 tests"]]
+    },
+    "REQ-1": {
+      title: "Let a student join the waitlist for a full section", story: "US-1", goal: "G1 Fill freed seats fairly", version: "v7",
+      rationale: "Core of the request.", request: "Add a waitlist so students can get into a full section when someone drops.", clarification: "", who: "Priya, Nov 10, 2:14 PM",
+      links: [["Code", "WaitlistController.java : join()", "ok", "Linked"], ["Code", "WaitlistService.java : add()", "ok", "Linked"], ["Test", "WaitlistServiceTest : joinFullSection", "ok", "Passing"]],
+      history: [["Nov 10", "Proposed as US-1"], ["Nov 10", "Approved, became REQ-1"]]
+    },
+    "NFR-1": {
+      title: "Seats are offered strictly in the order students joined (first come, first served)", story: "US-3", goal: "G1 Fill freed seats fairly", version: "v7",
+      rationale: "Registrar policy. Fairness complaints are the main risk of any waitlist.", request: "Add a waitlist so students can get into a full section when someone drops.", clarification: "Offer the seat, 24 hours to accept, first come first served.", who: "Priya, Nov 10, 2:16 PM",
+      links: [["Contract", "offerSeat ensures earliestEligible()", "ok", "Holds"], ["Test", "WaitlistServiceTest : offersInJoinOrder", "ok", "Passing"]],
+      history: [["Nov 10", "Extracted as quality constraint from clarification"], ["Nov 10", "Approved, became NFR-1"]]
+    },
+    "REQ-2": {
+      title: "Show a student their position on the waitlist", story: "US-2", goal: "G2 Keep students informed", version: "v7",
+      rationale: "Students cannot plan without it.", request: "Add a waitlist so students can get into a full section when someone drops.", clarification: "", who: "Inferred from stakeholder Student",
+      links: [["Code", "WaitlistController.java : position()", "ok", "Linked"], ["Test", "WaitlistControllerTest : showsPosition", "ok", "Passing"]],
+      history: [["Nov 10", "Proposed as US-2"], ["Nov 10", "Approved, became REQ-2"]]
+    },
+    "REQ-4": {
+      title: "Send a reminder 4 hours before a seat offer expires", story: "US-4", goal: "G2 Keep students informed", version: "v7",
+      rationale: "Offers expire; a missed offer is the most likely complaint.", request: "Add a waitlist so students can get into a full section when someone drops.", clarification: "", who: "Suggested via stakeholder Notification service",
+      links: [["Code", "OfferReminderJob.java : run()", "ok", "Linked"], ["Test", "No test linked", "warn", "Missing"]],
+      history: [["Nov 10", "Proposed as US-4"], ["Nov 10", "Edited: channel set to email"], ["Nov 10", "Approved, became REQ-4"]]
+    }
+  };
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  function toast(msg) {
+    var t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.classList.remove("show"); }, 2600);
+  }
+
+  function decided() { return state.stories.filter(function (s) { return s.status !== "pending" && s.status !== "editing"; }).length; }
+  function approved() { return state.stories.filter(function (s) { return s.status === "approved"; }); }
+
+  /* ---------- Side bar stepper ---------- */
+  function renderSteps(current) {
+    var ul = $("#steps");
+    ul.innerHTML = "";
+    var idx = SCREENS.findIndex(function (s) { return s.id === current; });
+    SCREENS.forEach(function (s, i) {
+      var li = document.createElement("li");
+      var cls = i < idx ? "done" : (i === idx ? "cur" : "");
+      var badge = "";
+      if (s.id === "intent") badge = state.intentMet ? '<span class="badge ok">Met</span>' : '<span class="badge warn">Partial</span>';
+      if (s.id === "stories") badge = '<span class="badge">' + decided() + "/5</span>";
+      if (s.id === "gate") badge = state.released ? '<span class="badge ok">Open</span>' : '<span class="badge warn">Locked</span>';
+      if (s.id === "trace") badge = '<span class="badge warn">1 gap</span>';
+      if (s.id === "verify") badge = '<span class="badge bad">1 fail</span>';
+      li.innerHTML = '<button class="' + cls + (i === idx ? " on" : "") + '" data-go="' + s.id + '">' +
+        '<span class="num">' + (i < idx ? "&#10003;" : (i + 1)) + "</span>" +
+        '<span><span class="name">' + s.name + '</span><span class="sub">' + s.sub + "</span></span>" + badge + "</button>";
+      ul.appendChild(li);
+    });
+  }
+
+  function renderStatus() {
+    var bar = $("#statusBar"), txt = $("#statusText");
+    var pending = state.stories.length - decided();
+    bar.className = "status " + (state.released ? "open" : "locked");
+    if (state.released) txt.textContent = "Generation allowed for REQ-1 to REQ-4, NFR-1";
+    else if (pending > 0) txt.textContent = "Generation locked: " + pending + " " + (pending === 1 ? "story" : "stories") + " awaiting decision";
+    else txt.textContent = "Generation locked: approved set not yet released";
+    $("#sumApproved").textContent = String(approved().length + (approved().length ? 1 : 0));
+  }
+
+  /* ---------- Screen 1: intent ---------- */
+  function answerIntent(text) {
+    if (state.intentMet) return;
+    var chat = $("#chat");
+    var dev = document.createElement("div");
+    dev.className = "msg dev";
+    dev.innerHTML = '<div class="who">You &middot; 2:16 PM</div>' + text;
+    chat.appendChild(dev);
+    var sys = document.createElement("div");
+    sys.className = "msg sys";
+    sys.innerHTML = '<div class="who">IDE3.0 &middot; attempt 2 of 3</div>Updated intent statement:' +
+      '<div class="intent-box">Students can join a waitlist for a full section. When a seat opens, it is offered to the earliest waitlisted student, who has 24 hours to accept.</div>' +
+      '<div class="verdict"><span class="pill ok">Met</span><span class="small muted">Clear enough to identify stakeholders and draft user stories.</span></div>' +
+      '<div class="small muted">I also recorded "first come, first served" as a quality constraint, with your answer as its rationale.</div>' +
+      '<div class="actions" style="margin-top:10px"><button class="btn primary" data-go="stakeholders">Accept intent and continue</button><button class="btn" id="btnEditIntent">Edit statement</button></div>';
+    chat.appendChild(sys);
+    state.intentMet = true;
+    $("#composer").textContent = "Reply, or pick an answer above...";
+    $all("[data-quick]").forEach(function (b) { b.disabled = true; });
+    renderSteps("intent");
+    $("#view").scrollTop = 99999;
+  }
+
+  /* ---------- Screen 2: stakeholders ---------- */
+  function stakeholderAction(item, act) {
+    var name = $(".t", item).textContent;
+    var desc = $(".d", item).textContent;
+    if (act === "add") {
+      var n = document.createElement("div");
+      n.className = "item";
+      n.innerHTML = '<div><div class="t">' + name + '</div><div class="d">' + desc + '</div></div><span class="pill ok">Added</span>';
+      $("#shList").appendChild(n);
+      toast(name + " added to draft v2.");
+    } else {
+      var d = document.createElement("div");
+      d.className = "item declined";
+      d.innerHTML = '<div><div class="t">' + name + '</div><div class="d">Declined in v2.</div></div><span class="pill neutral">v2</span>';
+      $("#shDeclined").appendChild(d);
+      toast(name + " declined. IDE3.0 will not suggest it again for this request.");
+    }
+    item.remove();
+    var count = $all("#shList .item").length;
+    $("#s-stakeholders .pill.neutral").textContent = count + " stakeholders";
+  }
+
+  /* ---------- Screen 3: stories ---------- */
+  function renderStories() {
+    var root = $("#storyList");
+    root.innerHTML = "";
+    var goals = { G1: "Fill freed seats fairly", G2: "Keep students informed" };
+    Object.keys(goals).forEach(function (g) {
+      var head = document.createElement("div");
+      head.className = "goal-head";
+      head.innerHTML = '<span class="goal-id">' + g + "</span><b>" + goals[g] + "</b>";
+      root.appendChild(head);
+      state.stories.filter(function (s) { return s.goal === g; }).forEach(function (s) {
+        var el = document.createElement("div");
+        el.className = "story " + s.status;
+        var statusPill = { pending: '<span class="pill neutral">Pending</span>', approved: '<span class="pill ok">Approved, ' + s.req + "</span>",
+          rejected: '<span class="pill bad">Rejected</span>', editing: '<span class="pill warn">Editing</span>' }[s.status];
+        el.innerHTML =
+          '<div class="story-head"><span class="story-id">' + s.id + "</span>" + statusPill + "</div>" +
+          '<div class="story-text"><em>As a</em> ' + s.role + ", <em>I want to</em> " + s.want + ", <em>so that</em> " + s.why + ".</div>" +
+          '<div class="edit-area"><div class="input" contenteditable="true">As a ' + s.role + ", I want to " + s.want + ", so that " + s.why + ".</div></div>" +
+          '<div class="story-meta"><div><div class="lab">Came from</div>' + s.source + '</div><div><div class="lab">Rationale</div>' + s.rationale + "</div></div>" +
+          '<div class="row" style="align-items:center"><div class="checks">' +
+          s.checks.map(function (c) { return '<span class="pill ' + c[0] + '">' + c[1] + "</span>"; }).join("") +
+          '</div><div class="actions" style="justify-content:flex-end;flex:none">' +
+          (s.status === "editing"
+            ? '<button class="btn sel-edit" data-story="' + s.id + '" data-act="save">Save edit</button>'
+            : '<button class="btn ' + (s.status === "approved" ? "sel-ok" : "ok") + '" data-story="' + s.id + '" data-act="approve">Approve</button>' +
+              '<button class="btn" data-story="' + s.id + '" data-act="edit">Edit</button>' +
+              '<button class="btn ' + (s.status === "rejected" ? "sel-bad" : "bad") + '" data-story="' + s.id + '" data-act="reject">Reject</button>') +
+          "</div></div>";
+        root.appendChild(el);
+      });
+    });
+    var d = decided();
+    $("#decidedCount").textContent = d + " of 5";
+    $("#progressBar").style.width = (d / 5 * 100) + "%";
+    var ready = d === 5 && approved().length > 0;
+    $("#btnToGate").disabled = !ready;
+    $("#storiesNote").textContent = ready ? approved().length + " approved, " + (5 - approved().length) + " rejected. Ready for the approval gate." : "Decide every story to continue.";
+    renderGate();
+    renderStatus();
+  }
+
+  function storyAction(id, act) {
+    var s = state.stories.find(function (x) { return x.id === id; });
+    if (act === "approve") s.status = s.status === "approved" ? "pending" : "approved";
+    if (act === "reject") s.status = s.status === "rejected" ? "pending" : "rejected";
+    if (act === "edit") s.status = "editing";
+    if (act === "save") {
+      var txt = $("#storyList [data-story='" + id + "']").closest(".story").querySelector(".edit-area .input").textContent;
+      var m = txt.match(/As an? (.+?), I want to (.+?), so that (.+?)\.?$/i);
+      if (m) { s.role = m[1]; s.want = m[2]; s.why = m[3]; }
+      s.status = "approved";
+      toast(id + " edited and approved. The edit is kept in its history.");
+    }
+    if (state.released && act !== "edit") { state.released = false; toast("Approved set changed. Generation locked again until you re-release."); }
+    renderStories();
+    renderSteps("stories");
+  }
+
+  /* ---------- Screen 4: gate ---------- */
+  function renderGate() {
+    var tb = $("#gateTable");
+    tb.innerHTML = "";
+    state.stories.forEach(function (s) {
+      var pill = s.status === "approved" ? '<span class="pill ok">Approved</span>' : s.status === "rejected" ? '<span class="pill bad">Rejected</span>' : '<span class="pill warn">Undecided</span>';
+      tb.insertAdjacentHTML("beforeend", "<tr><td class=\"mono\">" + (s.status === "approved" ? s.req : s.id) + "</td><td>" + s.want.charAt(0).toUpperCase() + s.want.slice(1) + "</td><td>" + pill + "</td></tr>");
+    });
+    tb.insertAdjacentHTML("beforeend", '<tr><td class="mono">NFR-1</td><td>Offer seats first come, first served</td><td><span class="pill ok">Approved</span></td></tr>');
+    var allDecided = decided() === 5 && approved().length > 0;
+    var btn = $("#btnRelease");
+    btn.disabled = !allDecided || state.released;
+    btn.textContent = state.released ? "Released" : "Release to assistant";
+    var box = $("#lockBox");
+    box.className = "lock " + (state.released ? "open" : "locked");
+    $("#lockTitle").textContent = state.released ? "Generation allowed" : "Generation locked";
+    $("#lockSub").textContent = state.released ? "The assistant received the instruction below. Its changes will be checked in the Verify step."
+      : (allDecided ? "Every story is decided. Release the approved set to let the assistant start." : (5 - decided()) + " stories still need a decision before release.");
+    $("#lockIcon").innerHTML = state.released ? '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>' : '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
+    var appr = approved().map(function (s) { return s.req; });
+    var rej = state.stories.filter(function (s) { return s.status === "rejected"; }).map(function (s) { return s.id; });
+    $("#instr").textContent = "Implement exactly " + (appr.length ? appr.join(", ") : "(none yet)") + " and NFR-1 from intent model v7.\n" +
+      (rej.length ? "Do not implement " + rej.join(", ") + " (rejected during review).\n" : "") +
+      "Every new public method must satisfy its compiled contract.\nReport the files and tests you changed so IDE3.0 can link them.";
+  }
+
+  /* ---------- Screen 5: trace ---------- */
+  function renderTrace(id) {
+    var t = TRACE[id] || TRACE["REQ-3"];
+    $all("#tree .node").forEach(function (n) { n.classList.toggle("on", n.getAttribute("data-node") === id); });
+    var gaps = t.links.filter(function (l) { return l[2] !== "ok"; }).length;
+    $("#traceDetail").innerHTML =
+      '<div class="card"><div class="story-head"><span class="story-id">' + (TRACE[id] ? id : "REQ-3") + '</span><span class="pill info">' + t.goal + '</span><span class="pill neutral">from ' + t.story + '</span>' +
+      (gaps ? '<span class="pill warn">' + gaps + " missing link</span>" : '<span class="pill ok">Fully linked</span>') + "</div>" +
+      '<div style="font-size:14.5px;font-weight:600;margin:4px 0 10px">' + t.title + "</div>" +
+      '<div class="row"><div><div class="kind">Why it exists</div><div style="margin-top:4px">' + t.rationale + "</div></div>" +
+      '<div><div class="kind">Originating request</div><div class="quote">"' + t.request + '"' + (t.clarification ? '<br>Clarified: "' + t.clarification + '"' : "") + '</div><div class="small faint">' + t.who + "</div></div></div></div>" +
+      '<div class="row"><div class="card"><h2>Implemented and tested by</h2>' +
+      t.links.map(function (l) { return '<div class="link-row"><span class="kind">' + l[0] + '</span><span class="mono">' + l[1] + '</span><span class="pill ' + l[2] + '">' + l[3] + "</span></div>"; }).join("") +
+      (gaps ? '<div class="actions" style="margin-top:10px"><button class="btn" data-toast="IDE3.0 would ask the assistant to propose a test for this requirement, then send it to you for approval.">Ask assistant to propose a test</button></div>' : "") +
+      '</div><div class="card" style="flex:0.8"><h2>History</h2><ul class="timeline">' +
+      t.history.map(function (h) { return "<li><span>" + h[0] + "</span><b>" + h[1] + "</b></li>"; }).join("") +
+      "</ul></div></div>";
+  }
+
+  /* ---------- Router ---------- */
+  function go(id) {
+    if (!SCREENS.some(function (s) { return s.id === id; })) id = "intent";
+    $all(".screen").forEach(function (s) { s.classList.toggle("on", s.id === "s-" + id); });
+    var scr = $("#s-" + id);
+    $("#tabTitle").innerHTML = "IDE3.0: " + scr.getAttribute("data-title") + ' <span class="x">&times;</span>';
+    renderSteps(id);
+    $("#view").scrollTop = 0;
+    if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id);
+  }
+
+  /* ---------- Events ---------- */
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("button, [data-node]");
+    if (!t) return;
+    if (t.hasAttribute("data-go")) { go(t.getAttribute("data-go")); return; }
+    if (t.hasAttribute("data-quick")) {
+      var q = t.getAttribute("data-quick");
+      if (q === "other") { $("#composer").textContent = "Offer the seat, 24 hours to accept, first come first served"; $("#composer").style.color = "var(--text)"; return; }
+      answerIntent(q); return;
+    }
+    if (t.id === "btnRefine") { answerIntent("Offer the seat, 24 hours to accept, first come first served"); return; }
+    if (t.id === "btnEditIntent") { toast("The statement opens for editing. Edits are re-checked before you continue."); return; }
+    if (t.hasAttribute("data-sh-act")) { stakeholderAction(t.closest(".item"), t.getAttribute("data-sh-act")); return; }
+    if (t.id === "btnConfirmSh") {
+      state.shConfirmed = true;
+      $all("#shSuggest .item").forEach(function (it) { stakeholderAction(it, "decline"); });
+      toast("Stakeholders confirmed. Drafting goals and user stories.");
+      setTimeout(function () { go("stories"); }, 500); return;
+    }
+    if (t.hasAttribute("data-story")) { storyAction(t.getAttribute("data-story"), t.getAttribute("data-act")); return; }
+    if (t.id === "btnToGate") { go("gate"); return; }
+    if (t.id === "btnRelease") { state.released = true; renderGate(); renderStatus(); renderSteps("gate"); toast("Released. The assistant may now implement the approved set."); return; }
+    if (t.hasAttribute("data-node")) {
+      var n = t.getAttribute("data-node");
+      if (TRACE[n]) renderTrace(n); else toast("Goals group requirements. Pick a requirement to see its links.");
+      return;
+    }
+    if (t.hasAttribute("data-toast")) { toast(t.getAttribute("data-toast")); return; }
+    if (t.hasAttribute("data-v")) {
+      var v = t.getAttribute("data-v");
+      var msg = { reject: "Change rejected. The branch is flagged and the assistant session is notified.",
+        "return": "Sent back to the assistant with the NFR-1 violation, its rationale, and the failing contract.",
+        propose: "A proposal to change NFR-1 was opened. It goes through review and approval like any new requirement." }[v];
+      $("#verifyNote").textContent = msg;
+      $all("#verifyActions .btn").forEach(function (b) { b.classList.remove("sel-ok", "sel-bad", "sel-edit"); });
+      t.classList.add(v === "reject" ? "sel-bad" : "sel-edit");
+      return;
+    }
+  });
+
+  /* Optional preset for screenshots: #stories?demo=decided pre-decides stories. */
+  function applyPreset() {
+    var p = location.search;
+    var start = location.hash.slice(1);
+    // Opening a later screen directly implies the earlier steps are done.
+    if (start && start !== "intent") { state.intentMet = true; }
+    if ((start === "trace" || start === "verify") && !/demo=/.test(p)) { p = "?demo=released"; }
+    if (/demo=decided/.test(p) || /demo=released/.test(p)) {
+      state.intentMet = true; state.shConfirmed = true;
+      state.stories.forEach(function (s) { s.status = s.id === "US-5" ? "rejected" : "approved"; });
+    }
+    if (/demo=partial/.test(p)) {
+      state.stories[0].status = "approved"; state.stories[1].status = "approved"; state.stories[3].status = "editing";
+    }
+    if (/demo=released/.test(p)) state.released = true;
+    if (/demo=met/.test(p)) { answerIntent("Offer the seat, 24 hours to accept, first come first served"); }
+  }
+
+  window.addEventListener("hashchange", function () { go(location.hash.slice(1)); });
+  renderStories();
+  renderTrace("REQ-3");
+  applyPreset();
+  renderStories();
+  go(location.hash.slice(1) || "intent");
+  if (/demo=met/.test(location.search)) { $("#view").scrollTop = 99999; }
+})();
+</script>
+</body>
+</html>
