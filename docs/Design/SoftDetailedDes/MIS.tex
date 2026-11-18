@@ -204,8 +204,8 @@ Benefit & A numbered expected benefit, with the problems it addresses, its
 measure if one is given, and its source.\\
 Stakeholder & A person or group with an interest in the system, with its
 category and source.\\
-Persona & A representative user of a key user group, with role, goals, and
-concerns.\\
+Persona & A representative user of a key user group, with a reference to its
+corresponding stakeholder, role, goals, and concerns.\\
 Goal & A goal with its owner, its linked benefit, and whether it is hard or
 soft.\\
 UseCase & A use case for a hard goal, with a main success scenario,
@@ -506,6 +506,7 @@ None.
 identifyStakeholders & id: RequestId, req: Request & seq of Stakeholder & NoApprovedNeed, ModelUnavailable \\
 evaluateStakeholders & id: RequestId & Evaluation & ModelUnavailable \\
 definePersonas & id: RequestId, req: Request & seq of Persona & NoStakeholders, ModelUnavailable \\
+evaluatePersonas & id: RequestId & Evaluation & ModelUnavailable \\
 deriveGoals & id: RequestId & seq of Goal & NoStakeholders, ModelUnavailable \\
 deriveUseCases & id: RequestId, g: Goal & seq of UseCase & SoftGoal, ModelUnavailable \\
 openQuestions & id: RequestId & seq of OpenQuestion & - \\
