@@ -227,11 +227,11 @@ class PersonaFlowTests(unittest.TestCase):
         self.processor.responses.extend([
             response([draft()]), response([draft("Persona-1", gmc="Changed needs.")]),
         ])
-        self.evaluator.responses.extend([evaluation(), evaluation(ids=())])
+        self.evaluator.responses.extend([evaluation(), evaluation(ids=()), evaluation(ids=())])
         self.start()
         self.resume("Alex books rooms.")
-        with self.assertRaisesRegex(ValueError, "each current draft exactly once"):
-            self.resume("Change Persona-1's needs.")
+        result = self.resume("Change Persona-1's needs.")
+        self.assertIn("Enter RETRY", self.message(result))
         state = self.graph.get_state(self.config).values
         self.assertFalse(node.personas_ready(state))
         self.assertEqual(state["persona_metadata"]["drafts"][0]["varied_justification"], "")

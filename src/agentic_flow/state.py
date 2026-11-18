@@ -38,6 +38,11 @@ class StakeHolderEvaluationRecord(TypedDict):
     provided_stakeholders: list[IndividualStakeHolderEvaluationRecord]
 
 
+class ModelErrorRecord(TypedDict):
+    stage: Literal["response", "evaluation"]
+    detail: str
+
+
 class StakeHolderMetadata(TypedDict):
     initialized: bool
     initial_context_message: str
@@ -49,6 +54,7 @@ class StakeHolderMetadata(TypedDict):
     evaluated_draft_version: int | None
     latest_user_response: str
     response_feedback: str
+    model_error: ModelErrorRecord | None
     user_confirmed: bool
     approved_version: int | None
     finalized_stakeholders: list[StakeHolderRecord]
@@ -110,6 +116,7 @@ class PersonaMetadata(TypedDict):
     evaluated_draft_version: int | None
     latest_user_response: str
     response_feedback: str
+    model_error: ModelErrorRecord | None
     user_confirmed: bool
     approved_version: int | None
     finalized_personas: list[PersonaRecord]

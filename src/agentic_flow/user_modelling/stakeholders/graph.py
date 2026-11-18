@@ -31,7 +31,11 @@ def build_stakeholders(checkpointer=None):
 
     builder.add_edge(START, "start_stakeholders")
     builder.add_edge("start_stakeholders", "process_stakeholder_response")
-    builder.add_edge("process_stakeholder_response", "evaluate_stakeholders")
+    builder.add_conditional_edges(
+        "process_stakeholder_response",
+        lambda state: "refine" if state["stakeholder_metadata"].get("model_error") else "evaluate",
+        {"refine": "refine_stakeholders", "evaluate": "evaluate_stakeholders"},
+    )
     builder.add_conditional_edges(
         "evaluate_stakeholders",
         lambda state: "confirm" if stakeholders_ready(state) else "refine",

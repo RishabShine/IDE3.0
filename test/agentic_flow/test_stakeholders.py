@@ -110,10 +110,9 @@ class StakeHolderFlowTests(unittest.TestCase):
         result = self.resume("Front-desk staff handle bookings.")
         metadata = result["stakeholder_metadata"]
         self.assertNotIn("intent_context", metadata)
-        self.assertIn("<captured_intent>\n{}\n</captured_intent>",
-                      metadata["initial_context_message"])
+        self.assertIn("Reduce staff booking workload", metadata["initial_context_message"])
         self.assertNotIn("previous_evaluation", metadata)
-        self.assertIn("<latest_evaluation>\nnull\n</latest_evaluation>",
+        self.assertIn("<latest_evaluation>null</latest_evaluation>",
                       self.processor.calls[0][-1].content)
         self.assertEqual(metadata["evaluated_draft_version"], metadata["draft_version"])
         self.assertEqual(metadata["last_prompt_to_user"], prompt.STAKEHOLDER_STARTER_PROMPT)
@@ -259,10 +258,10 @@ class StakeHolderFlowTests(unittest.TestCase):
 
     def test_evaluator_cannot_skip_current_drafts(self):
         self.processor.responses.append(response([draft()]))
-        self.evaluator.responses.append(evaluation(ids=()))
+        self.evaluator.responses.extend([evaluation(ids=()), evaluation(ids=())])
         self.start()
-        with self.assertRaisesRegex(ValueError, "each current draft exactly once"):
-            self.resume("Front-desk staff handle bookings.")
+        result = self.resume("Front-desk staff handle bookings.")
+        self.assertIn("Enter RETRY", self.message(result))
         metadata = self.graph.get_state(self.config).values["stakeholder_metadata"]
         self.assertIsNone(metadata["evaluation"])
         self.assertFalse(metadata["user_confirmed"])
@@ -272,17 +271,17 @@ class StakeHolderFlowTests(unittest.TestCase):
             response([draft()]),
             response([draft("Stakeholder-1", summary="Handle bookings and cancellations.")]),
         ])
-        self.evaluator.responses.extend([evaluation(), evaluation(ids=())])
+        self.evaluator.responses.extend([evaluation(), evaluation(ids=()), evaluation(ids=())])
         self.start()
         result = self.resume("Front-desk staff handle bookings.")
         last_evaluation = result["stakeholder_metadata"]["evaluation"]
-        with self.assertRaisesRegex(ValueError, "each current draft exactly once"):
-            self.resume("Add cancellations to Stakeholder-1.")
+        result = self.resume("Add cancellations to Stakeholder-1.")
+        self.assertIn("Enter RETRY", self.message(result))
         state = self.graph.get_state(self.config).values
         metadata = state["stakeholder_metadata"]
         self.assertEqual(metadata["evaluation"], last_evaluation)
         self.assertNotIn("previous_evaluation", metadata)
-        self.assertEqual(metadata["evaluated_draft_version"], 1)
+        self.assertIsNone(metadata["evaluated_draft_version"])
         self.assertEqual(metadata["draft_version"], 2)
         self.assertFalse(node.stakeholders_ready(state))
         with self.assertRaisesRegex(ValueError, "requires explicit approval"):

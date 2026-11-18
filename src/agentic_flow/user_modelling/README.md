@@ -35,11 +35,10 @@ The single evaluation record is replaced after each successful evaluation.
 Its draft-version marker prevents old verdicts from approving edited drafts.
 Evaluation does not approve the draft list.
 
-Upstream intent integration is pending. The starter currently uses an empty
-context placeholder marked `REPLACE WITH ACTUAL INTENT DATA WHEN MERGED`.
-Once merged, select the needed intent fields directly from `AgentState` to
-prepare the context message. No separate raw intent copy is kept in stakeholder
-metadata. The `captured_intent` input below is reserved for that integration.
+Both starter nodes use `AgentState["captured_intent"]` when it is supplied,
+falling back to an empty context when upstream intent is not available. The
+persona starter also includes finalized stakeholders. No sample project is
+hardcoded and no separate raw intent copy is stored in stage metadata.
 The starter node prepares this context and displays the initial guidance in one
 step, without reading files or calling the model. It commits the prepared state
 when the user replies. On interrupt resume, preparing the context again is safe
@@ -75,8 +74,36 @@ Finalized records are available at
 strings such as `Stakeholder-1`, preserved across edits. `next_draft_number` is
 only the internal numeric counter for assigning new IDs. Assigning persistent
 artifact IDs and saving to the project remain to be
-connected. Schema or model errors raise an exception instead of approving or
-finalizing an invalid result; the last completed graph state is checkpointed.
+connected.
+
+## Model validation and recovery
+
+Structured responses reject unexpected fields. Before applying any operations,
+the nodes validate references, repeated/conflicting operations, duplicate names,
+and attempts to remove and recreate the same record. Duplicate comparisons
+ignore case, whitespace, and trailing involvement labels. This catches exact
+label variants; semantic overlap between differently named groups still needs
+evaluation and user review. New IDs are application-assigned; an ID supplied
+by the model on the very first submission is treated as a new-record proposal.
+
+A malformed response or invalid set of references gets one corrective call.
+If it remains invalid, processing returns to refinement with the drafts and ID
+counter unchanged. Model connection failures also return to refinement. The
+engineer can rephrase the reply without losing the thread's records.
+
+An evaluation must cover every current draft exactly once and use valid
+related IDs. If evaluation fails, the edited drafts remain available, but the
+old evaluation is not treated as a current pass. Enter RETRY at the refinement
+prompt to evaluate the current records again without interpreting another edit,
+or describe further changes. `model_error` in stage metadata records the
+failed stage and diagnostic detail. Approval is disabled until the error is
+resolved and a successful evaluation covers the current draft version.
+
+These safeguards validate structure and references; they cannot prove that a
+model faithfully interpreted arbitrary natural-language input. The prompts
+require preserving explicit user facts, distinguish questions from changes,
+and keep project examples separate from confirmed intent. Live model tests
+are still needed to assess those behaviours.
 
 Run the graph tests from the repository root with dependencies installed:
 

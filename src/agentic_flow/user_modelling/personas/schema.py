@@ -1,10 +1,12 @@
-from pydantic import BaseModel
+from pydantic import Field
+
+from agentic_flow.core.validation import StructuredRecord
 from typing import Literal
 
 Verdict = Literal["met", "not_met", "not_evaluated"]
 
 
-class PersonaDraft(BaseModel):
+class PersonaDraft(StructuredRecord):
     persona_id: str
     # Unknown until the user supplies or confirms the corresponding stakeholder.
     stakeholder_id: str | None
@@ -24,9 +26,15 @@ class PersonaDraft(BaseModel):
 
 # The node assigns Persona-1, Persona-2, etc. to new drafts. A missing
 # stakeholder reference stays unresolved rather than inventing a stakeholder.
-class PersonaDraftUpdate(BaseModel):
-    persona_id: str | None
-    stakeholder_id: str | None
+class PersonaDraftUpdate(StructuredRecord):
+    persona_id: str | None = Field(
+        description="JSON null for a new record; copy an exact current draft ID for an edit. "
+        "The application assigns new IDs. Never renumber existing records."
+    )
+    stakeholder_id: str | None = Field(
+        description="Existing finalized stakeholder ID supplied or confirmed by the engineer. "
+        "Preserve an unchanged link; use null if a new link is not yet established."
+    )
     name: str
     role: str
     status_and_trust_level: str
@@ -37,13 +45,13 @@ class PersonaDraftUpdate(BaseModel):
     varied_justification: str = ""
 
 
-class PersonaResponse(BaseModel):
+class PersonaResponse(StructuredRecord):
     updates: list[PersonaDraftUpdate]
     removed_persona_ids: list[str]
     clarification_feedback: str
 
 
-class IndividualPersonaEvaluation(BaseModel):
+class IndividualPersonaEvaluation(StructuredRecord):
     persona_id: str
     # Relevance covers the stakeholder match and consistency with known intent.
     # Missing context is not evidence of irrelevance. If relevance is not met
@@ -76,5 +84,5 @@ class IndividualPersonaEvaluation(BaseModel):
     overall_verdict: Verdict
 
 
-class PersonaEvaluation(BaseModel):
+class PersonaEvaluation(StructuredRecord):
     provided_personas: list[IndividualPersonaEvaluation]

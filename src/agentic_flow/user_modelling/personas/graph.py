@@ -31,7 +31,11 @@ def build_personas(checkpointer=None):
 
     builder.add_edge(START, "start_personas")
     builder.add_edge("start_personas", "process_persona_response")
-    builder.add_edge("process_persona_response", "evaluate_personas")
+    builder.add_conditional_edges(
+        "process_persona_response",
+        lambda state: "refine" if state["persona_metadata"].get("model_error") else "evaluate",
+        {"refine": "refine_personas", "evaluate": "evaluate_personas"},
+    )
     builder.add_conditional_edges(
         "evaluate_personas",
         lambda state: "confirm" if personas_ready(state) else "refine",

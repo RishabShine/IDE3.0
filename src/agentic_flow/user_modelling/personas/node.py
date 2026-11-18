@@ -3,6 +3,9 @@ import json
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agentic_flow.core.models import base_model
+from agentic_flow.core.validation import (
+    ModelResponseError, check_coverage, check_operations, failed_metadata, invoke_checked,
+)
 from agentic_flow.core.shared_nodes import get_user_input
 from agentic_flow.state import AgentState
 from agentic_flow.user_modelling.personas import prompt
@@ -64,7 +67,7 @@ def start_personas(state: AgentState) -> AgentState:
     Nothing is written before interrupt(). On resume, preparing the same local
     metadata again is safe; the node commits it together with the user's reply.
     """
-    context = {}  #! REPLACE WITH ACTUAL INTENT DATA WHEN MERGED
+    context = state.get("captured_intent", {})
     stakeholders = _stakeholders(state)
     if not stakeholders:
         raise ValueError("Personas require finalized stakeholders first.")
@@ -84,6 +87,7 @@ def start_personas(state: AgentState) -> AgentState:
             "evaluated_draft_version": None,
             "latest_user_response": "",
             "response_feedback": "",
+            "model_error": None,
             "user_confirmed": False,
             "approved_version": None,
             "finalized_personas": [],
@@ -99,6 +103,10 @@ def start_personas(state: AgentState) -> AgentState:
 def process_persona_response(state: AgentState) -> AgentState:
     """Interpret the reply, then apply user-requested additions, edits, and removals."""
     metadata = state["persona_metadata"]
+    if (metadata.get("model_error")
+            and metadata["model_error"]["stage"] == "evaluation"
+            and metadata["latest_user_response"].strip().upper() == "RETRY"):
+        return {"persona_metadata": {**metadata, "model_error": None, "response_feedback": ""}}
     request = prompt.PERSONA_RESPONSE_PROMPT.format(**_turn_input(metadata))
     # Each call gets reusable context, current records, and the latest exchange.
     # Older turns are not retained or replayed.
@@ -107,20 +115,18 @@ def process_persona_response(state: AgentState) -> AgentState:
         HumanMessage(content=metadata["initial_context_message"]),
         HumanMessage(content=request),
     ]
-    result = PersonaResponse.model_validate(
-        persona_response_processor.invoke(messages)
-    )
-
     drafts = {d["persona_id"]: dict(d) for d in metadata["drafts"]}
     next_number = metadata["next_draft_number"]
+    try:
+        result = invoke_checked(
+            persona_response_processor, PersonaResponse, messages,
+            lambda result: check_operations(result, drafts, "persona_id", next_number),
+        )
+    except ModelResponseError as error:
+        return {"persona_metadata": failed_metadata(metadata, "response", error,
+                                                     "finalized_personas")}
 
     removed = result.removed_persona_ids
-    updated = [u.persona_id for u in result.updates if u.persona_id is not None]
-    if len(removed) != len(set(removed)) or len(updated) != len(set(updated)):
-        raise ValueError("The response contains repeated persona operations.")
-    if not set(removed + updated).issubset(drafts) or set(removed) & set(updated):
-        raise ValueError("The response references an unknown or removed draft ID.")
-
     for persona_id in removed:
         drafts.pop(persona_id)
 
@@ -150,6 +156,7 @@ def process_persona_response(state: AgentState) -> AgentState:
             # Keep the latest completed evaluation to interpret this reply.
             # Its version prevents using old verdicts to approve edited drafts.
             "response_feedback": result.clarification_feedback,
+            "model_error": None,
             "user_confirmed": False,
             "approved_version": None,
             "finalized_personas": [],
@@ -166,20 +173,25 @@ def evaluate_personas(state: AgentState) -> AgentState:
         HumanMessage(content=metadata["initial_context_message"]),
         HumanMessage(content=request),
     ]
-    result = PersonaEvaluation.model_validate(persona_evaluator.invoke(messages))
-
     drafts = {d["persona_id"]: d for d in metadata["drafts"]}
-    ids = [e.persona_id for e in result.provided_personas]
-    if len(ids) != len(set(ids)) or set(ids) != set(drafts):
-        raise ValueError("The evaluation must cover each current draft exactly once.")
+
+    def validate(result):
+        check_coverage(result.provided_personas, drafts, "persona_id")
+        for item in result.provided_personas:
+            if (item.inferred_stakeholder_id is not None
+                    and item.inferred_stakeholder_id not in _stakeholders(state)):
+                raise ValueError("An inferred link must reference a finalized stakeholder ID.")
+
+    try:
+        result = invoke_checked(persona_evaluator, PersonaEvaluation, messages, validate)
+    except ModelResponseError as error:
+        return {"persona_metadata": failed_metadata(metadata, "evaluation", error,
+                                                     "finalized_personas")}
 
     stakeholders = _stakeholders(state)
     section_fields = [*prompt.PERSONA_FIELD_LABELS, "varied"]
     for evaluation in result.provided_personas:
         draft = drafts[evaluation.persona_id]
-        inferred = evaluation.inferred_stakeholder_id
-        if inferred is not None and inferred not in stakeholders:
-            raise ValueError("The evaluation proposes an unknown stakeholder ID.")
         link = draft["stakeholder_id"]
         if link is None:
             evaluation.relevance_verdict = "not_evaluated"
@@ -192,6 +204,11 @@ def evaluate_personas(state: AgentState) -> AgentState:
         else:
             evaluation.inferred_stakeholder_id = None
 
+        if evaluation.relevance_verdict == "met":
+            evaluation.relevance_feedback = ""
+            if not draft["demographics"].strip():
+                evaluation.demographics_verdict = "met"
+                evaluation.demographics_feedback = ""
         for field in section_fields:
             if evaluation.relevance_verdict != "met":
                 setattr(evaluation, field + "_verdict", "not_evaluated")
@@ -200,6 +217,16 @@ def evaluate_personas(state: AgentState) -> AgentState:
                 setattr(evaluation, field + "_verdict", "not_met")
                 if not getattr(evaluation, field + "_feedback"):
                     setattr(evaluation, field + "_feedback", "Please provide this detail.")
+        # The template makes demographics optional; absence is not a failed check.
+        if evaluation.relevance_verdict == "met" and not draft["demographics"].strip():
+            evaluation.demographics_verdict = "met"
+            evaluation.demographics_feedback = ""
+        for field in ["relevance", *section_fields]:
+            if getattr(evaluation, field + "_verdict") == "met":
+                setattr(evaluation, field + "_feedback", "")
+        for field in section_fields:
+            if getattr(evaluation, field + "_verdict") == "met":
+                setattr(evaluation, field + "_feedback", "")
         # A passing VARIED result must include the generated explanation.
         if (evaluation.relevance_verdict == "met"
                 and evaluation.varied_verdict == "met"
@@ -228,6 +255,7 @@ def evaluate_personas(state: AgentState) -> AgentState:
             "drafts": current,
             "draft_version": version,
             "evaluation": result.model_dump(),
+            "model_error": None,
             "evaluated_draft_version": version,
         }
     }
@@ -238,7 +266,7 @@ def personas_ready(state: AgentState) -> bool:
     metadata = state["persona_metadata"]
     evaluation = metadata["evaluation"]
     if (
-        not metadata["drafts"] or not evaluation
+        not metadata["drafts"] or not evaluation or metadata.get("model_error")
         or metadata["response_feedback"]
         or metadata["evaluated_draft_version"] != metadata["draft_version"]
     ):
@@ -257,6 +285,16 @@ def personas_ready(state: AgentState) -> bool:
 def prompt_persona_refinement(state: AgentState) -> AgentState:
     """Display current drafts and actionable evaluation feedback."""
     metadata = state["persona_metadata"]
+    if (metadata.get("model_error")
+            or metadata["evaluated_draft_version"] != metadata["draft_version"]):
+        error = metadata.get("model_error")
+        if error and error["stage"] == "response":
+            explanation = "I couldn't apply that reply. Your drafts are unchanged. Please rephrase the requested changes using their IDs."
+        else:
+            explanation = "The latest evaluation could not be completed. Current drafts are shown below; these are not current passing results. Enter RETRY to evaluate them again, or describe changes."
+        records = "\n\n".join(_record(d) for d in metadata["drafts"]) or "No drafts yet."
+        message = explanation + "\n\n" + records
+        return {"persona_metadata": _collect_response(metadata, message)}
     evaluations = {
         e["persona_id"]: e
         for e in metadata["evaluation"]["provided_personas"]

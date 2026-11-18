@@ -3,6 +3,9 @@ import json
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agentic_flow.core.models import base_model
+from agentic_flow.core.validation import (
+    ModelResponseError, check_coverage, check_operations, failed_metadata, invoke_checked,
+)
 from agentic_flow.core.shared_nodes import get_user_input
 from agentic_flow.state import AgentState
 from agentic_flow.user_modelling.stakeholders import prompt
@@ -61,7 +64,7 @@ def start_stakeholders(state: AgentState) -> AgentState:
     Nothing is written before interrupt(). On resume, preparing the same local
     metadata again is safe; the node commits it together with the user's reply.
     """
-    context = {}  #! REPLACE WITH ACTUAL INTENT DATA WHEN MERGED
+    context = state.get("captured_intent", {})
 
     metadata = state.get("stakeholder_metadata")
     if not metadata or not metadata.get("initialized"):
@@ -78,6 +81,7 @@ def start_stakeholders(state: AgentState) -> AgentState:
             "evaluated_draft_version": None,
             "latest_user_response": "",
             "response_feedback": "",
+            "model_error": None,
             "user_confirmed": False,
             "approved_version": None,
             "finalized_stakeholders": [],
@@ -91,6 +95,10 @@ def start_stakeholders(state: AgentState) -> AgentState:
 def process_stakeholder_response(state: AgentState) -> AgentState:
     """Interpret the reply, then apply user-requested additions, edits, and removals."""
     metadata = state["stakeholder_metadata"]
+    if (metadata.get("model_error")
+            and metadata["model_error"]["stage"] == "evaluation"
+            and metadata["latest_user_response"].strip().upper() == "RETRY"):
+        return {"stakeholder_metadata": {**metadata, "model_error": None, "response_feedback": ""}}
     request = prompt.STAKEHOLDER_RESPONSE_PROMPT.format(**_turn_input(metadata))
     # Each call gets reusable context, current records, and the latest exchange.
     # Older turns are not retained or replayed.
@@ -99,20 +107,18 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
         HumanMessage(content=metadata["initial_context_message"]),
         HumanMessage(content=request),
     ]
-    result = StakeHolderResponse.model_validate(
-        stakeholder_response_processor.invoke(messages)
-    )
-
     drafts = {d["stakeholder_id"]: dict(d) for d in metadata["drafts"]}
     next_number = metadata["next_draft_number"]
+    try:
+        result = invoke_checked(
+            stakeholder_response_processor, StakeHolderResponse, messages,
+            lambda result: check_operations(result, drafts, "stakeholder_id", next_number),
+        )
+    except ModelResponseError as error:
+        return {"stakeholder_metadata": failed_metadata(metadata, "response", error,
+                                                     "finalized_stakeholders")}
 
     removed = result.removed_stakeholder_ids
-    updated = [u.stakeholder_id for u in result.updates if u.stakeholder_id is not None]
-    if len(removed) != len(set(removed)) or len(updated) != len(set(updated)):
-        raise ValueError("The response contains repeated stakeholder operations.")
-    if not set(removed + updated).issubset(drafts) or set(removed) & set(updated):
-        raise ValueError("The response references an unknown or removed draft ID.")
-
     for stakeholder_id in removed:
         drafts.pop(stakeholder_id)
 
@@ -137,6 +143,7 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
             # Keep the latest completed evaluation to interpret this reply.
             # Its version prevents using old verdicts to approve edited drafts.
             "response_feedback": result.clarification_feedback,
+            "model_error": None,
             "user_confirmed": False,
             "approved_version": None,
             "finalized_stakeholders": [],
@@ -153,17 +160,23 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
         HumanMessage(content=metadata["initial_context_message"]),
         HumanMessage(content=request),
     ]
-    result = StakeHolderEvaluation.model_validate(stakeholder_evaluator.invoke(messages))
-
     drafts = {d["stakeholder_id"]: d for d in metadata["drafts"]}
-    ids = [e.stakeholder_id for e in result.provided_stakeholders]
-    if len(ids) != len(set(ids)) or set(ids) != set(drafts):
-        raise ValueError("The evaluation must cover each current draft exactly once.")
+
+    def validate(result):
+        check_coverage(result.provided_stakeholders, drafts, "stakeholder_id")
+        for item in result.provided_stakeholders:
+            related = item.overlap_stakeholder_ids
+            if (not set(related).issubset(drafts) or item.stakeholder_id in related
+                    or len(related) != len(set(related))):
+                raise ValueError("Overlap IDs must refer to other current drafts exactly once.")
+
+    try:
+        result = invoke_checked(stakeholder_evaluator, StakeHolderEvaluation, messages, validate)
+    except ModelResponseError as error:
+        return {"stakeholder_metadata": failed_metadata(metadata, "evaluation", error,
+                                                     "finalized_stakeholders")}
 
     for evaluation in result.provided_stakeholders:
-        related = evaluation.overlap_stakeholder_ids
-        if not set(related).issubset(drafts) or evaluation.stakeholder_id in related:
-            raise ValueError("The evaluation contains an invalid overlap reference.")
         missing = [
             field for field in ("name", "involvement", "summary", "justification")
             if not drafts[evaluation.stakeholder_id][field]
@@ -178,6 +191,12 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
             evaluation.overlap_verdict = "not_evaluated"
             evaluation.overlap_feedback = ""
             evaluation.overlap_stakeholder_ids = []
+        for category in ("detail", "relevance", "overlap"):
+            if getattr(evaluation, category + "_verdict") == "met":
+                setattr(evaluation, category + "_feedback", "")
+        for category in ("detail", "relevance", "overlap"):
+            if getattr(evaluation, category + "_verdict") == "met":
+                setattr(evaluation, category + "_feedback", "")
         verdicts = (
             evaluation.detail_verdict,
             evaluation.relevance_verdict,
@@ -193,6 +212,7 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
         "stakeholder_metadata": {
             **metadata,
             "evaluation": result.model_dump(),
+            "model_error": None,
             "evaluated_draft_version": metadata["draft_version"],
         }
     }
@@ -203,7 +223,7 @@ def stakeholders_ready(state: AgentState) -> bool:
     metadata = state["stakeholder_metadata"]
     evaluation = metadata["evaluation"]
     if (
-        not metadata["drafts"] or not evaluation
+        not metadata["drafts"] or not evaluation or metadata.get("model_error")
         or metadata["response_feedback"]
         or metadata["evaluated_draft_version"] != metadata["draft_version"]
     ):
@@ -220,6 +240,16 @@ def stakeholders_ready(state: AgentState) -> bool:
 def prompt_stakeholder_refinement(state: AgentState) -> AgentState:
     """Display current drafts and actionable evaluation feedback."""
     metadata = state["stakeholder_metadata"]
+    if (metadata.get("model_error")
+            or metadata["evaluated_draft_version"] != metadata["draft_version"]):
+        error = metadata.get("model_error")
+        if error and error["stage"] == "response":
+            explanation = "I couldn't apply that reply. Your drafts are unchanged. Please rephrase the requested changes using their IDs."
+        else:
+            explanation = "The latest evaluation could not be completed. Current drafts are shown below; these are not current passing results. Enter RETRY to evaluate them again, or describe changes."
+        records = "\n\n".join(_record(d) for d in metadata["drafts"]) or "No drafts yet."
+        message = explanation + "\n\n" + records
+        return {"stakeholder_metadata": _collect_response(metadata, message)}
     evaluations = {
         e["stakeholder_id"]: e
         for e in metadata["evaluation"]["provided_stakeholders"]
