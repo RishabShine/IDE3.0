@@ -3,6 +3,9 @@ import json
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agentic_flow.core.models import base_model
+from agentic_flow.core.refinement import (
+    MAX_REFINEMENT_ATTEMPTS, asked_about, checks_pass, review_note,
+)
 from agentic_flow.core.validation import (
     ModelResponseError, check_coverage, check_operations, failed_metadata, invoke_checked,
 )
@@ -29,11 +32,11 @@ def _json(value) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2)
 
 
-def _turn_input(metadata) -> dict[str, str]:
+def _response_input(metadata) -> dict[str, str]:
     return {
         "user_feedback": metadata["latest_user_response"],
         "last_prompt_to_user": metadata["last_prompt_to_user"],
-        "evaluation": _json(metadata["evaluation"]),
+        "asked_about": _json(asked_about(metadata, "provided_personas", "persona_id")),
         "personas": _json(metadata["drafts"]),
     }
 
@@ -85,6 +88,7 @@ def start_personas(state: AgentState) -> AgentState:
             "draft_version": 0,
             "evaluation": None,
             "evaluated_draft_version": None,
+            "refinement_attempts": 0,
             "latest_user_response": "",
             "response_feedback": "",
             "model_error": None,
@@ -107,7 +111,7 @@ def process_persona_response(state: AgentState) -> AgentState:
             and metadata["model_error"]["stage"] == "evaluation"
             and metadata["latest_user_response"].strip().upper() == "RETRY"):
         return {"persona_metadata": {**metadata, "model_error": None, "response_feedback": ""}}
-    request = prompt.PERSONA_RESPONSE_PROMPT.format(**_turn_input(metadata))
+    request = prompt.PERSONA_RESPONSE_PROMPT.format(**_response_input(metadata))
     # Each call gets reusable context, current records, and the latest exchange.
     # Older turns are not retained or replayed.
     messages = [
@@ -165,9 +169,9 @@ def process_persona_response(state: AgentState) -> AgentState:
 
 
 def evaluate_personas(state: AgentState) -> AgentState:
-    """Evaluate current drafts with reusable context and only the latest exchange."""
+    """Evaluate current records against project data, without replaying feedback."""
     metadata = state["persona_metadata"]
-    request = prompt.PERSONA_EVALUATION_PROMPT.format(**_turn_input(metadata))
+    request = prompt.PERSONA_EVALUATION_PROMPT.format(personas=_json(metadata["drafts"]))
     messages = [
         SystemMessage(content=prompt.PERSONA_EVALUATION_INSTRUCTIONS),
         HumanMessage(content=metadata["initial_context_message"]),
@@ -257,6 +261,7 @@ def evaluate_personas(state: AgentState) -> AgentState:
             "evaluation": result.model_dump(),
             "model_error": None,
             "evaluated_draft_version": version,
+            "refinement_attempts": metadata.get("refinement_attempts", 0) + 1,
         }
     }
 
@@ -276,9 +281,11 @@ def personas_ready(state: AgentState) -> bool:
         len(results) == len(metadata["drafts"])
         and {e["persona_id"] for e in results}
         == {d["persona_id"] for d in metadata["drafts"]}
-        and all(e["overall_verdict"] == "met" for e in results)
-        and all(d["stakeholder_id"] in _stakeholders(state)
-                and d["varied_justification"].strip() for d in metadata["drafts"])
+        and (checks_pass(metadata, "provided_personas")
+             or metadata.get("refinement_attempts", 0) >= MAX_REFINEMENT_ATTEMPTS)
+        and all(d["stakeholder_id"] in _stakeholders(state) for d in metadata["drafts"])
+        and (not checks_pass(metadata, "provided_personas")
+             or all(d["varied_justification"].strip() for d in metadata["drafts"]))
     )
 
 
@@ -290,6 +297,8 @@ def prompt_persona_refinement(state: AgentState) -> AgentState:
         error = metadata.get("model_error")
         if error and error["stage"] == "response":
             explanation = "I couldn't apply that reply. Your drafts are unchanged. Please rephrase the requested changes using their IDs."
+        elif not error:
+            explanation = metadata["response_feedback"] or "Please provide the records you want to refine."
         else:
             explanation = "The latest evaluation could not be completed. Current drafts are shown below; these are not current passing results. Enter RETRY to evaluate them again, or describe changes."
         records = "\n\n".join(_record(d) for d in metadata["drafts"]) or "No drafts yet."
@@ -347,6 +356,7 @@ def confirm_personas(state: AgentState) -> AgentState:
         raise ValueError("Personas are not ready for final confirmation.")
     metadata = state["persona_metadata"]
     message = prompt.PERSONA_CONFIRMATION_PROMPT.format(
+        review_note=review_note(metadata, "provided_personas", "persona_id"),
         draft_version=metadata["draft_version"],
         personas="\n\n".join(_record(d) for d in metadata["drafts"]),
     )
@@ -354,6 +364,9 @@ def confirm_personas(state: AgentState) -> AgentState:
     if updated["latest_user_response"].strip().upper() == "APPROVE":
         updated["user_confirmed"] = True
         updated["approved_version"] = metadata["draft_version"]
+    else:
+        # A new round starts after the engineer chooses to change the read-back.
+        updated["refinement_attempts"] = 0
     return {"persona_metadata": updated}
 
 

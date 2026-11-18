@@ -262,6 +262,136 @@ class ModelSafeguardTests(unittest.TestCase):
                 self.assertIn("Which roles have different needs?", self.message(result))
                 self.assertNotIn("Enter APPROVE", self.message(result))
 
+    def incomplete(self, flow, record_id=None, **changes):
+        changes["summary" if flow.prefix == "Stakeholder" else "ksa"] = ""
+        return flow.draft(record_id, **changes)
+
+    def test_two_completed_refinements_allow_explicit_review_of_unresolved_checks(self):
+        for area in ("stakeholder", "persona"):
+            with self.subTest(area=area), self.flow(area) as f:
+                f.processor.responses.extend([f.response([self.incomplete(f)]), f.response()])
+                f.evaluator.responses.extend([f.evaluation(), f.evaluation()])
+                first = f.resume("Here is the record, with some information missing.")
+                self.assertEqual(self.metadata(f, first)["refinement_attempts"], 1)
+                self.assertNotIn("Enter APPROVE", self.message(first))
+                review = f.resume("That is all the information I have for now.")
+                meta = self.metadata(f, review)
+                self.assertEqual(meta["refinement_attempts"], 2)
+                self.assertIn("Outstanding feedback", self.message(review))
+                self.assertIn("Approval does not mark these checks as met", self.message(review))
+                self.assertFalse(meta["user_confirmed"])
+                self.assertEqual(meta["finalized_" + area + "s"], [])
+                rebuilt = f.build(f.saver)
+                final = rebuilt.invoke(Command(resume="APPROVE"), f.config)
+                meta = self.metadata(f, final)
+                self.assertTrue(meta["user_confirmed"])
+                self.assertEqual(meta["evaluation"]["provided_" + area + "s"][0]["overall_verdict"], "not_met")
+                self.assertEqual(len(meta["finalized_" + area + "s"]), 1)
+                if area == "persona":
+                    self.assertEqual(meta["finalized_personas"][0]["varied_justification"], "")
+
+    def test_errors_and_corrective_retries_do_not_count_as_completed_refinements(self):
+        for area in ("stakeholder", "persona"):
+            with self.subTest(area=area), self.flow(area) as f:
+                f.processor.responses.append(f.response([self.incomplete(f)]))
+                f.evaluator.responses.extend([f.evaluation(ids=()), f.evaluation()])
+                first = f.resume("Here is the first record.")
+                self.assertEqual(self.metadata(f, first)["refinement_attempts"], 1)
+                self.assertEqual(len(f.evaluator.calls), 2)
+                f.processor.responses.extend([f.response([f.draft(f.prefix + "-99")]) for _ in range(2)])
+                failed = f.resume("An edit the model misinterprets.")
+                self.assertEqual(self.metadata(f, failed)["refinement_attempts"], 1)
+                f.processor.responses.append(f.response())
+                f.evaluator.responses.extend([f.evaluation(ids=()), f.evaluation(ids=())])
+                failed = f.resume("Keep the current record.")
+                self.assertEqual(self.metadata(f, failed)["refinement_attempts"], 1)
+                self.assertIn("Enter RETRY", self.message(failed))
+                f.evaluator.responses.append(f.evaluation())
+                review = f.resume("RETRY")
+                self.assertEqual(self.metadata(f, review)["refinement_attempts"], 2)
+                self.assertIn("Outstanding feedback", self.message(review))
+
+    def test_clarification_only_turns_do_not_consume_refinement_attempts(self):
+        for area in ("stakeholder", "persona"):
+            with self.subTest(area=area), self.flow(area) as f:
+                f.processor.responses.append(f.response(feedback="Which role would you like to describe?"))
+                question = f.resume("What do I enter here?")
+                self.assertEqual(self.metadata(f, question)["refinement_attempts"], 0)
+                self.assertFalse(f.evaluator.calls)
+                self.assertIn("Which role", self.message(question))
+                self.assertNotIn("Enter RETRY", self.message(question))
+                f.processor.responses.append(f.response([self.incomplete(f)]))
+                f.evaluator.responses.append(f.evaluation())
+                f.resume("Here is a first record.")
+                f.processor.responses.append(f.response(feedback="That field describes the group's role."))
+                question = f.resume("What does that field mean?")
+                self.assertEqual(self.metadata(f, question)["refinement_attempts"], 1)
+                self.assertEqual(len(f.evaluator.calls), 1)
+                self.assertIn("That field describes", self.message(question))
+
+    def test_changing_bounded_readback_starts_a_new_round(self):
+        for area in ("stakeholder", "persona"):
+            with self.subTest(area=area), self.flow(area) as f:
+                f.processor.responses.extend([
+                    f.response([self.incomplete(f)]), f.response(),
+                    f.response([self.incomplete(f, f.prefix + "-1", name="Changed role")]),
+                ])
+                f.evaluator.responses.extend([f.evaluation(), f.evaluation(), f.evaluation()])
+                f.resume("First record.")
+                f.resume("No more detail yet.")
+                result = f.resume("Change the first record's name to Changed role.")
+                self.assertEqual(self.metadata(f, result)["refinement_attempts"], 1)
+                self.assertFalse(self.metadata(f, result)["user_confirmed"])
+                self.assertNotIn("Enter APPROVE", self.message(result))
+
+    def test_unknown_persona_link_blocks_approval_even_after_attempt_limit(self):
+        with self.flow("persona") as f:
+            f.processor.responses.extend([
+                f.response([f.draft(stakeholder_id=None)]), f.response(),
+                f.response([f.draft("Persona-1", stakeholder_id="Stakeholder-1")]),
+            ])
+            f.evaluator.responses.extend([
+                f.evaluation(inferred_stakeholder_id="Stakeholder-1"),
+                f.evaluation(inferred_stakeholder_id="Stakeholder-1"), f.evaluation(),
+            ])
+            f.resume("Alex, without a stakeholder link yet.")
+            result = f.resume("No additional detail for now.")
+            self.assertEqual(self.metadata(f, result)["refinement_attempts"], 2)
+            self.assertNotIn("Enter APPROVE", self.message(result))
+            self.assertIsNone(self.metadata(f, result)["drafts"][0]["stakeholder_id"])
+            result = f.resume("Confirm Persona-1 represents Stakeholder-1.")
+            self.assertIn("Enter APPROVE", self.message(result))
+
+    def test_processor_gets_derived_targets_and_evaluator_gets_current_records_only(self):
+        import json
+        for area in ("stakeholder", "persona"):
+            with self.subTest(area=area), self.flow(area) as f:
+                changes = ({"detail_verdict": "not_met", "detail_feedback": "UNIQUE_QUESTION"}
+                           if area == "stakeholder" else
+                           {"ksa_verdict": "not_met", "ksa_feedback": "UNIQUE_QUESTION"})
+                f.processor.responses.extend([
+                    f.response([self.incomplete(f)]), f.response([f.draft(f.prefix + "-1")]),
+                ])
+                initial_evaluation = f.evaluation()
+                item = getattr(initial_evaluation, "provided_" + area + "s")[0]
+                for field, value in changes.items():
+                    setattr(item, field, value)
+                f.evaluator.responses.extend([initial_evaluation, f.evaluation()])
+                f.resume("First record.")
+                result = f.resume("UNIQUE_LATEST_REPLY")
+                processor = f.processor.calls[-1][-1].content
+                targets = json.loads(processor.split("<asked_about>")[1].split("</asked_about>")[0])
+                self.assertEqual(targets, [f.prefix + "-1"])
+                self.assertIn("UNIQUE_QUESTION", processor)
+                self.assertIn("UNIQUE_LATEST_REPLY", processor)
+                self.assertNotIn("<latest_evaluation>", processor)
+                evaluator = f.evaluator.calls[-1][-1].content
+                self.assertNotIn("UNIQUE_QUESTION", evaluator)
+                self.assertNotIn("UNIQUE_LATEST_REPLY", evaluator)
+                self.assertNotIn("<last_prompt_to_user>", evaluator)
+                self.assertNotIn("<latest_evaluation>", evaluator)
+                self.assertNotIn("asked_about", self.metadata(f, result))
+
 
 if __name__ == "__main__":
     unittest.main()

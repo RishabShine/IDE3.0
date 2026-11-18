@@ -15,7 +15,7 @@ starter → process response → evaluate
                                   |               ↓
                                   └──── refinement input
 
-evaluate → all checks met → confirmation
+evaluate → checks met or review limit reached → confirmation
                                                     |
                               changes/questions ────┘ → process response
                                                     |
@@ -29,11 +29,27 @@ into requested draft additions, edits, and removals; the other evaluates the
 updated drafts. Under `stakeholder_metadata` or `persona_metadata`, each stage
 retains the reusable project context message, current drafts, the last prompt shown to the
 user, their latest reply, and the most recent completed evaluation. There is no growing
-message history. Each model call receives task-specific instructions, the
-reusable context, and one current-state request containing that latest exchange.
+message history. Each model call receives task-specific instructions and reusable
+project context. The response processor also receives current drafts, the latest
+reply, the last displayed prompt, and derived `asked_about` IDs for questions
+shown about those records. It does not receive another copy of the evaluation.
+The evaluator receives current drafts only, without replaying the previous
+prompt, reply, or evaluation. This keeps refinement references available to the
+processor while preventing earlier feedback from becoming evaluation input.
 The single evaluation record is replaced after each successful evaluation.
 Its draft-version marker prevents old verdicts from approving edited drafts.
 Evaluation does not approve the draft list.
+
+Each stage counts completed, valid evaluations in `refinement_attempts`. After
+two evaluations, the engineer can review a nonempty current list even if some
+checks remain unresolved. The read-back displays outstanding feedback and
+requires an explicit APPROVE to accept the current version as-is; approval does
+not change verdicts to met or invent a VARIED justification. Empty lists,
+invalid/currently failed model calls, stale evaluations, and unresolved persona
+links cannot be approved through the limit. Choosing changes at the read-back
+starts another round. Model failures and answer-only clarification turns do not
+consume an evaluation attempt. The threshold is configured by
+`MAX_REFINEMENT_ATTEMPTS` in `core/refinement.py`.
 
 Both starter nodes use `AgentState["captured_intent"]` when it is supplied,
 falling back to an empty context when upstream intent is not available. The

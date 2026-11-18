@@ -218,8 +218,12 @@ class PersonaFlowTests(unittest.TestCase):
             latest = "\n".join(message.content for message in model.calls[-1])
             self.assertNotIn("FIRST_USER_ONLY", latest)
             self.assertNotIn("FIRST_FEEDBACK_ONLY", latest)
-            self.assertIn("SECOND_FEEDBACK_ONLY", latest)
-            self.assertIn("They need quick booking confirmation.", latest)
+            if model is self.processor:
+                self.assertIn("SECOND_FEEDBACK_ONLY", latest)
+                self.assertIn("They need quick booking confirmation.", latest)
+            else:
+                self.assertNotIn("SECOND_FEEDBACK_ONLY", latest)
+                self.assertNotIn("<user_response>", latest)
         self.assertNotIn("messages", result["persona_metadata"])
         self.assertNotIn("previous_evaluation", result["persona_metadata"])
 

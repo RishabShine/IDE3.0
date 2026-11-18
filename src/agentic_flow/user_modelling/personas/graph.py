@@ -29,11 +29,23 @@ def build_personas(checkpointer=None):
     builder.add_node("confirm_personas", confirm_personas)
     builder.add_node("finalize_personas", finalize_personas)
 
+    def after_response(state):
+        metadata = state["persona_metadata"]
+        if metadata.get("model_error"):
+            return "refine"
+        # Answer-only turns do not need another evaluation of unchanged drafts.
+        if metadata["response_feedback"] and (
+            metadata["evaluated_draft_version"] == metadata["draft_version"]
+            or not metadata["drafts"]
+        ):
+            return "refine"
+        return "evaluate"
+
     builder.add_edge(START, "start_personas")
     builder.add_edge("start_personas", "process_persona_response")
     builder.add_conditional_edges(
         "process_persona_response",
-        lambda state: "refine" if state["persona_metadata"].get("model_error") else "evaluate",
+        after_response,
         {"refine": "refine_personas", "evaluate": "evaluate_personas"},
     )
     builder.add_conditional_edges(

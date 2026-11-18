@@ -3,6 +3,9 @@ import json
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agentic_flow.core.models import base_model
+from agentic_flow.core.refinement import (
+    MAX_REFINEMENT_ATTEMPTS, asked_about, checks_pass, review_note,
+)
 from agentic_flow.core.validation import (
     ModelResponseError, check_coverage, check_operations, failed_metadata, invoke_checked,
 )
@@ -29,11 +32,11 @@ def _json(value) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2)
 
 
-def _turn_input(metadata) -> dict[str, str]:
+def _response_input(metadata) -> dict[str, str]:
     return {
         "user_feedback": metadata["latest_user_response"],
         "last_prompt_to_user": metadata["last_prompt_to_user"],
-        "evaluation": _json(metadata["evaluation"]),
+        "asked_about": _json(asked_about(metadata, "provided_stakeholders", "stakeholder_id")),
         "stakeholders": _json(metadata["drafts"]),
     }
 
@@ -79,6 +82,7 @@ def start_stakeholders(state: AgentState) -> AgentState:
             "draft_version": 0,
             "evaluation": None,
             "evaluated_draft_version": None,
+            "refinement_attempts": 0,
             "latest_user_response": "",
             "response_feedback": "",
             "model_error": None,
@@ -99,7 +103,7 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
             and metadata["model_error"]["stage"] == "evaluation"
             and metadata["latest_user_response"].strip().upper() == "RETRY"):
         return {"stakeholder_metadata": {**metadata, "model_error": None, "response_feedback": ""}}
-    request = prompt.STAKEHOLDER_RESPONSE_PROMPT.format(**_turn_input(metadata))
+    request = prompt.STAKEHOLDER_RESPONSE_PROMPT.format(**_response_input(metadata))
     # Each call gets reusable context, current records, and the latest exchange.
     # Older turns are not retained or replayed.
     messages = [
@@ -152,9 +156,9 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
 
 
 def evaluate_stakeholders(state: AgentState) -> AgentState:
-    """Evaluate current drafts with reusable context and only the latest exchange."""
+    """Evaluate current records against project data, without replaying feedback."""
     metadata = state["stakeholder_metadata"]
-    request = prompt.STAKEHOLDER_EVALUATION_PROMPT.format(**_turn_input(metadata))
+    request = prompt.STAKEHOLDER_EVALUATION_PROMPT.format(stakeholders=_json(metadata["drafts"]))
     messages = [
         SystemMessage(content=prompt.STAKEHOLDER_EVALUATION_INSTRUCTIONS),
         HumanMessage(content=metadata["initial_context_message"]),
@@ -194,9 +198,6 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
         for category in ("detail", "relevance", "overlap"):
             if getattr(evaluation, category + "_verdict") == "met":
                 setattr(evaluation, category + "_feedback", "")
-        for category in ("detail", "relevance", "overlap"):
-            if getattr(evaluation, category + "_verdict") == "met":
-                setattr(evaluation, category + "_feedback", "")
         verdicts = (
             evaluation.detail_verdict,
             evaluation.relevance_verdict,
@@ -214,6 +215,7 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
             "evaluation": result.model_dump(),
             "model_error": None,
             "evaluated_draft_version": metadata["draft_version"],
+            "refinement_attempts": metadata.get("refinement_attempts", 0) + 1,
         }
     }
 
@@ -233,7 +235,8 @@ def stakeholders_ready(state: AgentState) -> bool:
         len(results) == len(metadata["drafts"])
         and {e["stakeholder_id"] for e in results}
         == {d["stakeholder_id"] for d in metadata["drafts"]}
-        and all(e["overall_verdict"] == "met" for e in results)
+        and (checks_pass(metadata, "provided_stakeholders")
+             or metadata.get("refinement_attempts", 0) >= MAX_REFINEMENT_ATTEMPTS)
     )
 
 
@@ -245,6 +248,8 @@ def prompt_stakeholder_refinement(state: AgentState) -> AgentState:
         error = metadata.get("model_error")
         if error and error["stage"] == "response":
             explanation = "I couldn't apply that reply. Your drafts are unchanged. Please rephrase the requested changes using their IDs."
+        elif not error:
+            explanation = metadata["response_feedback"] or "Please provide the records you want to refine."
         else:
             explanation = "The latest evaluation could not be completed. Current drafts are shown below; these are not current passing results. Enter RETRY to evaluate them again, or describe changes."
         records = "\n\n".join(_record(d) for d in metadata["drafts"]) or "No drafts yet."
@@ -301,6 +306,7 @@ def confirm_stakeholders(state: AgentState) -> AgentState:
         raise ValueError("Stakeholders are not ready for final confirmation.")
     metadata = state["stakeholder_metadata"]
     message = prompt.STAKEHOLDER_CONFIRMATION_PROMPT.format(
+        review_note=review_note(metadata, "provided_stakeholders", "stakeholder_id"),
         draft_version=metadata["draft_version"],
         stakeholders="\n\n".join(_record(d) for d in metadata["drafts"]),
     )
@@ -308,6 +314,9 @@ def confirm_stakeholders(state: AgentState) -> AgentState:
     if updated["latest_user_response"].strip().upper() == "APPROVE":
         updated["user_confirmed"] = True
         updated["approved_version"] = metadata["draft_version"]
+    else:
+        # A new round starts after the engineer chooses to change the read-back.
+        updated["refinement_attempts"] = 0
     return {"stakeholder_metadata": updated}
 
 

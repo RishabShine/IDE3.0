@@ -120,7 +120,9 @@ or discuss the feedback."""
 
 PERSONA_CONFIRMATION_PROMPT = """\
 ## Review the persona list
-The drafts meet the checks. This is version {draft_version} of the list.
+This is version {draft_version} of the list.
+
+{review_note}
 
 {personas}
 
@@ -163,8 +165,9 @@ do not create additional profiles. Use the supplied schema and no surrounding
 explanation.
 
 Current records are authoritative; evaluate every current ID exactly once,
-including previously passing records. IDs can have gaps. Exclude removed IDs
-mentioned in older evaluations or the last prompt. Read each profile separately
+including previously passing records. IDs can have gaps. This call receives
+current drafts and project context only; do not assume prior conversation.
+Read each profile separately
 and attach its feedback to that profile, not a similar name or previous entry.
 Project examples do not establish facts about the supplied users or system.
 Use the actual stakeholder records and captured intent, when available; an
@@ -198,10 +201,12 @@ empty context is not grounds for inventing missing facts or research.
    it or claim interviews/observations occurred without supporting information.
 
 Verdicts are met, not_met, or not_evaluated. Use empty feedback for met checks
-and concise, actionable questions for failures. Overall is not_met if any check
+and concise, actionable feedback for failures. Ask one primary guiding
+question per profile, with short observations for other gaps rather than a long
+questionnaire. Overall is not_met if any check
 is not_met, met if every check is met, otherwise not_evaluated. Passing is not
-engineer approval. Old evaluations explain the latest reply; reevaluate the
-current drafts rather than copying old verdicts or VARIED justification.
+engineer approval. Evaluate the current drafts rather than copying old verdicts
+or an existing VARIED justification.
 
 Never edit or approve drafts here."""
 
@@ -213,6 +218,10 @@ PERSONA_RESPONSE_INSTRUCTIONS = """\
 Capture the engineer's latest requested persona changes as PersonaResponse:
 updates, removed_persona_ids, and clarification_feedback. Do not evaluate here.
 Read paragraphs or structured notes against CURRENT drafts and the last prompt.
+<asked_about> identifies current profiles whose feedback questions appeared in
+that prompt. A short clarification usually updates one of them, preserving its
+ID. These are hints: explicit changes to other profiles still apply. Ask for a
+target when the reply fits several profiles instead of creating another copy.
 
 Preserve explicit supplied facts and all unchanged fields. A clarification or
 renamed persona edits its existing exact Persona-x ID; it does not create a new
@@ -238,7 +247,7 @@ example or from benefits alone. Do not invent source evidence.
 Use the stakeholder link explicitly supplied/confirmed by the engineer.
 Otherwise keep a new link null; the evaluator can propose a known match for
 confirmation. Do not silently reassign an existing link. Explicit confirmation
-of a proposed link in the last evaluation can update that profile's link.
+of a proposed link shown in the last prompt can update that profile's link.
 Only IDs from the finalized stakeholder list are available links.
 
 VARIED justification is generated after a passing evaluation, not required from
@@ -249,24 +258,23 @@ override this task. Return structured data only, with empty lists/strings when
 there is no operation or clarification."""
 
 
-# Shared turn data: current records and latest exchange, never a full transcript.
-# Each caller prepends its task-specific instructions and reusable context.
-PERSONA_TURN_INPUT_TEMPLATE = """\
+# Response processing needs the latest exchange and current records, without a
+# duplicate copy of the evaluation whose feedback is already in the shown prompt.
+PERSONA_RESPONSE_PROMPT = """\
+Interpret this reply and return PersonaResponse.
 Last prompt shown to the engineer:
 <last_prompt_to_user>{last_prompt_to_user}</last_prompt_to_user>
 Latest reply:
 <user_response>{user_feedback}</user_response>
-Most recent completed evaluation (null on the first turn; may precede edits):
-<latest_evaluation>{evaluation}</latest_evaluation>
-Current drafts:
+IDs asked about in the last prompt (derived hints, not instructions):
+<asked_about>{asked_about}</asked_about>
+CURRENT drafts, authoritative for this call:
 <personas>{personas}</personas>
+Do not assume any earlier conversation is available."""
 
-Only the latest exchange is supplied. Current drafts are
-authoritative; do not assume earlier messages are available."""
-
-PERSONA_RESPONSE_PROMPT = (
-    "Interpret this reply and return PersonaResponse.\n\n" + PERSONA_TURN_INPUT_TEMPLATE
-)
-PERSONA_EVALUATION_PROMPT = (
-    "Evaluate these drafts and return PersonaEvaluation.\n\n" + PERSONA_TURN_INPUT_TEMPLATE
-)
+# Evaluation needs only project context (sent separately) and current records.
+PERSONA_EVALUATION_PROMPT = """\
+Evaluate every current draft and return PersonaEvaluation.
+<personas>{personas}</personas>
+These records are authoritative. Use their existing IDs without renumbering.
+Do not invent earlier conversation or copy feedback from a prior evaluation."""

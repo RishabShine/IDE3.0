@@ -52,6 +52,7 @@ class StakeHolderMetadata(TypedDict):
     draft_version: int
     evaluation: StakeHolderEvaluationRecord | None
     evaluated_draft_version: int | None
+    refinement_attempts: int
     latest_user_response: str
     response_feedback: str
     model_error: ModelErrorRecord | None
@@ -114,6 +115,7 @@ class PersonaMetadata(TypedDict):
     draft_version: int
     evaluation: PersonaEvaluationRecord | None
     evaluated_draft_version: int | None
+    refinement_attempts: int
     latest_user_response: str
     response_feedback: str
     model_error: ModelErrorRecord | None

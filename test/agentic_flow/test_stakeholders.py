@@ -112,8 +112,8 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertNotIn("intent_context", metadata)
         self.assertIn("Reduce staff booking workload", metadata["initial_context_message"])
         self.assertNotIn("previous_evaluation", metadata)
-        self.assertIn("<latest_evaluation>null</latest_evaluation>",
-                      self.processor.calls[0][-1].content)
+        self.assertIn("<asked_about>[]</asked_about>", self.processor.calls[0][-1].content)
+        self.assertNotIn("<latest_evaluation>", self.processor.calls[0][-1].content)
         self.assertEqual(metadata["evaluated_draft_version"], metadata["draft_version"])
         self.assertEqual(metadata["last_prompt_to_user"], prompt.STAKEHOLDER_STARTER_PROMPT)
         self.assertNotIn("messages", metadata)
@@ -156,7 +156,8 @@ class StakeHolderFlowTests(unittest.TestCase):
                          "They handle bookings and explain booking exceptions.")
         self.assertNotIn("messages", metadata)
         self.assertIn(last_prompt, self.processor.calls[-1][-1].content)
-        self.assertIn('"detail_verdict": "not_met"', self.evaluator.calls[-1][-1].content)
+        self.assertNotIn("<latest_evaluation>", self.evaluator.calls[-1][-1].content)
+        self.assertNotIn("<last_prompt_to_user>", self.evaluator.calls[-1][-1].content)
         self.assertIn("Enter APPROVE", self.message(result))
         self.assertEqual(self.evaluator.calls[-1][1].content,
                          metadata["initial_context_message"])
@@ -183,8 +184,12 @@ class StakeHolderFlowTests(unittest.TestCase):
             latest = "\n".join(m.content for m in model.calls[-1])
             self.assertNotIn("FIRST_USER_TURN_ONLY", latest)
             self.assertNotIn("FIRST_EVALUATION_ONLY", latest)
-            self.assertIn("SECOND_EVALUATION_ONLY", latest)
-            self.assertIn("They know the booking rules and exceptions.", latest)
+            if model is self.processor:
+                self.assertIn("SECOND_EVALUATION_ONLY", latest)
+                self.assertIn("They know the booking rules and exceptions.", latest)
+            else:
+                self.assertNotIn("SECOND_EVALUATION_ONLY", latest)
+                self.assertNotIn("<user_response>", latest)
         self.assertEqual(result["stakeholder_metadata"]["drafts"][0]["stakeholder_id"], "Stakeholder-1")
         self.assertNotIn("messages", result["stakeholder_metadata"])
 

@@ -29,11 +29,23 @@ def build_stakeholders(checkpointer=None):
     builder.add_node("confirm_stakeholders", confirm_stakeholders)
     builder.add_node("finalize_stakeholders", finalize_stakeholders)
 
+    def after_response(state):
+        metadata = state["stakeholder_metadata"]
+        if metadata.get("model_error"):
+            return "refine"
+        # Answer-only turns do not need another evaluation of unchanged drafts.
+        if metadata["response_feedback"] and (
+            metadata["evaluated_draft_version"] == metadata["draft_version"]
+            or not metadata["drafts"]
+        ):
+            return "refine"
+        return "evaluate"
+
     builder.add_edge(START, "start_stakeholders")
     builder.add_edge("start_stakeholders", "process_stakeholder_response")
     builder.add_conditional_edges(
         "process_stakeholder_response",
-        lambda state: "refine" if state["stakeholder_metadata"].get("model_error") else "evaluate",
+        after_response,
         {"refine": "refine_stakeholders", "evaluate": "evaluate_stakeholders"},
     )
     builder.add_conditional_edges(
