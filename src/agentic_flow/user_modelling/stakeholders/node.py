@@ -26,18 +26,12 @@ def _json(value) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2)
 
 
-def _name(value: str) -> str:
-    return " ".join(value.split()).casefold()
-
-
 def _turn_input(metadata) -> dict[str, str]:
     return {
         "user_feedback": metadata["latest_user_response"],
         "last_prompt_to_user": metadata["last_prompt_to_user"],
         "evaluation": _json(metadata["evaluation"]),
         "stakeholders": _json(metadata["drafts"]),
-        "pending_suggestions": _json(metadata["pending_suggestions"]),
-        "declined_suggestions": _json(metadata["declined_suggestions"]),
     }
 
 
@@ -80,8 +74,6 @@ def start_stakeholders(state: AgentState) -> AgentState:
             "drafts": [],
             "next_draft_number": 1,
             "draft_version": 0,
-            "pending_suggestions": [],
-            "declined_suggestions": [],
             "evaluation": None,
             "evaluated_draft_version": None,
             "latest_user_response": "",
@@ -97,7 +89,7 @@ def start_stakeholders(state: AgentState) -> AgentState:
 
 
 def process_stakeholder_response(state: AgentState) -> AgentState:
-    """Interpret the reply, then apply explicit edits and suggestion decisions."""
+    """Interpret the reply, then apply user-requested additions, edits, and removals."""
     metadata = state["stakeholder_metadata"]
     request = prompt.STAKEHOLDER_RESPONSE_PROMPT.format(**_turn_input(metadata))
     # Each call gets reusable context, current records, and the latest exchange.
@@ -112,8 +104,6 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
     )
 
     drafts = {d["stakeholder_id"]: dict(d) for d in metadata["drafts"]}
-    pending = {_name(s["name"]): dict(s) for s in metadata["pending_suggestions"]}
-    declined = {_name(s["name"]): dict(s) for s in metadata["declined_suggestions"]}
     next_number = metadata["next_draft_number"]
 
     removed = result.removed_stakeholder_ids
@@ -124,31 +114,7 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
         raise ValueError("The response references an unknown or removed draft ID.")
 
     for stakeholder_id in removed:
-        removed_draft = drafts.pop(stakeholder_id)
-        declined[_name(removed_draft["name"])] = {
-            "name": removed_draft["name"],
-            "summary": removed_draft["summary"],
-            "justification": removed_draft["justification"],
-            "reason": "The user removed this group from the stakeholder drafts.",
-        }
-
-    decisions_seen = set()
-    for decision in result.suggestion_decisions:
-        key = _name(decision.name)
-        if key not in pending or key in decisions_seen:
-            raise ValueError("The response references an unknown or repeated suggestion.")
-        decisions_seen.add(key)
-        suggestion = pending.pop(key)
-        if decision.decision == "decline":
-            declined[key] = {**suggestion, "reason": decision.reason}
-        else:
-            stakeholder_id = f"Stakeholder-{next_number}"
-            drafts[stakeholder_id] = StakeHolderDraft(
-                stakeholder_id=stakeholder_id,
-                involvement=None,
-                **suggestion,
-            ).model_dump()
-            next_number += 1
+        drafts.pop(stakeholder_id)
 
     for update in result.updates:
         stakeholder_id = update.stakeholder_id
@@ -162,18 +128,12 @@ def process_stakeholder_response(state: AgentState) -> AgentState:
         drafts[stakeholder_id] = StakeHolderDraft.model_validate(record).model_dump()
 
     current = list(drafts.values())
-    current_names = {_name(d["name"]) for d in current}
-    # The user may explicitly introduce a previously declined group themselves.
-    pending = {k: v for k, v in pending.items() if k not in current_names}
-    declined = {k: v for k, v in declined.items() if k not in current_names}
     return {
         "stakeholder_metadata": {
             **metadata,
             "drafts": current,
             "next_draft_number": next_number,
             "draft_version": metadata["draft_version"] + (current != metadata["drafts"]),
-            "pending_suggestions": list(pending.values()),
-            "declined_suggestions": list(declined.values()),
             # Keep the latest completed evaluation to interpret this reply.
             # Its version prevents using old verdicts to approve edited drafts.
             "response_feedback": result.clarification_feedback,
@@ -229,20 +189,11 @@ def evaluate_stakeholders(state: AgentState) -> AgentState:
             else "not_evaluated"
         )
 
-    pending = {_name(s["name"]): s for s in metadata["pending_suggestions"]}
-    excluded = {_name(s["name"]) for s in metadata["declined_suggestions"]}
-    excluded.update(_name(d["name"]) for d in metadata["drafts"])
-    for suggestion in result.suggested_stakeholders:
-        key = _name(suggestion.name)
-        if key and key not in excluded and key not in pending:
-            pending[key] = suggestion.model_dump()
-
     return {
         "stakeholder_metadata": {
             **metadata,
             "evaluation": result.model_dump(),
             "evaluated_draft_version": metadata["draft_version"],
-            "pending_suggestions": list(pending.values()),
         }
     }
 
@@ -253,7 +204,7 @@ def stakeholders_ready(state: AgentState) -> bool:
     evaluation = metadata["evaluation"]
     if (
         not metadata["drafts"] or not evaluation
-        or metadata["pending_suggestions"] or metadata["response_feedback"]
+        or metadata["response_feedback"]
         or metadata["evaluated_draft_version"] != metadata["draft_version"]
     ):
         return False
@@ -267,7 +218,7 @@ def stakeholders_ready(state: AgentState) -> bool:
 
 
 def prompt_stakeholder_refinement(state: AgentState) -> AgentState:
-    """Display current drafts, actionable feedback, and outstanding suggestions."""
+    """Display current drafts and actionable evaluation feedback."""
     metadata = state["stakeholder_metadata"]
     evaluations = {
         e["stakeholder_id"]: e
@@ -308,15 +259,8 @@ def prompt_stakeholder_refinement(state: AgentState) -> AgentState:
         sections.append(prompt.STAKEHOLDER_FEEDBACK_SECTION_TEMPLATE.format(
             stakeholders="\n\n".join(needs_work)
         ))
-    if metadata["pending_suggestions"]:
-        sections.append(prompt.SUGGESTED_STAKEHOLDERS_SECTION_TEMPLATE.format(
-            suggestions="\n\n".join(
-                prompt.SUGGESTED_STAKEHOLDER_TEMPLATE.format(**s)
-                for s in metadata["pending_suggestions"]
-            )
-        ))
     if not metadata["drafts"]:
-        sections.append("Please provide at least one stakeholder, or accept a suggestion.")
+        sections.append("Please provide at least one stakeholder.")
     message = prompt.STAKEHOLDER_FOLLOW_UP_PROMPT.format(sections="\n\n".join(sections))
     return {"stakeholder_metadata": _collect_response(metadata, message)}
 

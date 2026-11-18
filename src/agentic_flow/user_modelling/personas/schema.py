@@ -37,26 +37,9 @@ class PersonaDraftUpdate(BaseModel):
     varied_justification: str = ""
 
 
-# Broad proposals for the user to consider, not completed persona profiles.
-class SuggestedPersona(BaseModel):
-    stakeholder_id: str
-    description: str
-    justification: str
-
-
-# Until a draft ID is assigned, match a suggestion by its stakeholder ID and
-# exact description. This distinguishes suggestions for the same stakeholder.
-class PersonaSuggestionDecision(BaseModel):
-    stakeholder_id: str
-    description: str
-    decision: Literal["accept", "decline"]
-    reason: str
-
-
 class PersonaResponse(BaseModel):
     updates: list[PersonaDraftUpdate]
     removed_persona_ids: list[str]
-    suggestion_decisions: list[PersonaSuggestionDecision]
     clarification_feedback: str
 
 
@@ -95,4 +78,3 @@ class IndividualPersonaEvaluation(BaseModel):
 
 class PersonaEvaluation(BaseModel):
     provided_personas: list[IndividualPersonaEvaluation]
-    suggested_personas: list[SuggestedPersona]

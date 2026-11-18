@@ -22,16 +22,9 @@ class StakeHolderDraftUpdate(BaseModel):
     justification: str
 
 
-class StakeHolderSuggestionDecision(BaseModel):
-    name: str
-    decision: Literal["accept", "decline"]
-    reason: str
-
-
 class StakeHolderResponse(BaseModel):
     updates: list[StakeHolderDraftUpdate]
     removed_stakeholder_ids: list[str]
-    suggestion_decisions: list[StakeHolderSuggestionDecision]
     clarification_feedback: str
 
 # eval for stakeholders that the user has agreed on
@@ -46,12 +39,6 @@ class IndividualStakeHolderEvaluation(BaseModel):
     overlap_stakeholder_ids: list[str]
     overall_verdict: Verdict
 
-# stakeholders the user potentially missed
-class SuggestedStakeHolder(BaseModel):
-    name: str
-    summary: str
-    justification: str
 
 class StakeHolderEvaluation(BaseModel):
     provided_stakeholders: list[IndividualStakeHolderEvaluation]
-    suggested_stakeholders: list[SuggestedStakeHolder]

@@ -33,16 +33,9 @@ class IndividualStakeHolderEvaluationRecord(TypedDict):
     overall_verdict: StakeHolderVerdict
 
 
-class SuggestedStakeHolderRecord(TypedDict):
-    name: str
-    summary: str
-    justification: str
-
-
 # Dictionary form of the full StakeHolderEvaluation Pydantic response.
 class StakeHolderEvaluationRecord(TypedDict):
     provided_stakeholders: list[IndividualStakeHolderEvaluationRecord]
-    suggested_stakeholders: list[SuggestedStakeHolderRecord]
 
 
 class StakeHolderMetadata(TypedDict):
@@ -52,8 +45,6 @@ class StakeHolderMetadata(TypedDict):
     drafts: list[StakeHolderRecord]
     next_draft_number: int
     draft_version: int
-    pending_suggestions: list[dict[str, str]]
-    declined_suggestions: list[dict[str, str]]
     evaluation: StakeHolderEvaluationRecord | None
     evaluated_draft_version: int | None
     latest_user_response: str
@@ -104,19 +95,8 @@ class IndividualPersonaEvaluationRecord(TypedDict):
     overall_verdict: PersonaVerdict
 
 
-class SuggestedPersonaRecord(TypedDict):
-    stakeholder_id: str
-    description: str
-    justification: str
-
-
-class DeclinedPersonaSuggestionRecord(SuggestedPersonaRecord):
-    reason: str
-
-
 class PersonaEvaluationRecord(TypedDict):
     provided_personas: list[IndividualPersonaEvaluationRecord]
-    suggested_personas: list[SuggestedPersonaRecord]
 
 
 class PersonaMetadata(TypedDict):
@@ -126,8 +106,6 @@ class PersonaMetadata(TypedDict):
     drafts: list[PersonaRecord]
     next_draft_number: int
     draft_version: int
-    pending_suggestions: list[SuggestedPersonaRecord]
-    declined_suggestions: list[DeclinedPersonaSuggestionRecord]
     evaluation: PersonaEvaluationRecord | None
     evaluated_draft_version: int | None
     latest_user_response: str

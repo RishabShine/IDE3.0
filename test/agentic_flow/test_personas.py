@@ -12,8 +12,6 @@ from agentic_flow.user_modelling.personas.schema import (
     PersonaDraftUpdate,
     PersonaEvaluation,
     PersonaResponse,
-    PersonaSuggestionDecision,
-    SuggestedPersona,
 )
 
 
@@ -44,14 +42,14 @@ def draft(persona_id=None, **changes):
     })
 
 
-def response(updates=(), decisions=(), removed=(), feedback=""):
+def response(updates=(), removed=(), feedback=""):
     return PersonaResponse(
         updates=list(updates), removed_persona_ids=list(removed),
-        suggestion_decisions=list(decisions), clarification_feedback=feedback,
+        clarification_feedback=feedback,
     )
 
 
-def evaluation(ids=("Persona-1",), suggestions=(), **changes):
+def evaluation(ids=("Persona-1",), **changes):
     fields = ["relevance", *prompt.PERSONA_FIELD_LABELS, "varied"]
     verdicts = {f + "_verdict": "met" for f in fields}
     feedback = {f + "_feedback": "" for f in fields}
@@ -68,7 +66,6 @@ def evaluation(ids=("Persona-1",), suggestions=(), **changes):
             "overall_verdict": "met",
             **changes,
         }) for persona_id in ids],
-        suggested_personas=list(suggestions),
     )
 
 
@@ -91,10 +88,6 @@ class PersonaFlowTests(unittest.TestCase):
              "involvement": "direct", "summary": "Manage bookings.",
              "justification": "Handle exceptions."},
         ]}}
-        self.suggestion = SuggestedPersona(
-            stakeholder_id="Stakeholder-1", description="Infrequent room-booker",
-            justification="Needs more guidance than frequent users.",
-        )
 
     def start(self):
         return self.graph.invoke(self.state, self.config)
@@ -179,57 +172,6 @@ class PersonaFlowTests(unittest.TestCase):
         self.assertFalse(node.personas_ready(result))
         self.assertIn("select a finalized stakeholder ID", self.message(result))
 
-    def test_suggestion_acceptance_creates_partial_draft_not_a_varied_pass(self):
-        self.processor.responses.extend([
-            response([draft()]), response(decisions=[PersonaSuggestionDecision(
-                **self.suggestion.model_dump(exclude={"justification"}), decision="accept", reason=""
-            )]),
-        ])
-        self.evaluator.responses.extend([
-            evaluation(suggestions=[self.suggestion]),
-            evaluation(ids=("Persona-1", "Persona-2")),
-        ])
-        self.start()
-        self.resume("Alex books rooms frequently.")
-        result = self.resume("Include the infrequent room-booker suggestion.")
-        metadata = result["persona_metadata"]
-        proposed = metadata["drafts"][1]
-        self.assertEqual(proposed["persona_id"], "Persona-2")
-        self.assertEqual(proposed["role"], self.suggestion.description)
-        self.assertEqual(proposed["stakeholder_id"], "Stakeholder-1")
-        self.assertEqual(proposed["varied_justification"], "")
-        self.assertEqual(metadata["pending_suggestions"], [])
-        self.assertIn("Personas needing refinement", self.message(result))
-        self.assertNotIn("Enter APPROVE", self.message(result))
-
-    def test_declined_and_unanswered_suggestions_remain_distinct_by_stakeholder(self):
-        other = self.suggestion.model_copy(update={"stakeholder_id": "Stakeholder-2"})
-        self.processor.responses.extend([
-            response([draft()]), response(decisions=[PersonaSuggestionDecision(
-                stakeholder_id="Stakeholder-1", description=self.suggestion.description,
-                decision="decline", reason="Already covered."
-            )]), response(decisions=[PersonaSuggestionDecision(
-                stakeholder_id="Stakeholder-2", description=other.description,
-                decision="decline", reason="Not needed."
-            )]),
-        ])
-        self.evaluator.responses.extend([
-            evaluation(suggestions=[self.suggestion, other]),
-            evaluation(suggestions=[self.suggestion]), evaluation(suggestions=[other]),
-        ])
-        self.start()
-        self.resume("Alex books rooms.")
-        result = self.resume("Decline the suggestion for Stakeholder-1; leave the other undecided.")
-        metadata = result["persona_metadata"]
-        self.assertEqual(metadata["pending_suggestions"], [other.model_dump()])
-        self.assertEqual(metadata["declined_suggestions"][0]["reason"], "Already covered.")
-        self.assertNotIn("Enter APPROVE", self.message(result))
-        result = self.resume("Decline the remaining suggestion.")
-        self.assertEqual(result["persona_metadata"]["pending_suggestions"], [])
-        self.assertIn("Enter APPROVE", self.message(result))
-        latest = self.evaluator.calls[-1][-1].content
-        self.assertIn("Already covered.", latest)
-        self.assertIn("Not needed.", latest)
 
     def test_confirmation_edit_clears_rationale_and_requires_fresh_approval(self):
         self.processor.responses.extend([
@@ -296,24 +238,25 @@ class PersonaFlowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "explicit approval"):
             node.finalize_personas(state)
 
-    def test_removal_suppresses_resuggestion_and_does_not_reuse_ids(self):
-        removed = SuggestedPersona(stakeholder_id="Stakeholder-1",
-                                   description="Infrequent room-booker", justification="Different needs.")
+    def test_user_can_remove_and_add_personas_without_reusing_ids(self):
         self.processor.responses.extend([
-            response([draft(), draft(name="Sam", role=removed.description)]),
+            response([draft(), draft(name="Sam", role="Infrequent room-booker")]),
             response([draft(name="Robin")], removed=["Persona-2"]),
         ])
         self.evaluator.responses.extend([
             evaluation(ids=("Persona-1", "Persona-2")),
-            evaluation(ids=("Persona-1", "Persona-3"), suggestions=[removed]),
+            evaluation(ids=("Persona-1", "Persona-3")),
         ])
         self.start()
         self.resume("Include Alex and Sam.")
         result = self.resume("Remove Persona-2 and add Robin.")
         metadata = result["persona_metadata"]
         self.assertEqual([d["persona_id"] for d in metadata["drafts"]], ["Persona-1", "Persona-3"])
-        self.assertEqual(metadata["pending_suggestions"], [])
         self.assertEqual(metadata["next_draft_number"], 4)
+        self.assertIn("Enter APPROVE", self.message(result))
+        result = self.resume("APPROVE")
+        self.assertEqual([d["name"] for d in result["persona_metadata"]["finalized_personas"]],
+                         ["Alex", "Robin"])
 
     def test_empty_list_and_early_approval_do_not_finalize(self):
         self.processor.responses.append(response())

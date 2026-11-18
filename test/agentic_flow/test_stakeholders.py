@@ -14,8 +14,6 @@ from agentic_flow.user_modelling.stakeholders.schema import (
     StakeHolderDraftUpdate,
     StakeHolderEvaluation,
     StakeHolderResponse,
-    StakeHolderSuggestionDecision,
-    SuggestedStakeHolder,
 )
 
 
@@ -44,16 +42,15 @@ def draft(stakeholder_id=None, **changes):
     return StakeHolderDraftUpdate(**{**data, **changes})
 
 
-def response(updates=(), decisions=(), feedback="", removed=()):
+def response(updates=(), feedback="", removed=()):
     return StakeHolderResponse(
         updates=list(updates),
         removed_stakeholder_ids=list(removed),
-        suggestion_decisions=list(decisions),
         clarification_feedback=feedback,
     )
 
 
-def evaluation(ids=("Stakeholder-1",), suggestions=(), detail="met", overall="met"):
+def evaluation(ids=("Stakeholder-1",), detail="met", overall="met"):
     return StakeHolderEvaluation(
         provided_stakeholders=[
             IndividualStakeHolderEvaluation(
@@ -68,7 +65,6 @@ def evaluation(ids=("Stakeholder-1",), suggestions=(), detail="met", overall="me
                 overall_verdict=overall,
             ) for i in ids
         ],
-        suggested_stakeholders=list(suggestions),
     )
 
 
@@ -92,11 +88,6 @@ class StakeHolderFlowTests(unittest.TestCase):
             "scope_exclusions": ["Equipment loans"],
             "constraints": ["Use university authentication"],
         }
-        self.suggestion = SuggestedStakeHolder(
-            name="University IT services",
-            summary="Maintain university authentication.",
-            justification="The application uses university authentication.",
-        )
 
     def start(self):
         return self.graph.invoke({"captured_intent": self.context}, self.config)
@@ -128,31 +119,19 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertEqual(metadata["last_prompt_to_user"], prompt.STAKEHOLDER_STARTER_PROMPT)
         self.assertNotIn("messages", metadata)
 
-    def test_declined_suggestion_is_not_repeated_and_approval_is_explicit(self):
-        self.processor.responses.extend([
-            response([draft()]),
-            response(decisions=[StakeHolderSuggestionDecision(
-                name=self.suggestion.name, decision="decline", reason="Covered elsewhere."
-            )]),
-        ])
-        # A repeated model suggestion must not undo the user's rejection.
-        self.evaluator.responses.extend([
-            evaluation(suggestions=[self.suggestion]),
-            evaluation(suggestions=[self.suggestion]),
-        ])
+    def test_passing_drafts_require_explicit_approval(self):
+        self.processor.responses.append(response([draft()]))
+        self.evaluator.responses.append(evaluation())
         self.start()
         result = self.resume("Front-desk staff handle bookings and know the rules.")
-        self.assertIn("Suggested stakeholder: University IT services", self.message(result))
-        result = self.resume("Leave out University IT services; covered elsewhere.")
         self.assertIn("Enter APPROVE", self.message(result))
         self.assertFalse(result["stakeholder_metadata"]["user_confirmed"])
+        self.assertEqual(result["stakeholder_metadata"]["finalized_stakeholders"], [])
         result = self.resume("APPROVE")
         metadata = result["stakeholder_metadata"]
         self.assertTrue(metadata["user_confirmed"])
         self.assertEqual(len(metadata["finalized_stakeholders"]), 1)
-        self.assertEqual(metadata["pending_suggestions"], [])
-        self.assertEqual(metadata["declined_suggestions"][0]["reason"], "Covered elsewhere.")
-        self.assertEqual(len(self.evaluator.calls), 2)
+        self.assertEqual(len(self.evaluator.calls), 1)
 
     def test_latest_exchange_survives_rebuilding_with_the_same_checkpointer(self):
         self.processor.responses.extend([
@@ -226,36 +205,6 @@ class StakeHolderFlowTests(unittest.TestCase):
         result = self.resume("APPROVE")
         self.assertEqual(result["stakeholder_metadata"]["approved_version"], 2)
 
-    def test_unanswered_suggestions_remain_pending(self):
-        self.processor.responses.extend([response([draft()]), response()])
-        self.evaluator.responses.extend([
-            evaluation(suggestions=[self.suggestion]), evaluation(),
-        ])
-        self.start()
-        self.resume("Front-desk staff handle bookings.")
-        result = self.resume("The existing staff description is fine.")
-        self.assertIn("Suggested stakeholder: University IT services", self.message(result))
-        self.assertNotIn("Enter APPROVE", self.message(result))
-
-    def test_accepted_suggestion_gets_a_new_id_and_requires_missing_detail(self):
-        self.processor.responses.extend([
-            response([draft()]),
-            response(decisions=[StakeHolderSuggestionDecision(
-                name=self.suggestion.name, decision="accept", reason=""
-            )]),
-        ])
-        # Even if the model incorrectly passes it, classification is unknown.
-        self.evaluator.responses.extend([
-            evaluation(suggestions=[self.suggestion]), evaluation(ids=("Stakeholder-1", "Stakeholder-2")),
-        ])
-        self.start()
-        self.resume("Front-desk staff handle bookings.")
-        result = self.resume("Include University IT services.")
-        metadata = result["stakeholder_metadata"]
-        self.assertEqual([d["stakeholder_id"] for d in metadata["drafts"]], ["Stakeholder-1", "Stakeholder-2"])
-        self.assertEqual(metadata["pending_suggestions"], [])
-        self.assertIn("More detail needed", self.message(result))
-        self.assertIn("involvement", self.message(result))
 
     def test_empty_list_and_early_approve_do_not_finalize(self):
         self.processor.responses.append(response())
@@ -265,22 +214,26 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertIn("Please provide at least one stakeholder", self.message(result))
         self.assertEqual(result["stakeholder_metadata"]["finalized_stakeholders"], [])
 
-    def test_removed_group_is_not_immediately_suggested_again(self):
+    def test_user_can_remove_and_add_groups_without_reusing_ids(self):
         self.processor.responses.extend([
-            response([draft(), draft(name=self.suggestion.name, involvement="indirect")]),
-            response(removed=["Stakeholder-2"]),
+            response([draft(), draft(name="University IT services", involvement="indirect")]),
+            response([draft(name="Library management")], removed=["Stakeholder-2"]),
         ])
         self.evaluator.responses.extend([
-            evaluation(ids=("Stakeholder-1", "Stakeholder-2")), evaluation(suggestions=[self.suggestion]),
+            evaluation(ids=("Stakeholder-1", "Stakeholder-2")),
+            evaluation(ids=("Stakeholder-1", "Stakeholder-3")),
         ])
         self.start()
         self.resume("Include front-desk staff and university IT services.")
-        result = self.resume("Remove Stakeholder-2.")
+        result = self.resume("Remove Stakeholder-2 and add library management.")
         metadata = result["stakeholder_metadata"]
-        self.assertEqual([d["stakeholder_id"] for d in metadata["drafts"]], ["Stakeholder-1"])
-        self.assertEqual(metadata["next_draft_number"], 3)
-        self.assertEqual(metadata["pending_suggestions"], [])
+        self.assertEqual([d["stakeholder_id"] for d in metadata["drafts"]],
+                         ["Stakeholder-1", "Stakeholder-3"])
+        self.assertEqual(metadata["next_draft_number"], 4)
         self.assertIn("Enter APPROVE", self.message(result))
+        result = self.resume("APPROVE")
+        self.assertEqual([d["name"] for d in result["stakeholder_metadata"]["finalized_stakeholders"]],
+                         ["Front-desk library staff", "Library management"])
 
     def test_string_overlap_references_and_merge_preserve_the_remaining_id(self):
         overlapping = evaluation(ids=("Stakeholder-1", "Stakeholder-2"))

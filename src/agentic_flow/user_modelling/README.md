@@ -1,8 +1,10 @@
 # User modelling
 
-The current graph implements stakeholder identification. The outer IDE3.0 graph
-now runs SSON capture, then this graph, then END. It can also run independently
-for testing. Personas and the Goal2Story handoff can be added later.
+The user-modelling graph runs stakeholders, then personas, then END. Each stage
+is a separate subgraph and evaluates only the records the engineer provides.
+The engineer can add, edit, or remove drafts before confirming each stage.
+The outer IDE3.0 graph runs SSON capture before user modelling. The Goal2Story
+handoff can be added later.
 
 The flow is:
 
@@ -13,7 +15,7 @@ starter → process response → evaluate
                                   |               ↓
                                   └──── refinement input
 
-evaluate → all checks met, no pending suggestions → confirmation
+evaluate → all checks met → confirmation
                                                     |
                               changes/questions ────┘ → process response
                                                     |
@@ -23,9 +25,9 @@ evaluate → all checks met, no pending suggestions → confirmation
 ```
 
 Each refinement turn uses two model calls: one interprets the user's response
-into draft changes and suggestion decisions; the other evaluates the updated
-drafts. Under `stakeholder_metadata`, the graph retains the reusable project
-context message, current drafts and decisions, the last prompt shown to the
+into requested draft additions, edits, and removals; the other evaluates the
+updated drafts. Under `stakeholder_metadata` or `persona_metadata`, each stage
+retains the reusable project context message, current drafts, the last prompt shown to the
 user, their latest reply, and the most recent completed evaluation. There is no growing
 message history. Each model call receives task-specific instructions, the
 reusable context, and one current-state request containing that latest exchange.

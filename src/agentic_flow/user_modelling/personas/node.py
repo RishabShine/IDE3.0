@@ -26,18 +26,12 @@ def _json(value) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2)
 
 
-def _name(value: str) -> str:
-    return " ".join(value.split()).casefold()
-
-
 def _turn_input(metadata) -> dict[str, str]:
     return {
         "user_feedback": metadata["latest_user_response"],
         "last_prompt_to_user": metadata["last_prompt_to_user"],
         "evaluation": _json(metadata["evaluation"]),
         "personas": _json(metadata["drafts"]),
-        "pending_suggestions": _json(metadata["pending_suggestions"]),
-        "declined_suggestions": _json(metadata["declined_suggestions"]),
     }
 
 
@@ -64,10 +58,6 @@ def _stakeholders(state: AgentState) -> dict:
     return {record["stakeholder_id"]: record for record in records}
 
 
-def _suggestion_key(suggestion) -> tuple[str, str]:
-    return suggestion["stakeholder_id"], _name(suggestion["description"])
-
-
 def start_personas(state: AgentState) -> AgentState:
     """Prepare reusable context and collect the first reply in a single node.
 
@@ -90,8 +80,6 @@ def start_personas(state: AgentState) -> AgentState:
             "drafts": [],
             "next_draft_number": 1,
             "draft_version": 0,
-            "pending_suggestions": [],
-            "declined_suggestions": [],
             "evaluation": None,
             "evaluated_draft_version": None,
             "latest_user_response": "",
@@ -109,7 +97,7 @@ def start_personas(state: AgentState) -> AgentState:
 
 
 def process_persona_response(state: AgentState) -> AgentState:
-    """Interpret the reply, then apply explicit edits and suggestion decisions."""
+    """Interpret the reply, then apply user-requested additions, edits, and removals."""
     metadata = state["persona_metadata"]
     request = prompt.PERSONA_RESPONSE_PROMPT.format(**_turn_input(metadata))
     # Each call gets reusable context, current records, and the latest exchange.
@@ -124,8 +112,6 @@ def process_persona_response(state: AgentState) -> AgentState:
     )
 
     drafts = {d["persona_id"]: dict(d) for d in metadata["drafts"]}
-    pending = {_suggestion_key(s): dict(s) for s in metadata["pending_suggestions"]}
-    declined = {_suggestion_key(s): dict(s) for s in metadata["declined_suggestions"]}
     next_number = metadata["next_draft_number"]
 
     removed = result.removed_persona_ids
@@ -136,39 +122,7 @@ def process_persona_response(state: AgentState) -> AgentState:
         raise ValueError("The response references an unknown or removed draft ID.")
 
     for persona_id in removed:
-        removed_draft = drafts.pop(persona_id)
-        # Keep the user-group description to avoid immediately suggesting it again.
-        suggestion = {
-            "stakeholder_id": removed_draft["stakeholder_id"],
-            "description": removed_draft["role"],
-            "justification": removed_draft["gmc"],
-            "reason": "The user removed this persona from the drafts.",
-        }
-        if suggestion["stakeholder_id"]:
-            declined[_suggestion_key(suggestion)] = suggestion
-
-    decisions_seen = set()
-    for decision in result.suggestion_decisions:
-        key = (decision.stakeholder_id, _name(decision.description))
-        if key not in pending or key in decisions_seen:
-            raise ValueError("The response references an unknown or repeated suggestion.")
-        decisions_seen.add(key)
-        suggestion = pending.pop(key)
-        if decision.decision == "decline":
-            declined[key] = {**suggestion, "reason": decision.reason}
-        else:
-            persona_id = f"Persona-{next_number}"
-            # A proposal identifies a user perspective, not a completed profile.
-            if suggestion["stakeholder_id"] not in _stakeholders(state):
-                raise ValueError("A suggested persona must reference a finalized stakeholder.")
-            drafts[persona_id] = PersonaDraft(
-                persona_id=persona_id,
-                stakeholder_id=suggestion["stakeholder_id"],
-                name="", role=suggestion["description"],
-                status_and_trust_level="", demographics="", ksa="", gmc="",
-                usage_patterns="", varied_justification="",
-            ).model_dump()
-            next_number += 1
+        drafts.pop(persona_id)
 
     for update in result.updates:
         persona_id = update.persona_id
@@ -187,20 +141,12 @@ def process_persona_response(state: AgentState) -> AgentState:
         drafts[persona_id] = PersonaDraft.model_validate(record).model_dump()
 
     current = list(drafts.values())
-    represented = {
-        (d["stakeholder_id"], _name(d["role"])) for d in current
-    }
-    # Explicitly reintroducing a declined user perspective is allowed.
-    pending = {k: v for k, v in pending.items() if k not in represented}
-    declined = {k: v for k, v in declined.items() if k not in represented}
     return {
         "persona_metadata": {
             **metadata,
             "drafts": current,
             "next_draft_number": next_number,
             "draft_version": metadata["draft_version"] + (current != metadata["drafts"]),
-            "pending_suggestions": list(pending.values()),
-            "declined_suggestions": list(declined.values()),
             # Keep the latest completed evaluation to interpret this reply.
             # Its version prevents using old verdicts to approve edited drafts.
             "response_feedback": result.clarification_feedback,
@@ -274,16 +220,6 @@ def evaluate_personas(state: AgentState) -> AgentState:
             **draft, "varied_justification": evaluation.varied_justification
         }
 
-    pending = {_suggestion_key(s): s for s in metadata["pending_suggestions"]}
-    excluded = {_suggestion_key(s) for s in metadata["declined_suggestions"]}
-    excluded.update((d["stakeholder_id"], _name(d["role"])) for d in drafts.values())
-    for suggestion in result.suggested_personas:
-        if suggestion.stakeholder_id not in stakeholders:
-            raise ValueError("A suggested persona must reference a finalized stakeholder.")
-        key = (suggestion.stakeholder_id, _name(suggestion.description))
-        if key[1] and key not in excluded and key not in pending:
-            pending[key] = suggestion.model_dump()
-
     current = list(drafts.values())
     version = metadata["draft_version"] + (current != metadata["drafts"])
     return {
@@ -293,7 +229,6 @@ def evaluate_personas(state: AgentState) -> AgentState:
             "draft_version": version,
             "evaluation": result.model_dump(),
             "evaluated_draft_version": version,
-            "pending_suggestions": list(pending.values()),
         }
     }
 
@@ -304,7 +239,7 @@ def personas_ready(state: AgentState) -> bool:
     evaluation = metadata["evaluation"]
     if (
         not metadata["drafts"] or not evaluation
-        or metadata["pending_suggestions"] or metadata["response_feedback"]
+        or metadata["response_feedback"]
         or metadata["evaluated_draft_version"] != metadata["draft_version"]
     ):
         return False
@@ -320,7 +255,7 @@ def personas_ready(state: AgentState) -> bool:
 
 
 def prompt_persona_refinement(state: AgentState) -> AgentState:
-    """Display current drafts, actionable feedback, and outstanding suggestions."""
+    """Display current drafts and actionable evaluation feedback."""
     metadata = state["persona_metadata"]
     evaluations = {
         e["persona_id"]: e
@@ -362,15 +297,8 @@ def prompt_persona_refinement(state: AgentState) -> AgentState:
         sections.append(prompt.PERSONA_FEEDBACK_SECTION_TEMPLATE.format(
             personas="\n\n".join(needs_work)
         ))
-    if metadata["pending_suggestions"]:
-        sections.append(prompt.SUGGESTED_PERSONAS_SECTION_TEMPLATE.format(
-            suggestions="\n\n".join(
-                prompt.SUGGESTED_PERSONA_TEMPLATE.format(**s)
-                for s in metadata["pending_suggestions"]
-            )
-        ))
     if not metadata["drafts"]:
-        sections.append("Please provide at least one persona, or accept a suggestion.")
+        sections.append("Please provide at least one persona.")
     message = prompt.PERSONA_FOLLOW_UP_PROMPT.format(sections="\n\n".join(sections))
     return {"persona_metadata": _collect_response(metadata, message)}
 
