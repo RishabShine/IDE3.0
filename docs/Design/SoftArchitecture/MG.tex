@@ -166,7 +166,7 @@ as follows:
 \end{itemize}
 
 \progname{} is a VS~Code extension that guides a developer through the
-requirements stages of CS/SE 3RA3, a McMaster University Rquirements Engineering course,
+requirements stages of CS/SE 3RA3, a McMaster University Requirements Engineering course,
 from a statement of need to reviewed requirements, an architecture, and Java interfaces with JML contracts. Every
 artifact is approved by the developer before it is used. Once approved, the
 interfaces and contracts are released as an implementation handoff, which is a
@@ -387,11 +387,10 @@ Ideas for Solution section left to the design.
   against the contracts held in the intent model, not the copy in the source
   tree, which the assistant can edit. A checker failure is reported as
   ``could not be checked'', never as a pass.
-  \item \textbf{The LLM is behind one module (LC1, MR2, HA-SR12, HA-SR16).} All
+  \item \textbf{The LLM is behind one module (LC1, MR2, HA-SR12).} All
   model calls go through the LLM Gateway (\mref{mLLM}), which hides the
-  provider and model, limits what content leaves the machine, and records the
-  model and prompt version of each generated artifact. This is the wrapper that
-  VnV Plan test MT-1 inspects for.
+  provider and model and limits what content leaves the machine. This is the
+  wrapper that VnV Plan test MT-1 inspects for.
   \item \textbf{Host isolation (IAS1, ACCR1, MR2).} All IDE specific
   presentation and the channel to the back end go through the Host IDE
   Interface (\mref{mHost}), so a change of host does not rewrite behavioural
@@ -565,7 +564,7 @@ Only leaf modules must be implemented.
   update or not at all, write nothing on error or timeout, and mark dependent
   artifacts and released handoffs for review when an approved artifact changes.
 \item[Implemented By:] \progname{}
-\item[Type of Module:] Abstract Object
+\item[Type of Module:] Library
 \end{description}
 
 \subsection{Software Decision Module (\mref{mSD})}
@@ -586,8 +585,7 @@ Only leaf modules must be implemented.
   approval is fingerprinted.
 \item[Services:]Create, read, and update artifacts and their status, reject
   invalid writes, apply each change completely or not at all, keep a
-  recoverable history, record the model and prompt version of generated
-  artifacts, and detect approved artifacts or released contracts that were
+  recoverable history, and detect approved artifacts or released contracts that were
   changed outside the review workflow.
 \item[Implemented By:] \progname{}
 \item[Type of Module:] Abstract Object
@@ -613,10 +611,9 @@ Only leaf modules must be implemented.
   and repaired, how rate limits and timeouts are retried, and which project
   content may be sent.
 \item[Services:]Run a prompt and return a structured result or a failure,
-  remove content that must not leave the machine, and report the model and
-  prompt version used.
+  and remove content that must not leave the machine.
 \item[Implemented By:] \progname{} (\texttt{core/models.py})
-\item[Type of Module:] Abstract Object
+\item[Type of Module:] Library
 \end{description}
 
 \subsubsection{Implementation Handoff Module (\mref{mHandoff})}
@@ -798,7 +795,7 @@ HA-SR12 & \mref{mLLM}\\
 HA-SR13 & \mref{mVerify}, \mref{mStore}\\
 HA-SR14 & \mref{mDerive}, \mref{mTrace}\\
 HA-SR15 & \mref{mGate}, \mref{mTrace}, \mref{mControl}\\
-HA-SR16 & \mref{mLLM}, \mref{mStore}\\
+HA-SR16 & \mref{mReview}, \mref{mStore}\\
 \bottomrule
 \end{longtable}
 
@@ -1040,8 +1037,7 @@ module, and design reflection after peer module implementation.
     Design Documentation rubric and to suggest areas of improvement, which
     the author then accepted, revised, or rejected.
   \item \textbf{Version 0.3.} Reviewed version 0.2 against the
-    rubric, the MG checklist, the revised SRS and Hazard Analysis, and the code
-    in \texttt{src/agentic\_flow/}. 
+    rubric, the MG checklist, the revised SRS and Hazard Analysis . 
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}

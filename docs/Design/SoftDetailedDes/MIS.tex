@@ -186,7 +186,7 @@ Stage & A stage of the workflow, one of \{\textit{need}, \textit{usersAndGoals},
 \textit{contracts}, \textit{release}, \textit{verification}\}. The first four
 form the requirements elicitation phase.\\
 Proposal & A draft set of artifacts from one stage, awaiting a decision.\\
-Artifact & A stored intent model entry as seen by clients.\\
+Artifact & A stored intent model entry as seen by clients, with its ArtifactStatus.\\
 ArtifactId & Identifier of an Artifact in the intent model.\\
 ArtifactStatus & One of \{\textit{draft}, \textit{pending}, \textit{approved},
 \textit{rejected}, \textit{needsReview}, \textit{unapproved}\}.\\
@@ -571,7 +571,7 @@ None.
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
 writeSpecification & id: RequestId & Specification & IncompleteElicitation, ModelUnavailable \\
-revise & spec: Specification, fb: Feedback & Specification & ModelUnavailable \\
+revise & id: RequestId, spec: Specification, fb: Feedback & Specification & ModelUnavailable \\
 \hline
 \end{tabular}
 \end{center}
@@ -686,7 +686,7 @@ None.
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
 propose & id: RequestId & ArchitectureProposal & NoRequirements, ModelUnavailable \\
-revise & ap: ArchitectureProposal, fb: Feedback & ArchitectureProposal & AllocationIncomplete, ModelUnavailable \\
+revise & id: RequestId, ap: ArchitectureProposal, fb: Feedback & ArchitectureProposal & AllocationIncomplete, ModelUnavailable \\
 \hline
 \end{tabular}
 \end{center}
@@ -742,8 +742,8 @@ None.
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-derive & c: Component & InterfaceSpec & NotApproved, MissingType, ModelUnavailable \\
-revise & spec: InterfaceSpec, fb: Feedback & InterfaceSpec & ModelUnavailable \\
+derive & id: RequestId, c: Component & InterfaceSpec & NotApproved, MissingType, ModelUnavailable \\
+revise & id: RequestId, spec: InterfaceSpec, fb: Feedback & InterfaceSpec & ModelUnavailable \\
 uncovered & spec: InterfaceSpec & seq of ArtifactId & - \\
 unsourced & spec: InterfaceSpec & seq of ContractClause & - \\
 \hline
@@ -804,8 +804,8 @@ None.
 \hline
 present & p: Proposal & - & DisplayFailed \\
 collectDecision & p: Proposal & Decision, Rationale & Cancelled \\
-amendItem & p: Proposal, item: ArtifactId, fb: Feedback & Proposal & UnknownItem \\
-removeItem & p: Proposal, item: ArtifactId & Proposal & UnknownItem \\
+amendItem & item: ArtifactId, p: Proposal, fb: Feedback & Proposal & UnknownItem \\
+removeItem & item: ArtifactId, p: Proposal & Proposal & UnknownItem \\
 askRevision & id: RequestId & Note & Cancelled \\
 showTrace & item: ArtifactId & - & NotFound \\
 presentReport & results: seq of ClauseResult & - & DisplayFailed \\
@@ -933,7 +933,6 @@ putDraft & p: Proposal & seq of ArtifactId & SchemaInvalid \\
 update & item: ArtifactId, a: Artifact & - & SchemaInvalid, NotFound \\
 setStatus & item: ArtifactId, s: ArtifactStatus, r: Rationale & - & NotFound \\
 get & item: ArtifactId & Artifact & NotFound \\
-status & item: ArtifactId & ArtifactStatus & NotFound \\
 history & item: ArtifactId & ArtifactHistory & NotFound \\
 approvedContracts & c: Component & InterfaceSpec & NotFound \\
 outsideEdits & - & seq of ArtifactId & - \\
@@ -1116,7 +1115,7 @@ None.
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-write & specs: seq of InterfaceSpec, items: seq of ArtifactId & HandoffId & WriteFailed \\
+write & items: seq of ArtifactId, specs: seq of InterfaceSpec & HandoffId & WriteFailed \\
 markStale & h: HandoffId & - & NotFound \\
 \hline
 \end{tabular}
