@@ -49,6 +49,9 @@ Nov 13, 2026 & 0.2 & Tyler Yue: Edited the Rev~-1 to ensure it is aligned with t
 Nov 17, 2026 & 0.3 & Qusay Qadir: Aligned the MIS with Module Guide version
 0.3. Updated the Host IDE Interface, Workflow Controller, Review Panel, Intent Model Store, Traceability Manager, and Contract
 Verifier for the implementation handoff.\\ 
+Nov 17, 2026 & 0.4 & Rishab Shine: Updated the Persona type to include its
+stakeholder reference and added persona evaluation to the User and Goal
+Modelling Module interface (M6).\\
 \bottomrule
 \end{tabularx}
 
@@ -204,8 +207,8 @@ Benefit & A numbered expected benefit, with the problems it addresses, its
 measure if one is given, and its source.\\
 Stakeholder & A person or group with an interest in the system, with its
 category and source.\\
-Persona & A representative user of a key user group, with role, goals, and
-concerns.\\
+Persona & A representative user of a key user group, with a reference to its
+corresponding stakeholder, role, goals, and concerns.\\
 Goal & A goal with its owner, its linked benefit, and whether it is hard or
 soft.\\
 UseCase & A use case for a hard goal, with a main success scenario,
@@ -506,6 +509,7 @@ None.
 identifyStakeholders & id: RequestId, req: Request & seq of Stakeholder & NoApprovedNeed, ModelUnavailable \\
 evaluateStakeholders & id: RequestId & Evaluation & ModelUnavailable \\
 definePersonas & id: RequestId, req: Request & seq of Persona & NoStakeholders, ModelUnavailable \\
+evaluatePersonas & id: RequestId & Evaluation & ModelUnavailable \\
 deriveGoals & id: RequestId & seq of Goal & NoStakeholders, ModelUnavailable \\
 deriveUseCases & id: RequestId, g: Goal & seq of UseCase & SoftGoal, ModelUnavailable \\
 openQuestions & id: RequestId & seq of OpenQuestion & - \\
