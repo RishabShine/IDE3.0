@@ -71,6 +71,9 @@ CC tests for FR13 to FR20) and HZ-4 to HZ-7 (HA-SR13 to HA-SR16). Updated the
 traceability tables. Added repeated runs for tests that call the LLM, and four
 symbolic parameters for the quality threshold, defect recall, judge agreement,
 and repeated runs (issues \#74 and \#75).\\
+Nov 17, 2026 & 1.5 & Rishab Shine: Updated ES-2 for developer-provided
+stakeholders and personas. Updated PF-5 and SEC-3 for the workspace-file
+implementation handoff.\\
 \bottomrule
 \end{longtable}
 
@@ -2048,18 +2051,24 @@ Control: Manual.
 
 Initial State: The need from ES-1 is approved.
 
-Input: The developer names only students and front desk staff as
-stakeholders.
+Input: The developer provides students and front desk staff as stakeholders,
+with descriptions of their involvement, and a persona for each group. One
+stakeholder description is incomplete, and one persona is missing its concerns.
 
-Output: The system asks about the client, domain experts, and related systems. Each persona has a
-role, goals, and concerns. The approved stakeholders and personas are
-recorded.
+Output: The system captures the supplied stakeholders and personas, links each
+persona to its corresponding stakeholder, and requests clarification of the
+missing information. Additional stakeholder groups or personas are not proposed.
+Following refinement and developer approval, the stakeholders, personas, and
+their links are recorded.
 
-Test Case Derivation: FR14 requires stakeholders and by personas, approved by the developer.
+Test Case Derivation: FR14 requires stakeholders and personas for the key user
+groups, approved by the developer.
 
-How test will be performed: The tester will answer the questions, approve the
-result, and check the questions asked against the stakeholders and
-each persona against the required fields.
+How test will be performed: The tester submits the descriptions, checks the
+feedback against the missing information, provides the requested details, and
+approves the result. The tester then checks that the stored information matches
+the supplied descriptions and that each persona references the correct
+stakeholder.
 
 \item{ES-3: Derive Goals and Use Cases, Keeping Open Questions\\}
 
@@ -2510,18 +2519,19 @@ Requirements: RFR2, SUPR1, SUPR2, HA-SR4.
 
 Type: Dynamic, Automatic.
 
-Initial State: The intent model contains approved artifacts, and a cryptographic
-hash of the \texttt{.ide3/} folder has been recorded.
+Initial State: The intent model contains approved artifacts, and cryptographic
+hashes of those persisted artifacts have been recorded.
 
-Input/Condition: Separate runs make the stub LLM service time out, disconnect the
-stub coding agent, and crash the OpenJML process.
+Input/Condition: Separate runs make the stub LLM service time out, fail a
+workspace-file handoff write, and crash the OpenJML process.
 
-Output/Result: The hash is unchanged after each run. The developer sees a message
-naming the failed service, and the diagnostic log contains the failure and the
-operation it interrupted.
+Output/Result: The artifact hashes are unchanged after each run. A failed handoff
+write leaves no partial or newly released handoff. The developer sees a message
+naming the failed operation, and the diagnostic log records the failure.
 
-How test will be performed: The test will inject each fault, compare the hash,
-and check the message and log entry.
+How test will be performed: The test will inject each fault, compare the artifact
+hashes, inspect the handoff files and release status, and check the message and
+log entry.
 
 \item{PF-6: Capacity and Scaling\\}
 
@@ -2808,17 +2818,21 @@ Requirements: IR1, HA-SR8.
 
 Type: Dynamic, Automatic.
 
-Initial State: A proposal is pending, and a stub coding agent is connected.
+Initial State: A proposal is pending. Its approval will release an implementation
+handoff to the workspace. The intent model and existing handoff files have been
+recorded.
 
 Input/Condition: Separate runs terminate the process during the intent-model write
-and fail delivery of the decision to the agent.
+and fail a handoff-file write while applying the approval and release.
 
-Output/Result: The model is left in its complete previous state or complete new
-state. If delivery fails, the model and agent are both left unchanged and the
-failure is reported.
+Output/Result: The decision, intent-model update, and released handoff are all
+applied or all left unchanged. No partial model or handoff is visible. A failed
+handoff write leaves the previous model and handoff unchanged, and the failure
+is reported.
 
-How test will be performed: The test will inject each failure, validate and compare
-the model, and inspect the agent's received messages and the reported error.
+How test will be performed: The test will inject each failure, restart after the
+termination case, validate and compare the model, and inspect the handoff files,
+recorded decision, release status, and reported error.
 
 \item{SEC-4: Reject Invalid Intent-Model Changes\\}
 
