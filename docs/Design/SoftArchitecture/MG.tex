@@ -63,11 +63,17 @@ Architecture Proposal module. Merged the Verification Report
 into the Review Panel and added the LLM Gateway. 
 Rewrote the anticipated changes to cover SRS LC1 to LC10, matched the
 unlikely changes to SRS UL1 to UL6, and renamed their prefix from UC to UL. 
-Traced every functional,nonfunctional, business rule, and Hazard Analysis requirement, 
+Traced every functional, nonfunctional, business rule, and Hazard Analysis requirement,
 one row each.
 Drew the complete uses relation in layers, recorded the design decisions that
 the SRS left to the design, and added a module timeline with owners and
 dates.\\
+Nov 18, 2026 & 0.4 & Vedant Patel: Aligned the User and Goal Modelling
+Module with SRS revision 1.3 (FR14): developer-provided stakeholders and
+personas, persona-to-stakeholder links, and approval with unresolved feedback
+after two completed evaluation rounds. Changed Need Capture and User and Goal
+Modelling to library modules, since the intent model is held only by the
+Intent Model Store. Fixed typos and expanded the Generative AI disclosure.\\
 \bottomrule
 \end{longtable}
 
@@ -352,8 +358,8 @@ Ideas for Solution section left to the design.
   earlier drafts of the SRS are not used. An MCP channel that only reads
   approved artifacts may be added later by changing \mref{mHandoff} alone
   (\acref{acHandoff}).
-  \item \textbf{The requirements stages follow requirements engineering elicitation engineering principles and two published
-  designs.} The ReqInOne design (summary, requirement extraction,
+  \item \textbf{The requirements stages follow requirements elicitation
+  principles and two published designs.} The ReqInOne design (summary, requirement extraction,
   classification, and per requirement quality scoring) shapes
   \mref{mSpec} and \mref{mQuality}. The Goal2Story design (one step per stage,
   each step reviewed) shapes \mref{mUsers}.
@@ -470,20 +476,25 @@ Only leaf modules must be implemented.
   the benefits, record the developer message each item came from, and accept
   the supported forms of engineering input.
 \item[Implemented By:] \progname{} (\texttt{capture\_intent/})
-\item[Type of Module:] Abstract Object
+\item[Type of Module:] Library (captured items are stored in \mref{mStore})
 \end{description}
 
 \subsubsection{User and Goal Modelling Module (\mref{mUsers})}
 
 \begin{description}
 \item[Secrets:]The CS/SE 3RA3 rules for stakeholders, personas, goals and soft goals, and use cases with
-  alternatives and exceptions.
-\item[Services:]Identify stakeholders and personas, derive goals with owners and
-  benefit links, classify them as hard or soft, derive use cases for each hard
-  goal, and keep unanswered questions open instead of answering them.
+  alternatives and exceptions, and the rule for when stakeholders or personas
+  may be approved with unresolved feedback.
+\item[Services:]Capture and refine the stakeholders and personas the developer
+  provides, link each persona to its stakeholder, evaluate both, and count the
+  completed evaluation rounds so that drafts may be approved with unresolved
+  feedback after two rounds, keeping any unmet criteria. Derive goals with
+  owners and benefit links, classify them as hard or soft, derive use cases
+  for each hard goal, and keep unanswered questions open instead of answering
+  them.
 \item[Implemented By:] \progname{} (\texttt{user\_modelling/} for
   stakeholders, the rest to be built)
-\item[Type of Module:] Abstract Object
+\item[Type of Module:] Library (captured items are stored in \mref{mStore})
 \end{description}
 
 \subsubsection{Requirements Specification Module (\mref{mSpec})}
@@ -1037,7 +1048,13 @@ module, and design reflection after peer module implementation.
     Design Documentation rubric and to suggest areas of improvement, which
     the author then accepted, revised, or rejected.
   \item \textbf{Version 0.3.} Reviewed version 0.2 against the
-    rubric, the MG checklist, the revised SRS and Hazard Analysis . 
+    rubric, the MG checklist, the revised SRS and Hazard Analysis.
+  \item \textbf{Version 0.4.} Claude Opus 5.5 (Anthropic, through Claude
+    Code) compared the MG and MIS against SRS revision 1.3 and the Design
+    Document rubric. It found that M6 did not reflect the revised FR14, that
+    M5 and M6 held state that duplicated the Intent Model Store, and several
+    typos, and drafted the changes in Section~\ref{SecMD}, the revision
+    history, and this section.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}
@@ -1050,6 +1067,12 @@ module, and design reflection after peer module implementation.
   \item Confirmed that low-level implementation detail was not introduced into
     secrets or services where the document should stay at the design-decision
     level.
+  \item For version 0.4, checked every requirement identifier in the
+    traceability tables against the identifiers defined in SRS revision 1.3
+    and the Hazard Analysis, so that no requirement is missing or invented.
+  \item For version 0.4, read the revised M6 secrets and services against the
+    FR14 text and its fit criterion, and checked that the M5 and M6 module
+    types agree with the MIS state variables.
 \end{enumerate}
 
 \newpage{}
