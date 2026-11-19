@@ -52,6 +52,11 @@ Verifier for the implementation handoff.\\
 Nov 17, 2026 & 0.4 & Rishab Shine: Updated the Persona type to include its
 stakeholder reference and added persona evaluation to the User and Goal
 Modelling Module interface (M6).\\
+Nov 18, 2026 & 0.5 & Vedant Patel: Aligned M6 with FR14 in SRS revision 1.3
+(capture of developer-provided stakeholders and personas, evaluation rounds,
+approval with unresolved feedback). Removed the state of M5 and M6 that
+duplicated the Intent Model Store. Added a table defining every exception.
+Expanded the Generative AI disclosure.\\
 \bottomrule
 \end{tabularx}
 
@@ -240,6 +245,57 @@ Host IDE Interface secret).\\
 StatusMsg & A readable status or error message for the IDE surface.\\
 LogEvent & A diagnostic record of a failure or significant event.\\
 SchemaId & Identifier of a supported intent model schema.\\
+PeopleKind & One of \{\textit{stakeholders}, \textit{personas}\}, the two
+drafts of User and Goal Modelling that are evaluated in rounds.\\
+\bottomrule
+\end{longtable}}
+
+\subsection{Exceptions}
+
+Each exception below is raised by the access programs that list it. An
+exception leaves the state of the raising module unchanged unless its module
+section says otherwise.
+
+{\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{l p{10.5cm}}
+\toprule
+\textbf{Exception} & \textbf{Raised when}\\
+\midrule
+\endhead
+AccessDenied & The workspace intent model cannot be opened for reading and writing.\\
+AllocationIncomplete & A revised architecture leaves an approved functional requirement unallocated.\\
+ApprovedLocked & A discard would remove an approved artifact.\\
+Cancelled & The developer dismisses a prompt without answering.\\
+DisplayFailed & The host surface cannot show the content.\\
+HostUnavailable & No host session is bound, or the host IDE stops responding.\\
+IllegalStage & A return or merge names a stage that is not allowed from the current stage.\\
+IncompleteElicitation & A stage of the requirements elicitation phase has not been approved.\\
+InvalidDecision & A decision is not approve, edit, or reject, or an edit is missing its content.\\
+InvalidLink & A trace link has no justification or is of the wrong kind for its two ends.\\
+InvalidOutput & The LLM result still does not follow the OutputSchema after repair.\\
+InvalidRequest & A request is empty, larger than \texttt{MAX\_REQUEST\_SIZE}, or in an unsupported form.\\
+MissingType & A contract needs a type that the approved domain model does not define.\\
+ModelUnavailable & The LLM service cannot be reached or times out after the retries.\\
+NoApprovedNeed & The statement of need has not been approved.\\
+NoRequirements & There are no approved requirements to allocate.\\
+NoStakeholders & There are no approved stakeholders.\\
+NoStatement & No statement of need has been captured for the request.\\
+NotApproved & The component or its requirements are not approved.\\
+NotFound & The named artifact, link, handoff, or saved progress does not exist.\\
+NotReleasable & At least one item lacks a required approval or a complete refinement chain.\\
+NotResumable & The saved progress of the request cannot be restored.\\
+NothingReleased & No handoff has been released for the component or request.\\
+RateLimited & The LLM service still refuses requests after the retries.\\
+SchemaInvalid & A write does not follow \texttt{SUPPORTED\_SCHEMA}.\\
+SoftGoal & Use cases are requested for a soft goal.\\
+StageIncomplete & The proposal of the current stage has not been approved.\\
+StoreFailed & The Intent Model Store could not record the decision.\\
+TooFewRounds & Approval with unresolved feedback is requested before \texttt{MIN\_ROUNDS\_BEFORE\_OVERRIDE} completed evaluation rounds.\\
+UnknownId & No request in progress has the given RequestId.\\
+UnknownItem & The proposal has no item with the given ArtifactId.\\
+UnknownQuestion & The question is not open for the request.\\
+UnsupportedArtifact & The request is in an input form the module does not accept.\\
+WriteFailed & A handoff file could not be written. No file is left partly written.\\
 \bottomrule
 \end{longtable}}
 
@@ -455,9 +511,9 @@ uncoveredProblems & id: RequestId & seq of Problem & - \\
 
 \subsubsection{State Variables}
 
-$statement$: Statement $\cup \{\mathrm{nil}\}$.\\
-$problems$: seq of Problem.\\
-$benefits$: seq of Benefit.
+None. The statement, problems, and benefits of each request are stored in
+IntentModelStore under its RequestId, which is the only module that holds the
+intent model.
 
 \subsubsection{Environment Variables}
 
@@ -496,7 +552,9 @@ LLMGateway, TraceabilityManager, IntentModelStore
 
 \subsubsection{Exported Constants}
 
-None.
+\texttt{MIN\_ROUNDS\_BEFORE\_OVERRIDE}: $\mathbb{N} = 2$, the number of
+completed evaluation rounds after which stakeholders or personas may be
+approved with unresolved feedback (FR14).
 
 \subsubsection{Exported Access Programs}
 
@@ -506,10 +564,12 @@ None.
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-identifyStakeholders & id: RequestId, req: Request & seq of Stakeholder & NoApprovedNeed, ModelUnavailable \\
+captureStakeholders & id: RequestId, req: Request & seq of Stakeholder & NoApprovedNeed, ModelUnavailable \\
 evaluateStakeholders & id: RequestId & Evaluation & ModelUnavailable \\
-definePersonas & id: RequestId, req: Request & seq of Persona & NoStakeholders, ModelUnavailable \\
+capturePersonas & id: RequestId, req: Request & seq of Persona & NoStakeholders, ModelUnavailable \\
 evaluatePersonas & id: RequestId & Evaluation & ModelUnavailable \\
+completedRounds & id: RequestId, k: PeopleKind & $\mathbb{N}$ & UnknownId \\
+approveWithFeedback & id: RequestId, k: PeopleKind, r: Rationale & - & TooFewRounds, UnknownId \\
 deriveGoals & id: RequestId & seq of Goal & NoStakeholders, ModelUnavailable \\
 deriveUseCases & id: RequestId, g: Goal & seq of UseCase & SoftGoal, ModelUnavailable \\
 openQuestions & id: RequestId & seq of OpenQuestion & - \\
@@ -522,11 +582,9 @@ answer & id: RequestId, q: OpenQuestion, req: Request & - & UnknownQuestion \\
 
 \subsubsection{State Variables}
 
-$stakeholders$: seq of Stakeholder.\\
-$personas$: seq of Persona.\\
-$goals$: seq of Goal.\\
-$useCases$: seq of UseCase.\\
-$questions$: seq of OpenQuestion.
+None. Stakeholders, personas, goals, use cases, open questions, evaluations,
+and the number of completed evaluation rounds are stored in IntentModelStore
+under the RequestId, which is the only module that holds the intent model.
 
 \subsubsection{Environment Variables}
 
@@ -536,13 +594,22 @@ None.
 
 Goals are derived only from an approved need and approved stakeholders. The
 module never answers an OpenQuestion itself. Only the developer answers it
-through \texttt{answer}.
+through \texttt{answer}. Stakeholders and personas start from what the
+developer provides, and every Persona references a captured Stakeholder.
+\texttt{approveWithFeedback} is called only by WorkflowController, after the
+developer chooses this option through ReviewPanel.
 
 \subsubsection{Access Routine Semantics}
 
 To be formalized in Revision~0. \texttt{deriveUseCases} raises
 \texttt{SoftGoal} for a soft goal, because use cases are derived for hard goals
-only.
+only. A call to \texttt{evaluateStakeholders} or \texttt{evaluatePersonas} that
+returns an Evaluation adds one completed round for that PeopleKind. A call that
+raises \texttt{ModelUnavailable} does not. \texttt{approveWithFeedback} raises
+\texttt{TooFewRounds} while \texttt{completedRounds} is below
+\texttt{MIN\_ROUNDS\_BEFORE\_OVERRIDE}. Otherwise it records the approval with
+the developer's rationale and keeps every unmet criterion with its feedback,
+never changing it to a passing verdict.
 
 \subsubsection{Local Functions}
 
@@ -1277,7 +1344,9 @@ None.
 \subsection{AI Tools Used}
 
 \begin{itemize}
-  \item Cursor and Claude, used in the writing process for this MIS.
+  \item Cursor and Claude, used in the writing process for versions 0.1 and
+    0.2 of this MIS.
+  \item Claude Opus 5.5 (Anthropic, through Claude Code) for version 0.5.
 \end{itemize}
 
 \subsection{How and Where Used}
@@ -1291,6 +1360,12 @@ None.
   \item \textbf{Rubric review.} Used to evaluate the document against the
     Design Documentation rubric and to suggest areas of improvement, which
     the author then accepted, revised, or rejected.
+  \item \textbf{Version 0.5.} Compared the MIS against SRS revision 1.3, the
+    Module Guide, and the rubric. It found that M6 did not reflect the revised
+    FR14, that M5 and M6 held state that duplicated the Intent Model Store,
+    and that exceptions were named but not defined. It drafted the M6 syntax
+    and semantics, the Exceptions table in the Notation section, and the
+    revision history entry.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}
@@ -1304,6 +1379,12 @@ None.
   \item Spot-checked that Uses lists remain consistent with the Module Guide
     and that Formal $:=$ access-routine semantics remain deferred to
     Revision~0 per Des.\ Doc.\ Rev~-1 scope (syntax only).
+  \item For version 0.5, checked that every exception named in an access
+    program table appears exactly once in the Exceptions table, and that the
+    table names no exception that no program raises.
+  \item For version 0.5, read the M6 access programs and semantics against the
+    FR14 text and fit criterion in SRS revision 1.3, and checked that the M5
+    and M6 module types in the Module Guide agree with their state variables.
 \end{enumerate}
 
 These steps are intended to convince a reader of the accuracy, completeness,
