@@ -20,22 +20,44 @@
 
 This document summarizes the contributions of each team member up to the POC
 Demo.  The time period of interest is the time between the beginning of the term
-and the POC demo.
-
-\wss{Please do not delete sections or modify the table formats.  Standardization
-helps the instructors and TAs to review these documents. You may add sections to
-the report.}
-
-\wss{Remove the instructor guidelines/comments in the final version.}
-
-\wss{Fill in the requested information, like project url, TA name, supervisor name, etc.}
+and the POC demo. Project repository:
+\href{https://github.com/RishabShine/IDE3.0}{https://github.com/RishabShine/IDE3.0}.
 
 \section{Demo Plans}
 
-\wss{What is your feasibility risk?}
+\noindent\textbf{Feasibility risk.}
+The primary feasibility risk is whether the team can construct and maintain a
+model that accurately represents relationships between a software system's
+implementation and engineering intent (requirements, constraints, and design
+decisions), including justifications for those links as the code evolves. This
+risk is stated in the Development Plan's Proof of Concept section
+(\texttt{docs/DevelopmentPlan/DevelopmentPlan.tex}).
 
-\wss{What will you be demonstrating}
+\noindent\textbf{What we will demonstrate.}
+The PoC demo shows the foundation of that intent model in the repository's
+agentic workflow under \texttt{src/agentic\_flow/}, rather than a full IDE
+product surface:
 
+\begin{itemize}
+  \item \textbf{Intent capture (SSON).} The
+    \texttt{capture\_intent} graph
+    (\texttt{src/agentic\_flow/capture\_intent/}) elicits and evaluates a
+    structured statement of need, looping until the evaluation is met.
+  \item \textbf{Stakeholder identification.} The user-modelling subgraph
+    (\texttt{src/agentic\_flow/user\_modelling/}) drafts and refines
+    stakeholders from captured intent, with human-in-the-loop interrupts, as
+    documented in
+    \texttt{src/agentic\_flow/user\_modelling/README.md}.
+  \item \textbf{Runnable checks.} Graph behaviour is covered by unit tests in
+    \texttt{test/agentic\_flow/} (run via
+    \texttt{PYTHONPATH=src python -m unittest discover -s test/agentic\_flow -v}).
+\end{itemize}
+
+Together these pieces demonstrate that the team can capture engineering intent
+in a structured, revisable form and attach early project context (stakeholders)
+to it---the prerequisite for later trace links from intent to implementation.
+UI mock-ups of the same workflow appear in the Wireframe CD
+(\texttt{docs/CDs/Wireframe/}).
 \section{Team Meeting Attendance}
 
 \begin{table}[H]
@@ -63,53 +85,12 @@ repo. The four meetings in the PoC period were:
 
 \begin{itemize}
   \item September 24, 2026 --- after Problem Statement informal (Sept~23)
-  \begin{itemize}
-    \item Clarify the PoC feasibility risk (intent-to-implementation
-      traceability) in the Problem Statement and Development Plan
-      (Rishab, Qusay).
-    \item Tighten stakeholder / environment wording so goals and
-      constraints are measurable (Vedant, Saumy).
-    \item Open GitHub issues for PS/Dev Plan revisions raised by the TA
-      and assign owners before the Sept~28 due date (Tyler).
-  \end{itemize}
   \item October 8, 2026 --- after SRS informal (Oct~7)
-  \begin{itemize}
-    \item Address TA feedback on functional vs.\ nonfunctional requirements
-      and make requirement IDs consistent across the SRS (Tyler, Vedant).
-    \item Draft the Hazard Analysis table structure and map hazards to
-      safety requirements that will appear in the SRS (Qusay, Saumy).
-    \item Split remaining SRS/HA sections, set an internal draft deadline
-      before Oct~19, and schedule peer-review prep (Rishab).
-  \end{itemize}
   \item October 29, 2026 --- after VnV Plan / PoC informal (Oct~28)
-  \begin{itemize}
-    \item Revise the VnV Plan so system tests explicitly trace to SRS
-      requirements and PoC scope (Vedant, Tyler).
-    \item Narrow the PoC demo script to constructing and justifying
-      intent--implementation relationships on a small example project
-      (Rishab, Qusay).
-    \item List remaining VnV Plan checklist gaps and close them before
-      the Nov~2 due date (Saumy).
-  \end{itemize}
   \item November 12, 2026 --- after Design Doc Rev~-1 informal (Nov~11)
-  \begin{itemize}
-    \item Finish MIS syntax for remaining leaf modules and align the
-      MG uses relation with the MIS (Tyler, Rishab).
-    \item Update the Wireframe CD so each screen maps to MIS access
-      programs called out in the informal review (Saumy, Vedant).
-    \item Produce a PoC dry-run checklist for the Nov~25 demo with Lucas
-      and assign who runs each demo step (Qusay).
-  \end{itemize}
 \end{itemize}
 
 \section{Supervisor/Stakeholder Meeting Attendance}
-
-\wss{For each team member how many supervisor/stakeholder team meetings have
-they attended over the time period of interest.  This number should be determined
-from the supervisor meeting issues in the team's repo.  The first entry in the
-table should be the total number of supervisor and team meetings held by the
-team.  If there is no supervisor, there will usually be meetings with
-stakeholders (potential users) that can serve a similar purpose.}
 
 \noindent \textbf{Supervisor's Name: } Dr.\ Istvan David
 
@@ -119,30 +100,23 @@ stakeholders (potential users) that can serve a similar purpose.}
 \toprule
 \textbf{Student} & \textbf{Meetings}\\
 \midrule
-Total & 5\\
-Vedant Patel & 5\\
-Rishab Shine & 5\\
-Name 3 & Num\\
-Name 4 & Num\\
-Name 5 & Num\\
+Total & 4\\
+Qusay Qadir & 4\\
+Rishab Shine & 4\\
+Tyler Yue & 4\\
+Vedant Patel & 4\\
+Saumy Patel & 4\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\wss{If needed, an explanation for the counts can be provided here.}
+All five team members attended every supervisor meeting held so far in the PoC
+period. Attendance was coordinated through the team's Discord channel. Matching
+GitHub issues were not created after each supervisor meeting; they were added
+afterward for this deliverable so the counts could be recorded in the
+repository.
 
 \section{Lecture Attendance}
-
-\wss{For each team member how many lectures have they attended over the time
-period of interest.  This number should be determined from the lecture issues in
-the team's repo. You can find the number of lectures in the time period of
-interest by looking at the
-\href{https://calendar.google.com/calendar/u/0/embed?src=rnboqiaki1k2la7rpu3bn0um58@group.calendar.google.com&ctz=America/Toronto}
-{Google calendar} for the capstone course. The first entry in the
-table should be the total number of lectures held for the class during the period of interest.}
-
-\wss{NOTE: There will be approximately 13 lectures between the start of class
-and the POC demos}
 
 \begin{table}[H]
 \centering
@@ -150,25 +124,25 @@ and the POC demos}
 \toprule
 \textbf{Student} & \textbf{Lectures}\\
 \midrule
-Total & Num\\
-Vedant Patel & 1\\
+Total & 7\\
+Qusay Qadir & 7\\
 Rishab Shine & 7\\
-Name 3 & Num\\
-Name 4 & Num\\
-Name 5 & Num\\
+Tyler Yue & 4\\
+Vedant Patel & 1\\
+Saumy Patel & 5\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\wss{If needed, an explanation for the lecture attendance can be provided here.}
+Lecture attendance was tracked informally through the team's Discord channel
+rather than through per-lecture GitHub issues at the time. The matching lecture
+issues were added afterward for this deliverable so attendance could be
+recorded in the repository; they were not created immediately after each
+lecture.
 
 \section{TA Document Discussion Attendance}
 
-\wss{For each team member how many of the informal document discussion meetings
-with the TA were attended over the time period of interest. The first row is the
-total number of discussion meetings scheduled by the TA with the team.}
-
-\noindent \textbf{TA's Name: } [fill in this information]
+\noindent \textbf{TA's Name: } Lucas Dutton
 
 \begin{table}[H]
 \centering
@@ -177,43 +151,23 @@ total number of discussion meetings scheduled by the TA with the team.}
 \textbf{Student} & \textbf{Meetings}\\
 \midrule
 Total & 4\\
-Vedant Patel & 0\\
+Qusay Qadir & 4\\
 Rishab Shine & 4\\
-Name 3 & Num\\
-Name 4 & Num\\
-Name 5 & Num\\
+Tyler Yue & 4\\
+Vedant Patel & 0\\
+Saumy Patel & 4\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\wss{If needed, an explanation for the attendance can be provided here.}
-
-Rishab's team, supervisor, and TA meeting attendance figures are based on his
-recollection: six team meetings, five supervisor meetings, and four TA document
-discussions, all attended. Meeting attendance records were not found in the
-repository's issues at the time of this update.
-
-Vedant attended six team meetings, five supervisor meetings, and no TA
-document discussions. Like Rishab's, these figures are based on recollection,
-since meeting issues had not yet been created in the repository.
+The four informal TA document discussions in the PoC period were Problem
+Statement (Sept~23), SRS (Oct~7), VnV Plan / PoC (Oct~28), and Design Doc
+Rev~-1 (Nov~11). Everyone attended all four except Vedant, who attended none.
+Coordination and follow-up happened primarily on Discord. Matching GitHub
+issues were not created after each TA discussion; they were added afterward for
+this deliverable so attendance could be recorded in the repository.
 
 \section{Commits, Lines Added and Lines Deleted, Pull Requests}
-
-\wss{For each team member how many commits to the main branch have been made
-over the time period of interest.  The total is the total number of commits for
-the entire team since the beginning of the term.  The percentage is the
-percentage of the total commits made by each team member.}
-
-\wss{There are also columns for lines added and lines deleted to give a sense of
-the magnitude of each team member's contributions.  Note that these numbers can
-be somewhat misleading, as a team member who does refactoring may have high
-numbers in both columns, while a team member who implements a large new feature
-may have a high number of lines added, but few lines deleted.  As for all commit
-information, these numbers will be interpreted with care.}
-
-\wss{The pull requests column counts the number of pull requests created by each
-team member.  This is a measure of how many contributions were made in branches,
-which may not be reflected in the commit counts for the main branch.}
 
 \begin{table}[H]
 \centering
@@ -222,49 +176,32 @@ which may not be reflected in the commit counts for the main branch.}
 \textbf{Student} & \textbf{Commits} & \textbf{Percent} & \textbf{Lines Added} &
 \textbf{Lines Deleted} & \textbf{Pull Requests}\\
 \midrule
-Total & 165 & 100\% & 25,457 & 2,985 & 59\\
-Vedant Patel & 25 & 15.15\% & 2,163 & 382 & 10\\
-Rishab Shine & 37 & 22.42\% & 14,540 & 237 & 12\\
-Name 3 & Num & \% & num & num & num\\
-Name 4 & Num & \% & num & num & num\\
-Name 5 & Num & \% & num & num & num\\
+Total & 175 & 100\% & 25,570 & 3,010 & 63\\
+Qusay Qadir & 63 & 36.00\% & 4,183 & 1,285 & 18\\
+Rishab Shine & 39 & 22.29\% & 14,582 & 249 & 14\\
+Tyler Yue & 29 & 16.57\% & 2,992 & 1,023 & 13\\
+Vedant Patel & 27 & 15.43\% & 2,182 & 388 & 11\\
+Saumy Patel & 9 & 5.14\% & 1,631 & 65 & 7\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\wss{If needed, an explanation for the counts can be provided here.  For
-instance, if a team member has more commits to unmerged branches, these numbers
-can be provided here.  If multiple people contribute to a commit, git allows for
-multi-author commits.}
-
 These figures were collected on November 19, 2026 from the
-\href{https://github.com/RishabShine/IDE3.0}{project repository}.
-The table counts all commits reachable from \texttt{main}, including merge
-commits and automated commits in the team total. Rishab's commits were matched
-to the author name Rishab Shine, including both his personal and GitHub
-no-reply email addresses. Lines added and deleted are summed from the text-file
-changes in non-merge commits; binary-file changes are excluded. These totals
-include the initial capstone-template import and therefore do not represent
-only newly written project content. Pull requests include both open and closed
-requests authored by each contributor.
-
-The pushed branch
-\href{https://github.com/RishabShine/IDE3.0/tree/rishab-stakeholder-v2}{\texttt{rishab-stakeholder-v2}}
-contains another 10 commits by Rishab that are not yet in \texttt{main}, with
-2,895 lines added and 1,215 lines deleted. These cover stakeholder and persona
-work and are reported separately to avoid counting unmerged work as main-branch
-contributions. The measured main and branch heads are \texttt{01de503} and
-\texttt{7e65fa2}, respectively.
-
-Vedant's commits were matched to the author name Vedant Patel and measured at
-the same \texttt{main} head (\texttt{01de503}) using the same method. The pull
-request count includes open and closed requests authored by \texttt{vp2306}.
+\href{https://github.com/RishabShine/IDE3.0}{project repository} at
+\texttt{main} head \texttt{d6b654c}. The table counts all commits reachable from
+\texttt{main}, including merge commits. The team total also includes 8
+automated \texttt{github-actions[bot]} commits (not shown as a row), so member
+percentages sum to less than 100\%. Author names were matched as follows:
+Qusay Qadir; Rishab Shine (personal and GitHub no-reply emails); Tyler Yue
+(personal and GitHub no-reply emails); Vedant Patel; and Saumy Patel
+(\texttt{SaumyP04}). Lines added and deleted are summed from text-file changes
+in non-merge commits; binary-file changes are excluded. These totals include
+the initial capstone-template import and therefore do not represent only newly
+written project content. Pull requests include both open and closed requests
+authored by each contributor (\texttt{qusayqadir}, \texttt{RishabShine},
+\texttt{Tyler-Yue}, \texttt{vp2306}, \texttt{SaumyP04}).
 
 \section{Issue Tracker}
-
-\wss{For each team member how many issues have they authored (including open and
-closed issues (O+C)) and how many have they been assigned (only counting closed
-issues (C only)) over the time period of interest.}
 
 \begin{table}[H]
 \centering
@@ -272,64 +209,141 @@ issues (C only)) over the time period of interest.}
 \toprule
 \textbf{Student} & \textbf{Authored (O+C)} & \textbf{Assigned (C only)}\\
 \midrule
+Qusay Qadir & 11 & 9 \\
+Rishab Shine & 6 & 0 \\
+Tyler Yue & 7 & 0 \\
 Vedant Patel & 2 & 0 \\
-Rishab Shine & 2 & 0 \\
-Name 3 & Num & Num \\
-Name 4 & Num & Num \\
-Name 5 & Num & Num \\
+Saumy Patel & 2 & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\wss{If needed, an explanation for the counts can be provided here.}
+As of November 19, 2026, pull requests are excluded from these issue counts and
+are counted in the commits section instead. Authored counts include open and
+closed issues; assigned counts include only closed issues.
 
-As of November 19, 2026, Rishab authored issues
-\href{https://github.com/RishabShine/IDE3.0/issues/95}{\#95} and
-\href{https://github.com/RishabShine/IDE3.0/issues/96}{\#96}; both are open.
-No closed issues are assigned to \texttt{RishabShine}. Pull requests are excluded
-from these issue counts and are counted in Section~6 instead.
-
-Vedant authored issues
-\href{https://github.com/RishabShine/IDE3.0/issues/97}{\#97} and
-\href{https://github.com/RishabShine/IDE3.0/issues/98}{\#98}; both are open.
-No closed issues are assigned to \texttt{vp2306}.
+\begin{itemize}
+  \item Qusay (\texttt{qusayqadir}): authored 11 issues; assigned on 9 closed
+    issues.
+  \item Rishab (\texttt{RishabShine}): authored
+    \href{https://github.com/RishabShine/IDE3.0/issues/95}{\#95},
+    \href{https://github.com/RishabShine/IDE3.0/issues/96}{\#96},
+    \href{https://github.com/RishabShine/IDE3.0/issues/108}{\#108},
+    \href{https://github.com/RishabShine/IDE3.0/issues/109}{\#109},
+    \href{https://github.com/RishabShine/IDE3.0/issues/110}{\#110}, and
+    \href{https://github.com/RishabShine/IDE3.0/issues/111}{\#111}; no closed
+    issues assigned.
+  \item Tyler (\texttt{Tyler-Yue}): authored
+    \href{https://github.com/RishabShine/IDE3.0/issues/80}{\#80}--\href{https://github.com/RishabShine/IDE3.0/issues/82}{\#82}
+    and
+    \href{https://github.com/RishabShine/IDE3.0/issues/112}{\#112}--\href{https://github.com/RishabShine/IDE3.0/issues/115}{\#115};
+    no closed issues assigned.
+  \item Vedant (\texttt{vp2306}): authored
+    \href{https://github.com/RishabShine/IDE3.0/issues/97}{\#97} and
+    \href{https://github.com/RishabShine/IDE3.0/issues/98}{\#98}; no closed
+    issues assigned.
+  \item Saumy (\texttt{SaumyP04}): authored
+    \href{https://github.com/RishabShine/IDE3.0/issues/99}{\#99} and
+    \href{https://github.com/RishabShine/IDE3.0/issues/117}{\#117}; no closed
+    issues assigned.
+\end{itemize}
 
 \section{CICD via GitHub Actions}
 
-\wss{Say how CICD technology is used and will be used in your project.}
+CI/CD is implemented with GitHub Actions. The active workflow builds LaTeX
+documents when \texttt{docs/}, \texttt{refs/}, or related build inputs change,
+commits generated PDFs back to \texttt{main} when appropriate, and deploys
+project pages. That keeps documentation artifacts reproducible and reviewable
+on every documentation pull request.
 
-\wss{Provide links to your CICD yaml files}
+\begin{itemize}
+  \item Workflow file:
+    \href{https://github.com/RishabShine/IDE3.0/blob/main/.github/workflows/latex-pages.yml}{\texttt{.github/workflows/latex-pages.yml}}
+  \item Supporting scripts and dependency manifest:
+    \texttt{.github/scripts/} and \texttt{.pdf-deps.json}
+\end{itemize}
+
+Per the Development Plan, the team still intends to extend Actions to automated
+tests, linting, and formatting for \texttt{src/} (for example running the
+existing \texttt{test/agentic\_flow} suite on pull requests). Documentation CI
+is in place now; product-code CI will be added as the implementation grows past
+the PoC.
 
 \section{Custom Documents (CDs)}
 
-\wss{What is the plan (as documented in TeamComposition.csv) for the team's
-CDs?  Should the CDs be modified now that the team knows more about the
-project?}
+As recorded in \texttt{TeamComposition.csv}, the team's planned CDs are:
+
+\begin{itemize}
+  \item \textbf{Wireframe Report} (CD-Fall) --- delivered under
+    \texttt{docs/CDs/Wireframe/}, including a clickable prototype
+    (\texttt{docs/CDs/Wireframe/prototype/index.html}) aligned with the intent
+    capture / stakeholder / verification workflow.
+  \item \textbf{Usability Report} (later) --- planned evaluation with
+    SFWRENG~2AA4 students as usability participants, per the team composition
+    stakeholders.
+\end{itemize}
+
+The CD plan does not need to change: the Wireframe CD remains the right Fall
+artifact for communicating the human-in-the-loop IDE surface implied by the
+SRS and MG/MIS, and the Usability Report remains the right follow-on once more
+of the product UI is implemented. No replacement CD types are proposed at this
+time.
 
 \section{Team Charter Trigger Items}
 
-\wss{Provide a summary of the quantified triggers identified in the team's
-charter.}
+The Development Plan appendix (Team Charter) identifies these quantified or
+operational triggers for under-contribution and process failure:
 
-\wss{Provide a list of any violations of the triggers.  If the team wishes, the
-violations can be summarized on aggregate, instead of naming specific team
-members.}
+\begin{itemize}
+  \item Work for each deliverable should be split into a roughly equal share of
+    issues per member; progress is reviewed at team meetings.
+  \item Pull requests require peer review before merge (at least one reviewer;
+    the charter also aims for two reviewers on merge requests).
+  \item Attendance, commit history, and issue completion are the project
+    management metrics used to judge fair share.
+  \item A member consistently below target is first raised with them by the
+    team, then with the TA/instructor if it continues.
+  \item Members must flag blockers early rather than missing internal deadlines
+    silently.
+\end{itemize}
 
-\wss{Provide a plan to address the violations.  This could include revising the
-triggers, if they are found to be too weak, strong or ambiguous.}
+\noindent\textbf{Violations (aggregate).}
+In the PoC period, informal TA document discussions were missed by one member
+(0 of 4). Lecture attendance is uneven across the team. Team and supervisor
+meeting attendance were complete. No member was escalated to the TA or
+instructor for under-contribution. Meeting issues were created late (after the
+fact for this report), so attendance triggers were harder to audit in-repo
+during the term.
+
+\noindent\textbf{Plan.}
+\begin{itemize}
+  \item Create meeting, lecture, and TA issues at the time of each event going
+    forward so triggers are measurable from the repository.
+  \item Keep the equal-issue-share and PR-review rules; treat missed informal
+    TA sessions as a soft trigger that requires a written Discord debrief from
+    the absent member within 24 hours.
+  \item Revisit lecture-attendance expectations after PoC: either record
+    lecture issues consistently or narrow the trigger to deliverable-critical
+    sessions only, so the metric matches how the team actually works.
+\end{itemize}
 
 \section{Additional Productivity Metrics}
 
-\wss{If your team has additional metrics of productivity, please feel free to
-add them to this report.  If not, please explicitly state that there are no additional
-metrics.}
+Beyond the attendance, commit, PR, and issue tables above, the team tracked:
 
-\wss{Additional metrics can include things like code reviews done, pull requests
-created, count of joining meetings late, count of number of times contributions
-had to be corrected, number of internal deadlines missed, test cases written, etc.}
+\begin{itemize}
+  \item \textbf{Pull requests authored:} 63 total on the repository (see
+    Section~6), used as a proxy for branch-based delivery.
+  \item \textbf{Automated graph tests:} the agentic-flow unit suite under
+    \texttt{test/agentic\_flow/} (stakeholder graph coverage with controlled
+    model responses; no live Ollama required).
+  \item \textbf{Documentation CI runs:} LaTeX/PDF workflow executions on
+    documentation pull requests via
+    \texttt{.github/workflows/latex-pages.yml}.
+\end{itemize}
 
-\wss{We are looking for data on these metrics, not just a list of additional
-metrics the team is planning on tracking.  However, if all you have is a plan,
-please share it here.}
+The team is not currently counting late arrivals, correction cycles, or missed
+internal deadlines as separate numeric metrics; those will be added only if
+charter triggers continue to be hard to interpret from GitHub data alone.
 
 \end{document}
