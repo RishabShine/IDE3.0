@@ -3,6 +3,7 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{hyperref}
+\setlength{\emergencystretch}{3em}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{amssymb}
@@ -32,9 +33,10 @@
 
 \section*{Revision History}
 
-\begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
+\begin{longtable}{p{2.6cm}p{1.7cm}p{\dimexpr\textwidth-4.3cm-6\tabcolsep\relax}}
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
+\endhead
 Oct 29, 2026 & 0.1 & Qusay Qadir: Drafted Sections 2.1, 2.2, 3, 3.1, and 3.3\\
 Oct 31, 2026 & 0.2 & Vedant Patel: Completed Sections 2.3, 2.4, and 3.2\\
 Oct 31, 2026 & 0.3 & Qusay Qadir: Completed Sections 3.4 and 3.5\\
@@ -57,10 +59,23 @@ Nov 2, 2026 & 1.1 & Vedant Patel: Added individual reflection and Section 3.1
 team-table row\\
 Nov 2, 2026 & 1.2 & Saumy Patel: Updated Section 4.1; completed remaining
 Section 4.2 nonfunctional tests; added Section 4.3 traceability\\
+Nov 16, 2026 & 1.3 & Vedant Patel: Updated Section 2.3 to the registered CDs
+(Wireframe Report, Usability Report)\\
 Nov 2, 2026 & 1.1 & Tyler Yue: Drafted Section 4.2 nonfunctional tests; added
 reflection and AI disclosure appendices. Modified Section 3.1, added acronym table and revision history table..\\
+Nov 17, 2026 & 1.4 & Qusay Qadir: Updated the plan for SRS revision 1.2, in
+which \progname{} releases an implementation handoff to the workspace instead
+of integrating with the assistant through MCP. Rewrote CG-1 to CG-3, VF-2,
+VF-3, OP-3, SEC-1, SEC-9, MD-2, and MD-3. Added Section 4.1.6 (ES, QG, AR, and
+CC tests for FR13 to FR20) and HZ-4 to HZ-7 (HA-SR13 to HA-SR16). Updated the
+traceability tables. Added repeated runs for tests that call the LLM, and four
+symbolic parameters for the quality threshold, defect recall, judge agreement,
+and repeated runs (issues \#74 and \#75).\\
+Nov 17, 2026 & 1.5 & Rishab Shine: Updated ES-2 for developer-provided
+stakeholders and personas. Updated PF-5 and SEC-3 for the workspace-file
+implementation handoff.\\
 \bottomrule
-\end{tabularx}
+\end{longtable}
 
 \newpage
 
@@ -208,25 +223,23 @@ Statement \citep{ProblemStatement}. Both support verification and validation
 directly.
 
 \begin{itemize}
-  \item \textbf{CD-Fall: Literature Review.} A review of existing research on
-  requirements traceability, design rationale capture, program comprehension,
-  and the risk of AI-generated code drifting from its specification. For V\&V,
-  it gives the team an outside reference for what a complete and correct
-  intent model looks like. Findings will feed the SRS and design review
-  checklists (Sections 3.2 and 3.3), and the validation
-  criteria in Section 3.7.
-  \item \textbf{CD-Winter: Code Walkthroughs.} Structured walkthroughs of the
-  project's critical code, recording the process, issues found, and follow-up
-  actions. This is the team's main manual verification method for the
-  implementation (Section 3.5). It also mirrors what \progname{} automates:
-  checking that code still follows the recorded intent. Running the process by
-  hand on our own codebase shows where the tool's automated checks fall short.
+  \item \textbf{CD-Fall: Wireframe Report.} A clickable mock-up of the
+  \progname{} IDE panels, presented to the supervisor and potential users. For
+  V\&V, it is an early validation of the requirements: stakeholders walk
+  through the intended workflow before it is built, so missing or wrong
+  requirements surface during SRS and design review (Sections 3.2 and 3.3).
+  Its insights also feed the software validation in Section 3.7.
+  \item \textbf{CD-Winter: Usability Report.} A usability evaluation of the
+  built tool with developers and students, potentially in SFWRENG 2AA4. It
+  verifies the usability and humanity requirements tested in Section 4.2, and
+  shows whether developers will actually capture and review intent in
+  practice.
 \end{itemize}
 
-Both are feasible within the course timeline. The literature review is
-completed in Term 1, before most design work, so its findings are available
-when the design is reviewed. The code walkthroughs run in Term 2, once the
-critical modules are implemented, and finish before the final demo.
+Both are feasible within the course timeline. The wireframe is completed in
+Term 1, before implementation, so its findings are available for Design
+Document Revision 0. The usability evaluation runs in Term 2, once the core
+workflow is implemented, and finishes before the final demo.
 
 \subsection{Relevant Documentation}
 
@@ -505,7 +518,7 @@ The technical verification co-leads will confirm that every planned activity is 
 To verify that the planned tests can detect defects, there will be an intentional introduction of faults injected into the implementation to see if the test cases fail. Any fault that no test detects shows there is a gap in the plan, and a test case will be added to cover it.
 
 \paragraph{Evaluation Rubric Validation.}
-The quality of the LLM-generated artifacts will be evaluated against an evaluation (eval) suite. We will manually score a set of deliberately flawed outputs (such as requirements having invented constraints or missing trace links) and confirm that each one falls below the pass threshold. If any of the flawed outputs are considered acceptable, then the evals and acceptance rubric would need to be revised. When the LLM-as-judge is used, its scores will be compared with our manual ratings on a sample of acceptable outputs.
+The quality of the LLM-generated artifacts will be evaluated against an evaluation (eval) suite. We will manually score a set of deliberately flawed outputs (such as requirements having invented constraints or missing trace links) and confirm that each one falls below QUALITY\_THRESHOLD. If any of the flawed outputs are considered acceptable, then the evals and acceptance rubric would need to be revised. When an LLM judge is used, its scores will be compared with our manual ratings on a sample of acceptable and flawed outputs. The judge is accepted only if it agrees with the manual ratings on at least JUDGE\_AGREEMENT of the sample, where agreement means that both place an output on the same side of QUALITY\_THRESHOLD. If agreement falls below that value, the judge's prompt is revised and the comparison is repeated on a new sample.
 
 \paragraph{Tracking and Success Metrics.}
 All findings will be logged in GitHub Issues and addressed in our team meetings, so that the plan can be refined and retuned. Progress can be measured via requirement coverage, mutation detection rate, and finally issue resolution rate.
@@ -661,10 +674,11 @@ Traceability tables show which tests support each requirement and use case.
 
 The functional system tests are grouped by area of the IDE3.0 workflow so
 that related behaviours can be verified together. Intent capture covers
-FR1--FR3. Requirement review and approval covers FR4--FR6. Code generation
-control covers FR7 and FR8. The intent model, rationale, and traceability
+FR1--FR3. Requirement review and approval covers FR4--FR6. Release control
+covers FR7 and FR8. The intent model, rationale, and traceability
 cover FR9 and FR11. Verification of generated changes covers FR10 and
-FR12. Within each area, tests are further divided into related cases with
+FR12. Elicitation stages, architecture, and change control cover FR13 to FR20.
+Source grounding (FR16) is covered by HZ-1. Within each area, tests are further divided into related cases with
 shared identifiers, such as \texttt{IC} for intent capture and \texttt{RRA}
 for requirement review and approval.
 
@@ -679,6 +693,16 @@ a case number. The groups cover engineering artifact submission
 (\texttt{IC-NL}), iterative refinement and contract readiness
 (\texttt{IC-IR}), and requirement and constraint identification
 (\texttt{IC-RC}).
+
+These tests exercise the LLM, whose output varies between runs (SRS RF5). Each
+IC test, and each test in Section 4.1.6 that calls the LLM, is therefore run
+REPEAT\_RUNS times on the same input. For every run the tester records the
+model identifier, the prompt version, and the model settings such as
+temperature (HA-SR16). A test passes only if every run passes. A test that
+passes on some runs and fails on others is reported as a failure, with the
+differing outputs attached, so that a single lucky run is never taken as
+evidence. IC-NL-4, which compares two wordings of a request, compares the
+REPEAT\_RUNS outputs of each wording rather than one output each.
 
 \paragraph{Engineering Artifact Submission}
 
@@ -1718,63 +1742,67 @@ contains both requirements without the removed constraint.
 
 \end{enumerate}
 
-\subsubsection{Code Generation Control}
+\subsubsection{Release Control}
 
-These tests check that the coding assistant is instructed only from an
-approved proposal, and that a rejection sends the assistant back for a
-revision. They correspond to FR7 and FR8.
+These tests check that an implementation handoff is written only from an
+approved set, and that a rejection writes none. They correspond to FR7 and
+FR8. \progname{} does not communicate with the coding assistant, so the tests
+inspect the files written to the workspace.
 
-\paragraph{Generation Control}
+\paragraph{Release Control}
 
 \begin{enumerate}
 
-\item{CG-1: Block Generation Until Approval\\}
+\item{CG-1: No Handoff Until Approval\\}
 
 Requirements: FR7, SCR1, HA-SR1, HA-SR6.
 
 Control: Automated.
 
-Initial State: The fixture has approved requirements and an unapproved
+Initial State: The fixture has approved requirements and an approved
+component, and one of the contracts derived for that component is
+unapproved.
+
+Input: The developer requests a release of the component's interfaces and
+contracts.
+
+Output: No file is written to the handoff location or to the source tree.
+The extension reports that the contract is still unapproved and names it.
+
+Test Case Derivation: FR7 forbids releasing interfaces, contracts, or a brief
+until the requirement, its component, and its contracts are approved. SCR1
+requires the same explicit approval.
+
+How test will be performed: The tester will list the workspace files before
+and after the release request in the extension test host, check that they
+are identical, and check that the reported reason names the unapproved
 contract.
 
-Input: A request, from the developer or from the coding assistant, to
-generate an implementation of the approved requirements.
-
-Output: No implementation is requested from the assistant. The extension
-reports that the contract is still unapproved.
-
-Test Case Derivation: FR7 requires generation to wait until the required
-engineering artifacts and contracts are approved. SCR1 requires the same
-explicit approval.
-
-How test will be performed: The tester will invoke the generate command in
-the extension test host and check that the assistant adapter receives no
-implementation request. The reported reason names the unapproved contract.
-
-\item{CG-2: Send the Approved Proposal\\}
+\item{CG-2: Write the Approved Handoff\\}
 
 Requirements: FR8, PUC6.
 
 Control: Automated.
 
-Initial State: The fixture's requirements, constraints, and contracts are
-approved.
+Initial State: The fixture's requirements, component, and contracts are
+approved. One other requirement in the same request is pending and one is
+rejected.
 
-Input: The developer confirms generation.
+Input: The developer releases the approved set.
 
-Output: The stub assistant receives the approved requirements, the
-constraints, the contracts, and the originating request. It does not
-receive rejected or pending items. The instruction is to implement that
-approved set.
+Output: The approved interfaces with their JML contracts are written into
+the source tree, and an implementation brief lists the approved requirement
+identifiers, the interfaces to implement, and the constraints that apply.
+Neither the interfaces nor the brief contain the pending or the rejected
+requirement.
 
-Test Case Derivation: FR8 requires the decision to be communicated to the
-assistant and to the intent store, and an approval to instruct
-implementation of exactly the approved requirements. PUC6 is the same
-handoff.
+Test Case Derivation: FR8 requires the handoff to contain exactly the
+approved set, as workspace files that any assistant can read. PUC6 is the
+same handoff.
 
-How test will be performed: The tester will confirm generation against a
-stub assistant and compare the payload with the approved set in the intent
-store. Pending and rejected items are absent.
+How test will be performed: The tester will release the set and compare the
+written interfaces and brief with the approved set in the intent model.
+Pending and rejected items are absent.
 
 \item{CG-3: Ask How to Revise a Rejection\\}
 
@@ -1787,15 +1815,15 @@ includes no replacement text.
 
 Input: The rejection decision.
 
-Output: The assistant is told not to implement the proposal. The developer
-is asked how to revise the request. The intent store records the rejection.
+Output: No handoff is written. The developer is asked how to revise the
+request. The intent model records the rejection.
 
-Test Case Derivation: FR8 requires a rejection without an edit to withhold
-implementation and to ask how the request should be revised.
+Test Case Derivation: FR8 requires a rejection without an edit to write no
+handoff and to ask how the request should be revised.
 
 How test will be performed: The tester will reject the proposal with an
-empty edit and check the stub assistant's instruction, the developer
-prompt, and the stored rejection.
+empty edit and check the workspace files, the developer prompt, and the
+stored rejection.
 
 \end{enumerate}
 
@@ -1920,28 +1948,30 @@ How test will be performed: The tester will submit both versions through
 the verification command and compare the report with the constraints in
 the intent model.
 
-\item{VF-2: Compile Constraints into Executable Tests\\}
+\item{VF-2: Derive an Interface with JML Contracts\\}
 
-Requirements: FR12.
+Requirements: FR12, STDR1.
 
 Control: Automated.
 
-Initial State: One precondition and one postcondition are approved. The
-fixture names an input that satisfies each and an input that violates each.
+Initial State: An approved component has two allocated requirements and an
+approved domain model with the types they use. The expected interpretation
+names one precondition and one postcondition for each requirement.
 
-Input: The approved constraint set.
+Input: The approved component and its requirements.
 
-Output: Executable tests are written for the approved constraints. Each
-test fails on the violating input and passes on the satisfying input. Each
-test is linked to the constraint it encodes.
+Output: A Java interface is derived whose methods carry the expected JML
+clauses and use the domain model types. Each clause records the requirement
+it was derived from, and each allocated requirement has at least one clause.
+The interface compiles with \texttt{javac} and is accepted by OpenJML.
 
-Test Case Derivation: FR12 requires the approved requirements and quality
-constraints to be compiled into executable tests that the generated code
-must satisfy.
+Test Case Derivation: FR12 requires an interface with JML contracts for each
+approved component, with each clause traced to its requirement. STDR1
+requires standard JML that existing tools can check.
 
-How test will be performed: The tester will generate the tests, run them
-against a stub that passes and a stub that violates each constraint, and
-check the trace links back to the constraints.
+How test will be performed: The tester will derive the interface, compare its
+clauses and trace links with the expected interpretation, and run
+\texttt{javac} and OpenJML on it.
 
 \item{VF-3: Check a Contract with OpenJML\\}
 
@@ -1956,8 +1986,8 @@ Input: A generated interface whose operation carries those two constraints
 in JML. The contract is shown for review before use. A second
 implementation violates the postcondition.
 
-Output: The contract is linked to the requirement and is not used for
-generation until the developer approves it. After approval, OpenJML reports
+Output: The contract is linked to the requirement and is not released
+until the developer approves it (FR7). After approval, OpenJML reports
 the violating implementation and the extension surfaces that report. A
 satisfying implementation produces no violation.
 
@@ -1969,6 +1999,205 @@ reported.
 How test will be performed: The tester will generate the interface, confirm
 the review gate holds, approve the contract, run OpenJML on both
 implementations, and match the extension's report to OpenJML's output.
+
+\end{enumerate}
+
+\subsubsection{Elicitation Stages, Architecture, and Change Control}
+
+These tests cover the requirements added in SRS revision 1.2: the elicitation
+stages (FR13 to FR15, identifiers \texttt{ES}), the requirement quality check
+(FR17, \texttt{QG}), the architecture stage (FR18, \texttt{AR}), and change
+control (FR19 and FR20, \texttt{CC}). Source grounding (FR16) is covered by
+HZ-1. The fixture is the library study room booking case used in the design
+examples. Tests that call the LLM follow the rule for repeated runs stated for
+the intent capture tests.
+
+\paragraph{Elicitation Stages}
+
+\begin{enumerate}
+
+\item{ES-1: Capture the Need\\}
+
+Requirements: FR13.
+
+Control: Manual.
+
+Initial State: A new project with no captured intent.
+
+Input: The statement ``Let McMaster students book library group study rooms
+themselves, so front desk staff no longer handle bookings.'', two problems
+(staff spend hours a week on bookings, and rooms are double booked), and two
+benefits: staff spend under one hour a week on bookings, and booking is easy on
+a phone. No benefit addresses the double booking problem.
+
+Output: The statement is scored against the industry accepted definition and the score
+is shown. Each benefit is linked to the problem it addresses. The benefit with
+no measure is marked soft and does not block approval. Approval is refused
+while the double booking problem is neither addressed by a benefit nor marked
+out of scope, and is accepted once a benefit addresses it.
+
+Test Case Derivation: FR13 requires the statement, problems, and benefits to
+be captured, linked, and evaluated before approval. 
+
+How test will be performed: The tester will enter the inputs, attempt
+approval with the problem uncovered, add a benefit for it, approve, and
+compare the stored items and links with the inputs.
+
+\item{ES-2: Identify Stakeholders and Personas\\}
+
+Requirements: FR14.
+
+Control: Manual.
+
+Initial State: The need from ES-1 is approved.
+
+Input: The developer provides students and front desk staff as stakeholders,
+with descriptions of their involvement, and a persona for each group. One
+stakeholder description is incomplete, and one persona is missing its concerns.
+
+Output: The system captures the supplied stakeholders and personas, links each
+persona to its corresponding stakeholder, and requests clarification of the
+missing information. Additional stakeholder groups or personas are not proposed.
+Following refinement and developer approval, the stakeholders, personas, and
+their links are recorded.
+
+Test Case Derivation: FR14 requires stakeholders and personas for the key user
+groups, approved by the developer.
+
+How test will be performed: The tester submits the descriptions, checks the
+feedback against the missing information, provides the requested details, and
+approves the result. The tester then checks that the stored information matches
+the supplied descriptions and that each persona references the correct
+stakeholder.
+
+\item{ES-3: Derive Goals and Use Cases, Keeping Open Questions\\}
+
+Requirements: FR15.
+
+Control: Manual.
+
+Initial State: The stakeholders and personas from ES-2 are approved.
+
+Input: The developer confirms the goal ``a student books a room without staff
+and is never double booked'' and does not answer the system's question about
+whether a student can cancel after the booking starts.
+
+Output: Each goal has an owner from the approved stakeholders, a link to a
+benefit, and a hard or soft classification. Each hard goal has at least one
+use case with a main success scenario, alternatives, and exceptions. The
+cancellation question remains listed as open. No drafted requirement states a
+cancellation rule or cites the open question as its source.
+
+Test Case Derivation: FR15 requires goals with owners and benefits, use cases
+for hard goals, and open questions that the system does not answer itself.
+
+How test will be performed: The tester will review the goals and use cases
+against the required fields and search the drafted requirements for any
+cancellation rule.
+
+\end{enumerate}
+
+\paragraph{Quality Check and Architecture}
+
+\begin{enumerate}
+
+\item{QG-1: Flag Requirements of Low Quality\\}
+
+Requirements: FR17.
+
+Control: Automated.
+
+Initial State: A benchmark set of draft requirements in which half contain one
+seeded defect each: a vague term such as ``quickly'', no measurable
+condition, a contradiction with another requirement, no link to a goal, or a
+named design choice.
+
+Input: The draft set is submitted to the quality check.
+
+Output: Each requirement is scored from 1 to 5 on each criterion. Every
+requirement scoring below QUALITY\_THRESHOLD is shown with the criterion it
+failed. At least DEFECT\_RECALL of the seeded defects are flagged.
+
+Test Case Derivation: FR17 requires every requirement below the threshold to
+be shown with the failed criterion before review.
+
+How test will be performed: The test will run the quality check and compare
+the flagged requirements and criteria with the list of seeded defects.
+
+\item{AR-1: Propose and Approve the Architecture\\}
+
+Requirements: FR18, PUC9.
+
+Control: Manual.
+
+Initial State: Four booking requirements are approved, together with a
+domain model of Student, Room, and Booking.
+
+Input: The developer requests an architecture proposal, moves one requirement
+to a different component, and approves.
+
+Output: Each approved requirement is allocated to exactly one component, and
+the proposal states which components use which. No interface exists before
+the approval. After the approval, interfaces are derived only for the
+approved components, using the edited allocation.
+
+Test Case Derivation: FR18 requires each requirement to be allocated to
+exactly one component and the proposal to be approved before any interface is
+derived.
+
+How test will be performed: The tester will check the allocation before and
+after the edit, check the workspace for interfaces before the approval, and
+compare the derived interfaces with the approved components.
+
+\end{enumerate}
+
+\paragraph{Change Control}
+
+\begin{enumerate}
+
+\item{CC-1: Mark Dependent Artifacts for Review\\}
+
+Requirements: FR19, HA-SR6.
+
+Control: Automated.
+
+Initial State: An approved goal has a derived use case, requirements, and
+contracts, and a handoff that includes them has been released. A second goal
+has its own approved artifacts.
+
+Input: The developer edits the first goal.
+
+Output: The use case, requirements, and contracts derived from the first goal
+are marked as needing review, and the released handoff is marked stale. The
+artifacts of the second goal are unchanged.
+
+Test Case Derivation: FR19 requires every derived artifact and any released
+handoff to be marked for review when an approved artifact changes.
+
+How test will be performed: The test will edit the goal and compare the
+status of every artifact and of the handoff with the expected set.
+
+\item{CC-2: Detect Changes Made Outside the Workflow\\}
+
+Requirements: FR20, HA-SR7, HA-SR13.
+
+Control: Automated.
+
+Initial State: A handoff with an approved interface and its JML contracts has
+been released.
+
+Input: Outside the review workflow, one JML precondition is removed from the
+interface in the source tree, and the text of one approved requirement is
+changed in the intent model files.
+
+Output: On the next load, both items are marked unapproved and the
+differences from the approved versions are shown.
+
+Test Case Derivation: FR20 requires changes made other than through the
+review workflow to be detected, marked unapproved, and shown.
+
+How test will be performed: The test will make both edits directly on disk,
+reload the project, and compare the reported changes with the edits.
 
 \end{enumerate}
 
@@ -2290,18 +2519,19 @@ Requirements: RFR2, SUPR1, SUPR2, HA-SR4.
 
 Type: Dynamic, Automatic.
 
-Initial State: The intent model contains approved artifacts, and a cryptographic
-hash of the \texttt{.ide3/} folder has been recorded.
+Initial State: The intent model contains approved artifacts, and cryptographic
+hashes of those persisted artifacts have been recorded.
 
-Input/Condition: Separate runs make the stub LLM service time out, disconnect the
-stub coding agent, and crash the OpenJML process.
+Input/Condition: Separate runs make the stub LLM service time out, fail a
+workspace-file handoff write, and crash the OpenJML process.
 
-Output/Result: The hash is unchanged after each run. The developer sees a message
-naming the failed service, and the diagnostic log contains the failure and the
-operation it interrupted.
+Output/Result: The artifact hashes are unchanged after each run. A failed handoff
+write leaves no partial or newly released handoff. The developer sees a message
+naming the failed operation, and the diagnostic log records the failure.
 
-How test will be performed: The test will inject each fault, compare the hash,
-and check the message and log entry.
+How test will be performed: The test will inject each fault, compare the artifact
+hashes, inspect the handoff files and release status, and check the message and
+log entry.
 
 \item{PF-6: Capacity and Scaling\\}
 
@@ -2384,24 +2614,26 @@ unnecessary development files are not packaged.
 How test will be performed: The tester will review the output of \texttt{vsce ls}
 and record the result of each publishing requirement.
 
-\item{OP-3: Connect Through MCP\\}
+\item{OP-3: Use One Handoff with Two Assistants\\}
 
-Requirements: IAS2, STDR1.
+Requirements: IAS2, MIG3.
 
 Type: Dynamic, Manual.
 
-Initial State: The \progname{} MCP server is running.
+Initial State: A handoff for an approved component has been released. Two
+different AI coding assistants are installed, with their configuration
+recorded.
 
-Input/Condition: The tester connects the MCP Inspector and one MCP-capable coding
-assistant, then lists and calls the available workflow tools.
+Input/Condition: The tester gives the same implementation brief to each
+assistant and asks it to implement the interfaces.
 
-Output/Result: Both clients complete initialization and tool calls without
-protocol errors. The assistant can drive the workflow as far as the approval
-gate using only MCP.
+Output/Result: Both assistants read the handoff and produce an
+implementation without any change to their configuration. Both
+implementations are checked by the verification command (FR10).
 
-How test will be performed: The tester will record the protocol version, tool
-listing, and responses from each client and compare them with the MCP
-specification.
+How test will be performed: The tester will compare each assistant's
+configuration before and after, and record the verification report for each
+implementation.
 
 \item{OP-4: Version the Intent Model With Git\\}
 
@@ -2542,23 +2774,25 @@ also verify related safety and security requirements from the Hazard Analysis.
 
 \begin{enumerate}
 
-\item{SEC-1: Prevent Assistant Self-Approval\\}
+\item{SEC-1: Accept Decisions Only Through the Review Interface\\}
 
 Requirements: ACR1, HA-SR7.
 
 Type: Dynamic, Automatic.
 
-Initial State: A proposal is pending, and a stub coding agent is connected through
-MCP.
+Initial State: A proposal is pending.
 
-Input/Condition: The agent lists all tools and calls approve, edit, and reject
-operations by name with the proposal identifier.
+Input/Condition: As an AI coding assistant with workspace access could, the
+test changes the proposal's status to approved by editing the intent model
+files directly, and then requests a release.
 
-Output/Result: No decision tool is listed, each call is refused, and the proposal
-remains pending. The same decisions succeed from the IDE panel.
+Output/Result: The proposal is treated as unapproved, the edit is reported,
+and no handoff is written. The same approval made through the review
+interface succeeds.
 
-How test will be performed: The test will inspect the tool list and call results,
-compare the stored proposal, then make a decision through the panel.
+How test will be performed: The test will edit the files, check the reported
+status and the workspace files, then approve through the review interface and
+check that the release succeeds.
 
 \item{SEC-2: Inherit Workspace Permissions\\}
 
@@ -2584,17 +2818,21 @@ Requirements: IR1, HA-SR8.
 
 Type: Dynamic, Automatic.
 
-Initial State: A proposal is pending, and a stub coding agent is connected.
+Initial State: A proposal is pending. Its approval will release an implementation
+handoff to the workspace. The intent model and existing handoff files have been
+recorded.
 
 Input/Condition: Separate runs terminate the process during the intent-model write
-and fail delivery of the decision to the agent.
+and fail a handoff-file write while applying the approval and release.
 
-Output/Result: The model is left in its complete previous state or complete new
-state. If delivery fails, the model and agent are both left unchanged and the
-failure is reported.
+Output/Result: The decision, intent-model update, and released handoff are all
+applied or all left unchanged. No partial model or handoff is visible. A failed
+handoff write leaves the previous model and handoff unchanged, and the failure
+is reported.
 
-How test will be performed: The test will inject each failure, validate and compare
-the model, and inspect the agent's received messages and the reported error.
+How test will be performed: The test will inject each failure, restart after the
+termination case, validate and compare the model, and inspect the handoff files,
+recorded decision, release status, and reported error.
 
 \item{SEC-4: Reject Invalid Intent-Model Changes\\}
 
@@ -2696,10 +2934,10 @@ Requirements: IMR1.
 
 Type: Dynamic, Automatic.
 
-Initial State: The extension and MCP server are running.
+Initial State: The extension is running.
 
 Input/Condition: Requests are submitted that are empty, contain only whitespace, are
-exactly MAX\_REQUEST\_SIZE, exceed it by one byte, and contain malformed MCP data.
+exactly MAX\_REQUEST\_SIZE, exceed it by one byte, and contain malformed text.
 
 Output/Result: The request of exactly MAX\_REQUEST\_SIZE is accepted. The others are
 rejected with a clear error, and the intent model and running service are unaffected.
@@ -2748,8 +2986,8 @@ that is only a version change as a GitHub Issue.
 
 \subsubsection{Compliance Requirements}
 
-These tests inspect licence and IDE guideline compliance. MCP conformance (STDR1) is
-covered by OP-3, and intent-model format conformance (STDR3) by SEC-4.
+These tests inspect licence and IDE guideline compliance. JML conformance (STDR1) is
+covered by VF-2 and VF-3, and intent model format conformance (STDR3) by SEC-4.
 
 \begin{enumerate}
 
@@ -2824,11 +3062,12 @@ Type: Dynamic, Manual.
 Initial State: The project from MD-1 has a recorded assistant configuration and build
 result from before setup.
 
-Input/Condition: The tester adds the MCP server, then removes the extension, its MCP
-entry, and \texttt{.ide3/}.
+Input/Condition: The tester sets up \progname{}, releases one handoff, then removes the
+extension and \texttt{.ide3/}.
 
-Output/Result: The only assistant configuration change is the added MCP server. After
-removal, the build and tests give the same results as before setup.
+Output/Result: The assistant configuration is unchanged throughout. After removal, the
+build and tests give the same results as before setup, apart from the released
+interfaces, which are ordinary Java files that remain part of the project.
 
 How test will be performed: The tester will compare the configuration files, source
 tree, and build results with those recorded before setup.
@@ -2842,8 +3081,8 @@ Type: Dynamic, Manual.
 Initial State: A person who did not write the guide has a clean environment and only the
 installation guide.
 
-Input/Condition: The person installs the extension, connects an AI coding assistant
-through MCP, and sets up the LLM service.
+Input/Condition: The person installs the extension, sets up the LLM service, and gives
+a released handoff to an AI coding assistant.
 
 Output/Result: All three tasks are completed using the guide.
 
@@ -2873,7 +3112,7 @@ missing item as a GitHub Issue.
 \subsubsection{Hazard Mitigation Requirements}
 
 These tests cover Hazard Analysis requirements not already fully covered by the tests
-above. The Hazard Analysis schedules HA-SR3 and HA-SR10 as stretch work, so those cases
+above. The Hazard Analysis schedules HA-SR10 and HA-SR15 as later work, so HZ-2 and HZ-6
 will run when the corresponding features are implemented.
 
 \begin{enumerate}
@@ -2931,6 +3170,78 @@ verified.
 How test will be performed: The test will compare the report with the newer constraint
 set and check for the limitation statement.
 
+\item{HZ-4: Verify Against the Approved Contracts\\}
+
+Requirements: HA-SR13, FR10.
+
+Type: Dynamic, Automatic.
+
+Initial State: A released interface carries an approved precondition that a booking
+does not overlap an existing booking for the same room. An implementation accepts
+overlapping bookings.
+
+Input/Condition: The precondition is removed from the interface in the source tree,
+and verification is run.
+
+Output/Result: Verification uses the approved precondition and reports the violation.
+The report states that the contract in the source tree differs from the approved one.
+
+How test will be performed: The test will compare the report with the approved
+contract and check that the difference is reported.
+
+\item{HZ-5: Trace Each Contract Clause\\}
+
+Requirements: HA-SR14, FR12.
+
+Type: Dynamic, Automatic.
+
+Initial State: The contracts derived for a component are pending. One allocated
+requirement has no clause, and a prepared stub response adds a clause that traces to
+no requirement.
+
+Input/Condition: The developer opens the contracts for review.
+
+Output/Result: Each clause shows the requirement it came from. The requirement without
+a clause and the clause without a requirement are both flagged before approval.
+
+How test will be performed: The test will compare the flags with the two seeded
+problems.
+
+\item{HZ-6: Release Nothing on an Incomplete Refinement Chain\\}
+
+Requirements: HA-SR15, FR7.
+
+Type: Dynamic, Manual.
+
+Initial State: An approved requirement traces to a use case that has no link to a goal.
+
+Input/Condition: The developer requests a release, then records that the goal stage
+was merged for this small request and requests the release again.
+
+Output/Result: The first request writes no handoff and shows the missing link. The
+second request writes the handoff and records the merged stage.
+
+How test will be performed: The tester will check the workspace files after each
+request and the recorded merge.
+
+\item{HZ-7: Show Differences When an Artifact Is Regenerated\\}
+
+Requirements: HA-SR16, FR19.
+
+Type: Dynamic, Automatic.
+
+Initial State: A set of use cases has been reviewed. A prepared stub response changes
+one of them and leaves the others identical.
+
+Input/Condition: The use case stage is run again.
+
+Output/Result: The changed use case is shown with its differences and marked for
+review. The unchanged use cases remain reviewed and keep their identifiers. Each
+generated artifact records the model identifier and the prompt version.
+
+How test will be performed: The test will compare the statuses, identifiers, and
+recorded versions with the expected values.
+
 \end{enumerate}
 
 \subsection{Traceability Between Test Cases and Requirements}
@@ -2939,9 +3250,8 @@ The tables below show how each requirement is verified. Each row lists the
 system tests that support a requirement, along with any other verification
 described in Sections 3.3, 3.5, and 3.7. A dash means that no additional
 verification is planned. Requirement labels match the SRS \citep{SRS}. Hazard
-Analysis \citep{HazardAnalysis} requirements use the prefix \texttt{HA-}
-because some of their labels, such as SR1, are also used in the SRS for
-different requirements.
+Analysis \citep{HazardAnalysis} requirements are labelled HA-SR1 to HA-SR16,
+which keeps them distinct from the SRS Style Requirements SR1 and SR2.
 
 \begin{longtable}{>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.43\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}}
 \caption{Traceability of functional requirements} \label{tab:trace-fr} \\
@@ -2961,12 +3271,20 @@ FR3 & IC-EAS-1, IC-EAS-2, IC-EAS-6 to 8, IC-NL-1 to 3, IC-IR-1 to 7, IC-RC-1 to 
 FR4 & RRA-PR-1 to 3, RRA-AD-2, RRA-AD-4, RRA-ED-2 & --- \\
 FR5 & RRA-AD-1 to 4, RRA-ED-1 to 4 & --- \\
 FR6 & RRA-PR-3, RRA-ED-1, RRA-ED-3, RRA-ED-4, RRA-PA-1 to 4 & --- \\
-FR7 & CG-1 & Peer code inspection (3.5); Design review (3.3) \\
+FR7 & CG-1, HZ-6 & Peer code inspection (3.5); Design review (3.3) \\
 FR8 & RRA-AD-1 to 4, CG-2, CG-3 & --- \\
 FR9 & RRA-AD-1, RRA-AD-3, IM-1, IM-2 & Peer code inspection (3.5); Design review (3.3) \\
-FR10 & VF-1, VF-3 & OpenJML static check (3.5); Code walkthrough (3.5) \\
+FR10 & VF-1, VF-3, HZ-4 & OpenJML static check (3.5); Code walkthrough (3.5) \\
 FR11 & IM-3 & --- \\
-FR12 & VF-2 & --- \\
+FR12 & VF-2, VF-3, HZ-5 & --- \\
+FR13 & ES-1 & Supervisor validation (3.7) \\
+FR14 & ES-2 & Supervisor validation (3.7) \\
+FR15 & ES-3 & Supervisor validation (3.7) \\
+FR16 & HZ-1 & --- \\
+FR17 & QG-1 & Evaluation suite (3.5) \\
+FR18 & AR-1 & Design review (3.3) \\
+FR19 & CC-1, HZ-7 & --- \\
+FR20 & CC-2, SEC-1 & --- \\
 \end{longtable}
 
 \begin{longtable}{>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.43\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}}
@@ -3056,7 +3374,7 @@ CULR2 & CUL-2 & --- \\
 \midrule
 \multicolumn{3}{l}{\textit{Compliance Requirements}} \\
 LEGR1 & CP-1 & --- \\
-STDR1 & OP-3 & --- \\
+STDR1 & VF-2, VF-3 & --- \\
 STDR2 & CP-2 & --- \\
 STDR3 & SEC-4 & --- \\
 STDR4 & CP-2 & --- \\
@@ -3064,7 +3382,7 @@ STDR4 & CP-2 & --- \\
 \multicolumn{3}{l}{\textit{Migration to the New Product}} \\
 MIG1 & MD-1 & --- \\
 MIG2 & MD-1 & --- \\
-MIG3 & MD-2 & --- \\
+MIG3 & MD-2, OP-3 & --- \\
 MIG4 & MD-2 & --- \\
 \midrule
 \multicolumn{3}{l}{\textit{User Documentation and Training}} \\
@@ -3092,11 +3410,12 @@ TRR2 & MD-4; UH-2 (supporting) & --- \\
 PUC1 & IC-EAS-1, IC-NL-1 & Supervisor validation (3.7) \\
 PUC2 & IC-IR-1 to 4, IC-IR-6, IC-RC-3 & Supervisor validation (3.7) \\
 PUC3 & RRA-AD-1, RRA-AD-3, RRA-ED-1 & Supervisor validation (3.7) \\
-PUC4 & IC-IR-1, IC-IR-2, IC-IR-5, IC-IR-6, VF-3 & Supervisor validation (3.7) \\
+PUC4 & IC-IR-1, IC-IR-2, IC-IR-5, IC-IR-6, VF-2, VF-3 & Supervisor validation (3.7) \\
 PUC5 & IC-IR-7 & Supervisor validation (3.7) \\
-PUC6 & CG-2 & Supervisor validation (3.7) \\
+PUC6 & CG-2, OP-3 & Supervisor validation (3.7) \\
 PUC7 & IM-2, UH-3 & Supervisor validation (3.7) \\
 PUC8 & IM-3, UH-3 & Supervisor validation (3.7) \\
+PUC9 & AR-1 & Supervisor validation (3.7) \\
 \end{longtable}
 
 \begin{longtable}{>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.43\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}}
@@ -3116,13 +3435,17 @@ HA-SR2 & RRA-PR-1, UH-2 & --- \\
 HA-SR3 & HZ-1 & --- \\
 HA-SR4 & PF-2, PF-5 & --- \\
 HA-SR5 & PF-4 & --- \\
-HA-SR6 & CG-1, SEC-10 & Peer code inspection (3.5) \\
-HA-SR7 & SEC-1 & Peer code inspection (3.5) \\
+HA-SR6 & CG-1, CC-1, SEC-10 & Peer code inspection (3.5) \\
+HA-SR7 & SEC-1, CC-2 & Peer code inspection (3.5) \\
 HA-SR8 & SEC-3 & --- \\
 HA-SR9 & OP-6, SEC-4, SEC-6, SEC-8 & --- \\
 HA-SR10 & HZ-2 & Peer code inspection (3.5) \\
 HA-SR11 & VF-1, SEC-10, HZ-3 & OpenJML static check (3.5) \\
 HA-SR12 & SEC-7 & --- \\
+HA-SR13 & HZ-4, CC-2 & OpenJML static check (3.5) \\
+HA-SR14 & HZ-5 & --- \\
+HA-SR15 & HZ-6 & --- \\
+HA-SR16 & HZ-7, rule for repeated runs (4.1.1) & --- \\
 \end{longtable}
 
 \section{Unit Test Description}
@@ -3281,6 +3604,10 @@ CAPACITY\_LINKS & 2,000 & PF-6 \\
 QUERY\_LIMIT & 1 s & PF-6 \\
 CONCURRENCY\_RUNS & 50 & SEC-5 \\
 MAX\_REQUEST\_SIZE & 100 KB & SEC-9 \\
+QUALITY\_THRESHOLD & 4 of 5 & QG-1, 3.4 \\
+DEFECT\_RECALL & 80\% & QG-1 \\
+JUDGE\_AGREEMENT & 80\% & 3.4 \\
+REPEAT\_RUNS & 3 & IC tests, 4.1.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3322,6 +3649,11 @@ final test decisions. Those decisions were made by the team.
   \item \textbf{Sections 2.3, 2.4, and 3.2} Group members gave Claude the
   structure and main ideas for specific sections and used AI to draft an initial
   version of each section, which was then revised as needed.
+  \item \textbf{Revision 1.4.} Claude drafted the rewritten tests based off detailed context
+  (CG-1 to CG-3, VF-2, VF-3, OP-3, SEC-1, SEC-9, MD-2, MD-3), the new tests in
+  Section 4.1.6 and HZ-4 to HZ-7, the repeated-run rule, the new symbolic
+  parameters. Claude was instructed to create the the traceability rows, from the requirements of SRS
+  revision 1.2.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}

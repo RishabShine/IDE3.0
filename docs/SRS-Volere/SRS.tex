@@ -15,6 +15,7 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, backgrounds, calc}
 \usepackage{hyperref}
+\setlength{\emergencystretch}{3em}
 \hypersetup{
     bookmarks=true,         % show bookmarks bar?
       colorlinks=true,      % false: boxed links; true: colored links
@@ -52,14 +53,20 @@
 
 \section*{Revision History}
 
-\begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
+\begin{longtable}{p{2.6cm}p{1.7cm}p{\dimexpr\textwidth-4.3cm-6\tabcolsep\relax}}
 \toprule {\textbf{Date}} & {\textbf{Version}} & {\textbf{Notes}}\\
 \midrule
+\endhead
 Oct 19, 2026 & 1.0 & Initial version of the SRS. Completed main sections: Purpose of the Project, Stakeholders, Mandated Constraints, Naming Conventions and Terminology, Relevant Facts and Assumptions, The Scope of the Work, Business Data Model and Data Dictionary, The Scope of the Product, Functional Requirements, Look and Feel Requirements, Usability and Humanity Requirements, Performance Requirements, Operational and Environmental Requirements, Maintainability and Support Requirements, Security Requirements, Cultural Requirements, Compliance Requirements, Open Issues, Off-the-Shelf Solutions, New Problems, Tasks, Migration to the New Product, Costs, User Documentation and Training, Waiting Room, Ideas for Solution, Appendix (Generative AI Use Disclosure), and Appendix (Reflection).\\
 \addlinespace
-Date 2 & 1.1 & To be added\\
+Nov 16, 2026 & 1.1 & Corrected the Proof of Concept demonstration dates in the schedule constraints to match the course schedule (Vedant Patel).\\
+Nov 17, 2026 & 1.2 & Replaced the MCP integration with an implementation handoff written to the workspace, and kept verification after code generation. Rewrote BR1, AS1, FR2, FR7, FR8, FR10, FR12, SR1, ACR1, IAS2, STDR1, MIG3, MIG4, UDR1, PUC6, and the BUC. Added FR13 to FR20, PUC9, and the Likely and Unlikely Changes section. Redrew Figures 2 to 4 and removed Feature Group B. Addresses issues \#43, \#48, \#84, \#86, \#88, and part of \#89, \#90, \#91, \#95, \#97, \#98 (Qusay Qadir).\\
+
+Nov 17, 2026 & 1.3 & Rishab Shine: Updated FR14 to clarify developer-provided
+stakeholders and personas, persona-to-stakeholder links, and approval with
+unresolved feedback after two completed evaluation rounds.\\
 \bottomrule
-\end{tabularx}
+\end{longtable}
 
 ~\\
 
@@ -142,9 +149,9 @@ Development team (Team 8) & Designs, builds, and tests the product. Owns the
 requirements and documentation. \\
 Course instructor and TAs & Evaluate the documentation, demonstrations, and
 final product against the course rubrics. \\
-AI coding assistant vendors & Provide the assistants \progname{} integrates
-with, such as Claude Code, Codex, and Cursor. Changes to their MCP support can
-break the integration. \\
+AI coding assistant vendors & Provide the assistants developers use to
+implement a handoff, such as Claude Code, Codex, and Cursor. Changes to how
+assistants read workspace files may affect the handoff. \\
 LLM and tracing service providers & Provide the LLM used for extraction and
 verification, and LangSmith for tracing. They receive project data sent by the
 product. \\
@@ -347,7 +354,7 @@ deliverable deadlines.
 \midrule
 Oct 19, 2026       & Requirements Document (SRS) and Hazard Analysis \\
 Nov 2, 2026        & Verification and Validation Plan \\
-Nov 30 to Dec 3, 2026 & Proof of Concept Demonstration \\
+Nov 23 to Dec 4, 2026 & Proof of Concept Demonstration \\
 Jan 18, 2027        & Design Document \\
 Feb 3 to Feb 12, 2027 & Revision 0 Demonstration \\
 Mar 8, 2027        & Verification and Validation Report \\
@@ -363,7 +370,7 @@ Apr 6, 2027         & Capstone EXPO \\
 The project has no monetary budget. Development currently relies on free and
 open-source tooling. 
 Any future cost would be limited to optional paid software services, for example a LangSmith subscription
-for tracing and evaluation, a hosted MCP prompt-versioning tool, or a managed
+for tracing and evaluation, or a managed
 database for storing the intent model. If any purchase is required, it would be discussed with and approved by the
 supervisor beforehand.
 
@@ -393,7 +400,8 @@ involved in the Project}
 \endhead
 AI coding assistant & An AI tool that writes or changes code from natural-language requests, such as Claude Code, Codex, or Cursor AI.\\ \hline
 Agentic & Describes an AI system that carries out multi-step tasks, such as editing files and running commands, with limited human input.\\ \hline
-Approval & The developer's decision to accept a proposal so that its requirements enter the intent model and guide code generation.\\ \hline
+Approval & The developer's decision to accept a proposal so that its requirements enter the intent model and may be released for implementation.\\ \hline
+Component & A unit of the architecture to which approved requirements are allocated, and for which an interface is derived (FR18).\\ \hline
 Design constraint & A restriction on how the software may be designed or built, such as a required framework or architecture.\\ \hline
 Design rationale & The reason a requirement or design decision was made.\\ \hline
 Engineering artifact & Any item recorded by \progname{}, such as a requirement, constraint, design decision, or traceability link.\\ \hline
@@ -405,11 +413,12 @@ GitHub & A hosting service for Git repositories.\\ \hline
 Host IDE & The IDE in which \progname{} runs, such as VS Code, Cursor, or PyCharm.\\ \hline
 Human-in-the-loop & A workflow in which a person must review and approve an AI result before it takes effect.\\ \hline
 IDE & Integrated Development Environment, an application for writing, running, and debugging code.\\ \hline
+Implementation handoff & The approved interfaces with their contracts, written into the project's source tree, together with an implementation brief that lists the approved requirement identifiers, the interfaces to implement, and the constraints that apply (FR8). Any AI coding assistant that can read workspace files can use it.\\ \hline
 Intent model & The versioned, structured record of a project's approved requirements, quality constraints, design rationale, and traceability links that serves as the source of truth for engineering intent.\\ \hline
+Interface specification & A Java interface whose methods carry JML preconditions, postconditions, and invariants derived from approved requirements (FR12).\\ \hline
 LangGraph & A framework for building LLM workflows that \progname{} uses to run extraction with human approval steps.\\ \hline
 LangSmith & A service for tracing and evaluating LLM workflows.\\ \hline
 LLM & Large Language Model, an AI model that generates text and that \progname{} uses to extract and verify requirements.\\ \hline
-MCP & Model Context Protocol, an open protocol that lets AI coding assistants call external tools and that \progname{} uses to communicate with the assistant.\\ \hline
 Non-functional requirement & A quality the system must have, such as performance, security, or usability.\\ \hline
 Proposal & A set of requirements and constraints extracted from a developer's request and awaiting approval, editing, or rejection, also called a draft proposal.\\ \hline
 Quality constraint & A required level of a quality attribute, such as a maximum response time.\\ \hline
@@ -464,9 +473,12 @@ The following rules describe how the intent refinement process must be carried
 out. They apply regardless of how the product is implemented.
 
 \medskip
-\noindent\textbf{BR1.} Intent is refined in ordered stages: high-level intent,
-epics and requirements, architecture, module and interface specifications,
-formal contracts, and code generation.
+\noindent\textbf{BR1.} Intent is refined in ordered stages. The first stage
+captures the statement of need, the current situation, and the expected
+benefits. It is followed by stakeholders and personas, then goals and use cases,
+then requirements, then the architecture (components and the requirements
+allocated to each), then interface specifications with formal contracts, and
+finally code generation by the developer's AI coding assistant.
 
 \medskip
 \noindent\textbf{BR2.} The artifacts produced at each stage must be reviewed and
@@ -503,11 +515,11 @@ capstone timeline. If any of them turns out to be false, the affected
 requirements will need to be revised.
 
 \medskip
-\noindent\textbf{AS1.} The initial implementation focuses primarily on intent
-capture, refinement, contract generation, and maintaining traceability between
-engineering artifacts and their resulting implementation. More advanced
-post-generation explanation and verification capabilities may be treated as
-future work if required by the project schedule.
+\noindent\textbf{AS1.} The capstone implements the refinement stages from the
+statement of need to released interfaces and contracts (FR13 to FR18, FR2,
+FR12, FR7, FR8), and the verification of an implementation against those
+contracts (FR10). Explaining generated code and supporting incremental changes
+to existing code are future work (see the Waiting Room).
 
 \medskip
 \noindent\textbf{AS2.} The product reuses existing contract languages and
@@ -593,9 +605,11 @@ high-level overview requirements or wants for the system and go through a
 journey of decomposition into more granular requirements in every domain that is
 identified (functional, non-functional, quality, design, and so on).
 The granular, feasible, executable requirements that are produced from the
-approval and rejection decisions of the human in the loop then direct the coding
-agent to generate contract-bound code. Contracts and interfaces are built so
-that the code cannot violate the requirements. Finally, a validation and
+approval and rejection decisions of the human in the loop are then grouped into
+components and turned into interfaces with formal contracts. Once approved, these
+are released as files in the workspace, and the developer's coding agent
+generates the code from them. The contracts state exactly what the code must
+satisfy. Finally, a validation and
 verification phase checks the generated code against the user-developed and
 agent-assisted intent model and its contracts.
 
@@ -604,13 +618,44 @@ exchanges with the adjacent systems it depends on.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{context-diagram.png}
-\caption{The context of the work. IDE3.0 (centre) exchanges named flows with the
-adjacent systems it depends on. These adjacent systems are the developer who
-sets objectives and makes review decisions, the AI coding assistant that
-proposes requirements and generates code, the validation toolchain that checks
-code against its contracts, and the intent model database that stores the
-approved requirements, rationale, and traceability links.}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >={Stealth[length=2.5mm]},
+  sys/.style={draw, rounded corners=3pt, align=center, minimum width=3.4cm,
+    minimum height=1.2cm, font=\small},
+  work/.style={draw, very thick, rounded corners=3pt, align=center, fill=gray!10,
+    minimum width=4.8cm, minimum height=2cm, font=\bfseries},
+  flow/.style={->, semithick},
+  ext/.style={->, semithick, dashed},
+  lab/.style={font=\scriptsize, align=center}
+]
+\node[work] (w) at (0,0) {\progname{}\\development work};
+\node[sys] (dev) at (-8.8,0) {Developer};
+\node[sys] (llm) at (0,4.2) {LLM service};
+\node[sys] (val) at (8.8,0) {Validation toolchain\\(OpenJML)};
+\node[sys] (ws)  at (0,-4.4) {Project workspace\\(source tree, Git)};
+\node[sys] (ai)  at (-8.8,-4.4) {AI coding assistant\\(any)};
+\draw[flow] ([yshift=3mm]dev.east) -- node[lab, above]{feature request,\\review decisions} ([yshift=3mm]w.west);
+\draw[flow] ([yshift=-3mm]w.west) -- node[lab, below]{drafted artifacts,\\verification report} ([yshift=-3mm]dev.east);
+\draw[flow] ([xshift=-5mm]w.north) -- node[lab, left]{prompts with\\minimized content} ([xshift=-5mm]llm.south);
+\draw[flow] ([xshift=5mm]llm.south) -- node[lab, right]{drafted\\artifacts} ([xshift=5mm]w.north);
+\draw[flow] ([yshift=3mm]w.east) -- node[lab, above]{implementation and\\approved contracts} ([yshift=3mm]val.west);
+\draw[flow] ([yshift=-3mm]val.west) -- node[lab, below]{passed / failed /\\could not be checked} ([yshift=-3mm]w.east);
+\draw[flow] ([xshift=-5mm]w.south) -- node[lab, left]{implementation handoff,\\intent model} ([xshift=-5mm]ws.north);
+\draw[flow] ([xshift=5mm]ws.north) -- node[lab, right]{implementation and\\outside edits} ([xshift=5mm]w.south);
+\draw[ext] (dev.south) -- node[lab, left]{gives the\\brief} (ai.north);
+\draw[ext] ([yshift=2mm]ws.west) -- node[lab, above]{reads the handoff} ([yshift=2mm]ai.east);
+\draw[ext] ([yshift=-2mm]ai.east) -- node[lab, below]{writes the code} ([yshift=-2mm]ws.west);
+\end{tikzpicture}}
+\caption{The context of the work. \progname{} (centre) exchanges named flows with
+the adjacent systems it depends on. The developer states objectives and makes
+review decisions. The LLM service drafts artifacts for review. The validation
+toolchain checks an implementation against the approved contracts. The project
+workspace holds the intent model, the implementation handoff, and the code.
+Dashed flows lie outside the work. The developer gives the handoff to an AI
+coding assistant of their choice, which reads it from the workspace and writes
+the code there. \progname{} does not
+communicate with or control the assistant (IAS2).}
 \label{fig:context}
 \end{figure}
 
@@ -620,12 +665,13 @@ approved requirements, rationale, and traceability links.}
 The work is partitioned using a business event list. Each business event is
 something an adjacent system does that the work must respond to, together with
 the input it consumes and the output it produces. Table~\ref{tab:events}
-catalogues the externally triggered events, each initiated by the developer or
-by the AI coding assistant. The events correspond to the three parts of the
+catalogues the externally triggered events. Each is initiated by the developer.
+The AI coding assistant does not interact with the work directly, but reads the
+implementation handoff from the workspace. The events correspond to the three parts of the
 solution and to the arms of the V-model in Figure~\ref{fig:vmodel}: events~1
 and~2 drive the guided decomposition of objectives into granular requirements
-(the specification arm, Part~1), event~3 drives contract-bound code generation
-(the base of the V, Part~2), and event~4 drives validation of the generated code
+(the specification arm, Part~1), event~3 releases the approved interfaces and contracts from which the
+developer's coding assistant generates code (the base of the V, Part~2), and event~4 drives validation of the generated code
 against the recorded intent (the verification arm, Part~3). Event~5 is the
 cross-cutting traceability query that the versioned intent model supports.
 
@@ -639,12 +685,12 @@ cross-cutting traceability query that the versioned intent model supports.
   trace/.style={dashed, gray, <->},
   arm/.style={font=\scriptsize\itshape, gray, align=center}
 ]
-\node[stage] (l1) at (-5.2, 3.4)  {Developer objective\\(high-level goal)};
-\node[stage] (l2) at (-3.9, 1.6)  {Granular, feasible\\requirements (FR1--FR3)};
-\node[stage] (l3) at (-2.6, -0.2) {Approved intent\\model (FR4--FR7)};
-\node[stage, fill=gray!14] (b) at (0, -2.0) {Contract-bound code\\generation (FR8, FR13)};
-\node[stage] (r3) at (2.6, -0.2)  {Contract validation:\\JML + JVM tests (FR10, FR13)};
-\node[stage] (r2) at (3.9, 1.6)   {Intent and traceability\\check (FR9, FR11)};
+\node[stage] (l1) at (-5.2, 3.4)  {Developer objective\\(FR13)};
+\node[stage] (l2) at (-3.9, 1.6)  {Goals and\\requirements\\(FR2, FR14, FR15)};
+\node[stage] (l3) at (-2.6, -0.2) {Approved\\architecture\\(FR4 to FR6, FR18)};
+\node[stage, fill=gray!14] (b) at (0, -2.0) {Interfaces and handoff\\(FR7, FR8, FR12)};
+\node[stage] (r3) at (2.6, -0.2)  {OpenJML verification\\(FR10, STDR1)};
+\node[stage] (r2) at (3.9, 1.6)   {Traceability check\\(FR9, FR11, FR20)};
 \node[stage] (r1) at (5.2, 3.4)   {Objective satisfied\\and recorded};
 
 \draw[->] (l1) -- (l2); \draw[->] (l2) -- (l3); \draw[->] (l3) -- (b);
@@ -657,8 +703,9 @@ cross-cutting traceability query that the versioned intent model supports.
 \end{tikzpicture}%
 }
 \caption{The V-model that frames the work. The specification arm decomposes a
-developer objective into approved, granular requirements; the base generates
-contract-bound code from them; the verification arm validates the code against
+developer objective into approved, granular requirements. The base releases
+interfaces and contracts from which the developer's coding assistant generates
+the code. The verification arm validates the code against
 the contracts and the intent model. Dashed links show the traceability each
 level maintains with its counterpart.}
 \label{fig:vmodel}
@@ -678,8 +725,8 @@ level maintains with its counterpart.}
 \endhead
 1 & Submit a feature request & Developer & Intent Database\\ \hline
 2 & Review and decide on a proposal & Developer & Intent Database\\ \hline
-3 & Return generated code & AI Assistant & Intent Database\\ \hline
-4 & Submit a change for verification & AI Assistant & Developer\\ \hline
+3 & Release approved interfaces and contracts & Developer & Project workspace (handoff)\\ \hline
+4 & Submit an implementation for verification & Developer & Developer (report)\\ \hline
 5 & Query rationale or traceability & Developer & Developer\\ \hline
 \end{longtable}}
 
@@ -698,13 +745,13 @@ validation flow that constitutes Part~3 of the solution.
   fl/.style={->, semithick},
   lab/.style={font=\footnotesize}
 ]
-\node[act] (in)  {Generated code and\\compiled contracts};
+\node[act] (in)  {Implementation and\\approved contracts};
 \node[act] (jml) [below=of in]  {OpenJML contract checks\\(pre/post-conditions, invariants)};
-\node[act] (jvm) [below=of jml] {JVM test execution (FR13)};
+\node[act] (jvm) [below=of jml] {JVM test execution (FR10)};
 \node[act] (rep) [below=of jvm] {Validation report against\\the intent model (FR10)};
 \node[dec] (d)   [below=1.3cm of rep] {Requirements\\satisfied?};
 \node[act, text width=3.6cm] (ok)  [below right=1.1cm and 1.4cm of d] {Record change as satisfying intent (FR9)};
-\node[act, text width=3.6cm] (bad) [below left=1.1cm and 1.4cm of d]  {Flag violation; return to developer or re-generate (FR8)};
+\node[act, text width=3.6cm] (bad) [below left=1.1cm and 1.4cm of d]  {Flag violation and return to developer (FR10)};
 \draw[fl] (in)  -- (jml);
 \draw[fl] (jml) -- (jvm);
 \draw[fl] (jvm) -- (rep);
@@ -712,11 +759,11 @@ validation flow that constitutes Part~3 of the solution.
 \draw[fl] (d) -| node[lab, pos=0.25, above]{yes} (ok);
 \draw[fl] (d) -| node[lab, pos=0.25, above]{no}  (bad);
 \end{tikzpicture}
-\caption{Part~3 of the work, the validation (verification) arm. A generated
-change and its compiled contracts are checked by the OpenJML contract checks and
-the JVM test suite; the resulting report either records the change as satisfying
-the intent model (FR9, FR10) or flags the violation and returns it to the
-developer for re-generation (FR8).}
+\caption{Part~3 of the work, the validation (verification) arm. An
+implementation of the released interfaces is checked against the approved
+contracts held in the intent model by OpenJML and the JVM test suite. The
+resulting report either records the change as satisfying the intent model (FR9,
+FR10) or flags the violation and returns it to the developer (FR10).}
 \label{fig:validation}
 \end{figure}
 
@@ -755,15 +802,15 @@ unblocked for exactly those requirements.
   reflects the intended behaviour.
   \item The developer approves the proposal.
   \item The work records the approved requirements, their rationale, and the
-  originating request in the versioned intent model. The work then signals the
-  AI coding assistant that generation may proceed for exactly those
-  requirements.
+  originating request in the versioned intent model. Once the interfaces and
+  contracts derived from them are approved, the work writes the implementation
+  handoff for exactly those requirements.
 \end{enumerate}
 
 \medskip
 \noindent\textbf{Alternative (rejection):} At step~5 the developer may reject
-the proposal instead of approving it. The work then discards the draft and keeps
-generation blocked. It asks the developer to revise the request and returns to
+the proposal instead of approving it. The work then discards the draft and writes no
+handoff. It asks the developer to revise the request and returns to
 step~1.
 
 \section{Business Data Model and Data Dictionary}
@@ -807,13 +854,17 @@ relationships. Engineering artifacts may also be connected to one or more
 implementation artifacts through traceability links.
 
 \subsection{Data Dictionary}
-\begin{table}[H]
-\centering
-\caption{Data Dictionary}
-\begin{tabular}{|p{4cm}|p{10cm}|}
+\begin{longtable}{|p{3.6cm}|p{9.2cm}|}
+\caption{Data Dictionary}\\
 \hline
 \textbf{Data Item} & \textbf{Description} \\
 \hline
+\endfirsthead
+\multicolumn{2}{c}{\tablename\ \thetable\ -- Continued}\\
+\hline
+\textbf{Data Item} & \textbf{Description} \\
+\hline
+\endhead
 
 Project &
 A software project managed by \progname{} containing engineering artifacts,
@@ -851,6 +902,22 @@ A precise specification used to constrain implementation, such as a
 precondition, postcondition, invariant, or other formally stated condition. \\
 \hline
 
+Component &
+A unit of the architecture to which approved requirements are allocated, and
+for which an interface specification is derived (FR18). \\
+\hline
+
+Interface Specification &
+A Java interface whose methods carry the implementation contracts, in JML,
+derived from the requirements allocated to its component (FR12). \\
+\hline
+
+Implementation Handoff &
+The approved interface specifications, written into the source tree, and an
+implementation brief listing the approved requirement identifiers, the
+interfaces to implement, and the constraints that apply (FR8). \\
+\hline
+
 Artifact Relationship &
 A relationship between engineering artifacts, such as a dependency, refinement,
 constraint, or conflict. \\
@@ -871,9 +938,7 @@ Rationale &
 Information describing the reasoning or justification behind an engineering
 artifact or decision. \\
 \hline
-
-\end{tabular}
-\end{table}
+\end{longtable}
 
 \section{The Scope of the Product}
 \subsection{Product Boundary}
@@ -895,7 +960,9 @@ project evolves.
 
 The generation and modification of application code are outside the product
 boundary and are performed by an external coding agent using the engineering
-artifacts produced by \progname{}. The host IDE, external AI models, version
+artifacts produced by \progname{}. \progname{} passes these artifacts to the
+coding agent only as files in the project workspace (IAS2) and does not
+communicate with or control the agent. The host IDE, external AI models, version
 control systems, and the software application being developed are also external
 systems that \progname{} may interact with but does not implement.
 
@@ -924,13 +991,16 @@ PUC4 & Generate Implementation Contracts & Engineer \\
 PUC5 & Resolve Conflicting or Ambiguous Engineering Intent & Engineer \\
 \hline
 
-PUC6 & Send Approved Engineering Context to Coding Agent & Engineer \\
+PUC6 & Hand Off Approved Context to the Coding Assistant & Engineer \\
 \hline
 
 PUC7 & Trace Engineering Intent to Implementation & Engineer \\
 \hline
 
 PUC8 & Trace Implementation to Engineering Intent & Engineer \\
+\hline
+
+PUC9 & Propose and Review the Architecture & Engineer \\
 \hline
 
 \end{tabular}
@@ -994,14 +1064,14 @@ PUC8 & Trace Implementation to Engineering Intent & Engineer \\
     \item The system updates the affected engineering artifacts and relationships.
 \end{enumerate}
 
-\noindent\textbf{PUC6: Send Approved Engineering Context to Coding Agent}\\
-\textbf{Trigger:} The engineer approves the engineering artifacts and implementation contracts for a development task.\\
-\textbf{Pre-condition:} Sufficient engineering intent and implementation contracts have been approved.\\
+\noindent\textbf{PUC6: Hand Off Approved Context to the Coding Assistant}\\
+\textbf{Trigger:} The engineer approves the interfaces and contracts for a development task.\\
+\textbf{Pre-condition:} The requirements, components, and contracts involved are approved (FR7).\\
 \textbf{Outcome:}
 \begin{enumerate}
-    \item The system collects the approved contracts and relevant engineering context.
-    \item The system provides this information to the external coding agent.
-    \item The coding agent uses the provided engineering context to perform the requested implementation.
+    \item The system writes the approved interfaces and their contracts into the source tree and writes an implementation brief (FR8).
+    \item The engineer gives the brief to an AI coding assistant of their choice.
+    \item The assistant generates the implementation. \progname{} does not observe or control this step. It checks the result afterwards (FR10).
 \end{enumerate}
 
 \noindent\textbf{PUC7: Trace Engineering Intent to Implementation}\\
@@ -1025,6 +1095,16 @@ PUC8 & Trace Implementation to Engineering Intent & Engineer \\
 \end{enumerate}
 
 
+\noindent\textbf{PUC9: Propose and Review the Architecture}\\
+\textbf{Trigger:} The requirements for a feature are approved.\\
+\textbf{Pre-condition:} An approved domain model exists for the feature.\\
+\textbf{Outcome:}
+\begin{enumerate}
+    \item The system proposes components and allocates each approved functional requirement to one of them (FR18).
+    \item The engineer approves, edits, or rejects the proposal.
+    \item Interfaces are derived only for approved components (FR12).
+\end{enumerate}
+
 \section{Functional Requirements}
 
 The functional requirements describe the behaviour \progname{} must provide to
@@ -1039,9 +1119,15 @@ feature request, or requests based on supported engineering artifact types
 (such as UML diagrams or Petri nets), through the \progname{} extension interface.
 
 \medskip
-\noindent\textbf{FR2.} The system shall extract a schema specified structured set of proposed
-functional requirements, non-functional requirement, quality constraints, and design constraints from the developer's 
-request and an iterative interaction with the user to refine these artifacts into more detailed contracts.
+\noindent\textbf{FR2.} From the approved outputs of the elicitation stages (FR13 to
+FR15), the system shall write a draft requirements specification in which each
+functional requirement, nonfunctional requirement, and constraint has a unique
+identifier, a type, and links to the elicitation items it was derived from.\\
+\textit{Rationale:} Requirements are written from the reviewed elicitation
+record, not from a single prompt, so that each one can be traced to the need it
+serves (BR7).\\
+\textit{Fit criterion:} Every requirement in the draft has an identifier, a
+type, and at least one link to an approved elicitation item.
 
 \medskip
 \noindent\textbf{FR3.} The system shall save the extracted requirements and
@@ -1062,17 +1148,38 @@ to the developer for review before any corresponding code is generated.
 individual requirements or quality constraints within a proposal while it is
 still pending.
 
-\subsection{Code Generation Control}
+\subsection{Release Control}
 
 \medskip
-\noindent\textbf{FR7.} The system shall prevent the AI coding assistant from
-generating code for a request until the required engineering artifacts and contracts have been approved.
+\noindent\textbf{FR7.} The system shall not release interfaces, contracts, or an
+implementation brief for a requirement until the developer has approved that
+requirement, the component it is allocated to (FR18), and the contracts derived
+from it (FR12). Stages may be merged for a small request (AS8) only by an
+explicit choice of the developer that the system records. The approvals listed
+here are still required.\\
+\textit{Rationale:} \progname{} does not control the developer's AI coding
+assistant (IAS2), so it cannot stop code from being generated. It controls what
+it releases, so withholding the handoff is the enforceable form of BR4 and SCR1.
+The list of approvals defines the required engineering artifacts.\\
+\textit{Fit criterion:} If any of these is unapproved, a release writes no
+handoff and names each unapproved item. If all are approved, a handoff is
+written.
 
 \medskip
-\noindent\textbf{FR8.} The system shall communicate the developer's decision
-back to the AI coding assistant, and the tools internal database which manages the requirements and constraints, instructing it to implement exactly the
-approved requirements when the proposal is approved, or to not implement and
-instead ask how to revise the request when the proposal is rejected if a edit is not suggested when rejecting the initial proposed requirment/constraint. 
+\noindent\textbf{FR8.} When the developer approves a set of contracts for release,
+the system shall write an implementation handoff to the project workspace: the
+approved interfaces with their contracts in the project's source tree, and an
+implementation brief that lists the approved requirement identifiers, the
+interfaces to implement, and the constraints that apply. When the developer
+rejects the set without proposing an edit, the system shall write no handoff and
+shall ask the developer how the request should be revised.\\
+\textit{Rationale:} Workspace files are the one channel that every AI coding
+assistant can read without integration, and the interfaces must be in the
+source tree anyway for the implementation to compile against them and be
+checked (FR10).\\
+\textit{Fit criterion:} The handoff contains every approved item in the set and
+no pending or rejected item. After a rejection no file is written and the
+developer is asked how to revise. 
 
 \subsection{Intent Model and Traceability}
 
@@ -1085,9 +1192,17 @@ implement and satisfy respectively.
 \subsection{Change Verification}
 
 \medskip
-\noindent\textbf{FR10.} The system shall check changes proposed or generated by
-the AI coding assistant against the intent model and report whether they satisfy
-the recorded requirements and constraints.
+\noindent\textbf{FR10.} The system shall check an implementation of a released
+interface against the approved contracts recorded in the intent model, not
+against the copy in the source tree, and shall report for each requirement
+whether its contracts passed, failed, or could not be checked.\\
+\textit{Rationale:} The assistant can edit any file in the workspace, including
+the contracts. Only the approved copy is trustworthy (FR20). A report for each
+requirement states what was and was not verified (HA-SR11).\\
+\textit{Fit criterion:} Take an implementation that violates an approved
+contract after that contract was weakened in the source tree. The report says
+``failed'' and names the edited contract. A checker crash is reported as
+``could not be checked'', never as ``passed''.
 
 \subsection{Design Rationale}
 
@@ -1096,11 +1211,119 @@ the recorded requirements and constraints.
 and design decision, the rationale behind it and the originating developer
 request that led to it, so that it is clear why a certain requirement exists. 
 
-\subsection{Constrained Generation}
+\subsection{Interfaces and Contracts}
 
 \medskip
-\noindent\textbf{FR12.} The system shall compile the approved requirements and
-quality constraints into executable test, that the AI-generated code assist must satisfy.
+\noindent\textbf{FR12.} For each approved component (FR18), the system shall derive
+a Java interface whose methods carry JML preconditions, postconditions, and
+invariants derived from the requirements allocated to that component, using the
+types of the approved domain model, and shall present it for review. Each
+contract clause shall record the requirement or requirements it was derived
+from.\\
+\textit{Rationale:} Contracts are precise, can be checked by existing tools
+(AS2, STDR1), and give the assistant an exact target. They replace the
+previously undefined ``executable test''. Acceptance tests are derived later,
+from the scenarios of the use cases.\\
+\textit{Fit criterion:} Every allocated requirement has at least one contract
+clause or a recorded reason it has none. Every clause links to at least one
+requirement. The interfaces compile with \texttt{javac} and are accepted by
+OpenJML.
+
+\subsection{Elicitation Stages}
+
+\medskip
+\noindent\textbf{FR13.} The system shall capture a single statement of need, the
+current situation as numbered problems, and the expected benefits as numbered
+outcomes each linked to the problem or problems it addresses. It shall evaluate
+each against the definitions that are accepted by the software requirements engineering researchers before the developer
+approves them.\\
+\textit{Rationale:} These state why the system exists, and every later artifact
+is justified against them (Standard Plan G.1 to G.3).\\
+\textit{Fit criterion:} The statement of need receives a score against the fixed
+criteria. Every benefit links to at least one problem. Every problem is
+addressed by a benefit or marked out of scope before approval.
+
+\medskip
+\noindent\textbf{FR14.} The system shall capture and refine the developer-provided stakeholders and personas for the key user groups, and shall have the developer approve them.\\
+\textit{Rationale:} A missing stakeholder group means missing requirements
+(Standard Plan G.7).\\
+\textit{Fit criterion:} Each persona references its corresponding stakeholder
+and contains a role, goals, and concerns. The developer's approval is recorded.
+For stakeholder and persona refinement separately, after two completed evaluation
+rounds, the developer may explicitly approve the current drafts with unresolved
+feedback, provided the required information is present, or choose to continue
+refining them. Model errors do not count as completed evaluation rounds.
+Any evaluation criteria that remain unmet at approval are retained with their
+feedback and are not changed to passing verdicts.
+
+\medskip
+\noindent\textbf{FR15.} The system shall derive goals, each with an owner from the
+approved stakeholders and a link to an expected benefit, and classify each as
+hard or soft. For each hard goal it shall derive at least one use case with a
+main success scenario, alternatives, and exceptions. Questions the developer has not answered shall remain visible as
+open questions, and the system shall not answer them itself.\\
+\textit{Rationale:} Use cases expose the alternatives and exceptions that a
+single prompt leaves out. Open questions keep the LLM from inventing rules.\\
+\textit{Fit criterion:} Every hard goal has at least one use case. Every use
+case traces to a goal. No requirement cites an open question as its source.
+
+\subsection{Grounding and Quality}
+
+\medskip
+\noindent\textbf{FR16.} The system shall record, for each artifact it drafts, the
+developer message it came from, and shall flag any drafted artifact that has no
+such source instead of adding it silently.\\
+\textit{Rationale:} Ungrounded or injected content must be visible to the
+reviewer (HA-SR3).\\
+\textit{Fit criterion:} Every approved artifact has a source reference or an
+explicit developer approval of the flag.
+
+\medskip
+\noindent\textbf{FR17.} Before review, the system shall score each draft
+requirement as unambiguous, verifiable, consistent, traceable to a goal, and
+free of design detail, and shall show the developer each requirement scoring
+below QUALITY\_THRESHOLD together with the criterion it failed.\\
+\textit{Rationale:} LLM output can read well and still be vague, contradictory,
+or untraceable (RF5). Flagging weak requirements also reduces approval fatigue.\\
+\textit{Fit criterion:} On the V\&V benchmark set of seeded defective
+requirements, at least DEFECT\_RECALL of the defects are flagged. Both values
+are defined in the V\&V Plan.
+
+\subsection{Architecture}
+
+\medskip
+\noindent\textbf{FR18.} After the requirements are approved, the system shall
+propose a set of components, allocate each approved functional requirement to
+exactly one component, and state which components use which. The developer shall
+approve, edit, or reject the proposal before any interface is derived.\\
+\textit{Rationale:} An interface must belong to a component. Grouping
+requirements into components is a design decision the developer must review
+(BR1, BR2), not one left implicit in interface generation.\\
+\textit{Fit criterion:} Every approved functional requirement is allocated to
+exactly one component. No interface exists before the proposal is approved.
+
+\subsection{Change Control}
+
+\medskip
+\noindent\textbf{FR19.} When an approved artifact changes, the system shall mark
+every artifact derived from it, and any released handoff that includes it, as
+needing review.\\
+\textit{Rationale:} Implements BR3. A stale handoff would let the assistant
+implement intent that is no longer approved.\\
+\textit{Fit criterion:} After an approved goal is edited, its use cases,
+requirements, contracts, and handoff are all marked as needing review.
+
+\medskip
+\noindent\textbf{FR20.} The system shall detect when an approved artifact, a
+released interface, or a released contract has been changed other than through
+the review workflow, shall mark it as unapproved, and shall show the developer
+what changed.\\
+\textit{Rationale:} The assistant has write access to the workspace.
+\progname{} cannot prevent such edits, but it can detect them, which keeps BR5
+and ACR1 true.\\
+\textit{Fit criterion:} After an approved artifact file or a JML clause is
+edited by hand, the next load or verification marks it unapproved and shows the
+difference.
 
 \section{Look and Feel Requirements}
 \subsection{Appearance Requirements}
@@ -1111,7 +1334,9 @@ quality constraints into executable test, that the AI-generated code assist must
 
 \subsection{Style Requirements}
 
-\noindent\textbf{SR1.} The system shall maintain a professional visual style that is consistent with the appearance and interaction patterns of the host IDE.
+\noindent\textbf{SR1.} The system shall present its views with the host IDE's own interface components, colour theme, and fonts, so that they look and behave like the views built into the host IDE.\\
+\textit{Rationale:} Gives ``professional'' a checkable meaning: reusing the host's components keeps the product consistent with the IDE the developer already knows.\\
+\textit{Fit criterion:} Every view uses the host theme's colours and fonts and follows a change of host theme. No view uses a custom font or a colour outside the host theme.
 
 \noindent\textbf{SR2.} The system shall maintain a consistent visual style across its views, prompts, artifact displays, and workflow states.
 
@@ -1202,9 +1427,13 @@ and workspace and imposes no requirements arising from a wider physical environm
 through that IDE's official extension API, such as the VS Code Extension API. 
 
 \medskip
-\noindent\textbf{IAS2.} The system shall communicate with the AI coding
-assistant through the Model Context Protocol (MCP), so that any assistant tool that
-supports MCP can drive the intent-capture, code, and test workflow. 
+\noindent\textbf{IAS2.} The system shall pass approved artifacts to AI coding
+assistants only through files in the project workspace, so that any assistant
+that can read workspace files can use them without integration or
+configuration.\\
+\textit{Rationale:} Supporting any assistant without code written for each assistant
+satisfies MR3 and ADR1, and keeps \progname{} independent of assistant
+interfaces, which change often. 
 
 \medskip
 \noindent\textbf{IAS3.} The system shall interface with the project's version
@@ -1267,9 +1496,10 @@ do not introduce any breaking changes to existing intent models.
 \subsection{Access Requirements}
 
 \medskip
-\noindent\textbf{ACR1.} Only the local developer who owns the code directory workspace shall be
-able to review, approve, reject, or edit a proposal, and the AI coding assistant
-shall never be able to approve, edit, or reject potential proposals. 
+\noindent\textbf{ACR1.} Only the local developer who owns the workspace shall be
+able to approve, edit, or reject a proposal, and only through the \progname{}
+review interface. Any change to an approved artifact made by other means,
+including by an AI coding assistant, shall be treated as unapproved (FR20). 
 
 \medskip
 \noindent\textbf{ACR2.} The system shall restrict read and write access to the
@@ -1359,7 +1589,8 @@ Version bump alone is not enough.
 If any open-source or third-party resources are used, then the system shall explicitly cite those resources, comply with the terms and conditions of each resource's license, and request permission for any license that requires it before the system is distributed publicly.
 \subsection{Standards Compliance Requirements}
 \medskip
-\noindent\textbf{STDR1.} The system shall conform to the Model Context Protocol (MCP) specification for any AI tool it integrates with.
+\noindent\textbf{STDR1.} The system shall write implementation contracts in standard JML so that existing JML tools, such as OpenJML, can check them.\\
+\textit{Rationale:} Makes AS2 concrete. The system no longer integrates with AI tools through MCP, so the previous STDR1 no longer applies.
 
 \medskip
 \noindent\textbf{STDR2.} The system shall comply with the VS Code Extension API guidelines and their equivalents for the other supported IDEs, such as Cursor and PyCharm.
@@ -1370,8 +1601,58 @@ If any open-source or third-party resources are used, then the system shall expl
 \medskip
 \noindent\textbf{STDR4.} The system shall conform to the host IDE's accessibility guidelines for any interface exposed to the user.
 
+\section{Likely and Unlikely Changes}
+\label{sec:changes}
+
+The changes below are stated at the requirement level. The Module Guide hides
+each likely change inside one module, and treats the unlikely changes as fixed.
+
+\subsection{Likely Changes}
+\begin{description}
+\item[LC1.] The LLM provider and model. Hosted models are retired often (Groq
+  retired its hosted Llama 3 models in August 2026), and output varies between
+  models (RF5). Affects FR2 and FR13 to FR17.
+\item[LC2.] The elicitation stage definitions and evaluation criteria. They
+  follow course material and supervisor feedback, which may change. Affects FR13
+  to FR15 and FR17.
+\item[LC3.] The template of the generated requirements specification (Standard
+  Plan or IEEE 830). Affects FR2.
+\item[LC4.] The target programming language and contract notation (Java and JML
+  now, see AS3). Affects FR12, FR10, and STDR1.
+\item[LC5.] The contract checker (OpenJML now, see AS2). Affects FR10.
+\item[LC6.] The format and delivery channel of the implementation handoff
+  (workspace files now, and an MCP channel that only reads approved artifacts
+  is possible). Affects FR8 and
+  IAS2.
+\item[LC7.] The host IDE (VS Code now, Cursor and PyCharm later). Affects IAS1
+  and STDR2.
+\item[LC8.] The schema and file layout of the intent model. Affects FR9, STDR3,
+  and REL2.
+\item[LC9.] Forms of engineering input beyond natural language. Affects FR1 and
+  ADR2.
+\item[LC10.] The design of the review interface. Affects EUR1 and EUR2.
+\end{description}
+
+\subsection{Unlikely Changes}
+\begin{description}
+\item[UL1.] A human approves every artifact before it is released for
+  implementation (BR4, BR5, SCR1, FR7). This is the purpose of the product.
+\item[UL2.] Code is generated only from approved interfaces and contracts, never
+  directly from the initial request (BR4).
+\item[UL3.] \progname{} does not integrate with or control the coding assistant.
+  The handoff is passive (IAS2). Reversing this would mean integration code for
+  each assistant.
+\item[UL4.] One developer works in a local workspace (AS4, ACR2).
+\item[UL5.] The intent model is stored in the workspace and versioned with Git
+  (PRR1, IAS3).
+\item[UL6.] The product runs inside the IDE (ACCR1).
+\end{description}
+
 \section{Open Issues}
-There are currently no open issues to be discussed. 
+
+\noindent\textbf{OI1.} Whether to add an MCP channel for the implementation
+handoff (LC6) that only reads approved artifacts. If it is added, it shall expose approved artifacts
+only, with no approve, edit, or reject operations. 
 
 \section{Off-the-Shelf Solutions}
 \subsection{Ready-Made Products}
@@ -1415,13 +1696,12 @@ evaluation.
 
 \progname{} will build on the following existing components instead of
 implementing them from scratch. Each component will be used according to its
-licence (see LR1).
+licence (see LEGR1).
 
 \begin{itemize}
   \item \textbf{VS Code Extension API.} Provides the user interface, commands,
   and workspace access for the tool inside the IDE.
-  \item \textbf{Model Context Protocol (MCP) SDKs.} Official libraries for
-  building the MCP server that the AI coding assistant communicates with.
+  
   \item \textbf{LangGraph.} Runs the refinement workflow as a graph and pauses
   it for developer approval at each stage. Its saved checkpoints allow an
   interrupted workflow to be resumed (RFR3).
@@ -1484,9 +1764,8 @@ Introducing \progname{} changes how developers work with AI coding assistants.
 \begin{itemize}
   \item \textbf{Host IDE.} The extension adds views and commands to the IDE and
   uses some of its memory and processing time.
-  \item \textbf{AI coding assistant.} The assistant must be configured to
-  connect to the \progname{} MCP server. This may interact with other MCP
-  servers or extensions the developer already uses.
+  \item \textbf{AI coding assistant.} No configuration change is needed. The
+  assistant reads the implementation handoff like any other project file.
   \item \textbf{Local tooling.} Contract checkers may require extra software,
   such as a Java runtime for OpenJML.
   \item \textbf{External LLM services.} Each refinement stage sends requests to
@@ -1518,12 +1797,14 @@ Introducing \progname{} changes how developers work with AI coding assistants.
 Inhibit the New Product}
 
 \begin{itemize}
-  \item \textbf{Limited control over the AI coding assistant.} \progname{} can
-  only guide the assistant through MCP. It cannot stop a developer from using
-  the assistant outside the tool to generate code.
-  \item \textbf{Changing external APIs.} The VS Code Extension API, the MCP
-  specification, and the AI coding assistants are updated often. Changes to
-  them may break the integration.
+  \item \textbf{Limited control over the AI coding assistant.} \progname{}
+  releases approved interfaces and contracts, but it cannot stop a developer or
+  an assistant from generating code without them. It detects changes made
+  outside the review workflow (FR20) and checks implementations against the
+  approved contracts (FR10).
+  \item \textbf{Changing external APIs.} The VS Code Extension API and the
+  contract tools are updated often. Changes to them may break the extension or
+  the contract checks.
   \item \textbf{LLM service limits.} Rate limits, response times, outages, and
   usage costs of the LLM service may slow down or interrupt refinement.
   \item \textbf{LLM context size.} Large projects may have more requirements and
@@ -1538,15 +1819,16 @@ Inhibit the New Product}
 \begin{itemize}
   \item \textbf{Keeping the intent model in sync with the code.} Once code is
   edited outside the refinement process, the intent model can become outdated.
-  Detecting this requires the post-generation verification features of Feature
-  Group B.
+  Detecting this relies on detecting changes made outside the review workflow
+  (FR20) and on
+  verification against the approved contracts (FR10).
   \item \textbf{Team use.} If several developers use \progname{} on the same
   project, their changes to the intent model may conflict (AS4).
   \item \textbf{Intent model format changes.} New releases may change the intent
   model format, so existing intent models will need to be migrated (REL2).
-  \item \textbf{Supporting more languages and assistants.} Each new programming
-  language needs its own contract adapter, and each new AI coding assistant
-  needs its own integration to be built and maintained.
+  \item \textbf{Supporting more languages.} Each new programming language needs
+  its own contract notation and checker. New AI coding assistants need no work,
+  because the handoff is plain files (IAS2).
   \item \textbf{Sharing project data with LLM services.} Developers working on
   private code may not be allowed to send it to an external LLM service, which
   may require support for locally hosted models (PRR1).
@@ -1605,12 +1887,13 @@ and define the evaluation criteria. \\
 the refinement stages on the case study, with developer approval at each stage
 and the ability to return to an earlier stage. \\
 3. Design & Design Document & Design the modules and interfaces of the VS Code
-extension, MCP server, refinement workflow, and intent model. \\
+extension, refinement workflow, implementation handoff, and intent model. \\
 4. Full refinement workflow & Revision~0 Demonstration & Implement the
-refinement process from high-level intent to formal contracts, and hand the
-approved contracts to the AI coding assistant. \\
-5. Evaluation and refinement & V\&V Report, Final Demonstration & Run the
-evaluation on the case study, fix the problems it finds, and improve
+refinement process from the statement of need to released interfaces and
+contracts (the implementation handoff). \\
+5. Verification and evaluation & V\&V Report, Final Demonstration & Verify
+implementations of the released interfaces against the approved contracts
+(FR10), run the evaluation on the case study, fix the problems it finds, and improve
 usability. \\
 6. Final documentation & Final Documentation, EXPO & Complete the
 documentation and present the product. \\
@@ -1618,8 +1901,8 @@ documentation and present the product. \\
 \end{tabularx}
 \end{table}
 
-Feature Group B (post-generation traceability, explanation, and verification)
-is not part of these phases and is treated as future work (AS1).
+Explaining generated code and supporting incremental changes to existing code
+are not part of these phases and are future work (AS1).
 
 \section{Migration to the New Product}
 \subsection{Requirements for Migration to the New Product}
@@ -1640,13 +1923,14 @@ process to new features only, without first recording intent for the existing
 code.
 
 \medskip
-\noindent\textbf{MIG3.} Setting up \progname{} shall not require changes to the
-developer's existing AI coding assistant configuration, other than adding the
-\progname{} MCP server.
+\noindent\textbf{MIG3.} Setting up \progname{} shall not require any change to
+the developer's AI coding assistant or its configuration.
 
 \medskip
 \noindent\textbf{MIG4.} Removing \progname{} from a project shall leave the
-project's code and build working as before.
+project's code and build working as before.\\
+\textit{Rationale:} The generated interfaces are ordinary Java and JML is
+written in comments, so the project builds without \progname{}.
 
 \subsection{Data That Has to be Modified or Translated for the New System}
 
@@ -1666,8 +1950,7 @@ the intent model, such as:
 
 Any content brought in this way is treated as a proposal and must be reviewed
 and approved by the developer before it enters the intent model (BR2).
-Recovering intent from existing code is part of Feature Group B and is treated
-as future work.
+Recovering intent from existing code is future work (see the Waiting Room).
 
 Within \progname{} itself, new releases may change the intent model format.
 Existing intent models must then be migrated to the new format (REL2).
@@ -1698,8 +1981,9 @@ costs are mainly the time of the team and of the people who use the product.
 
 \medskip
 \noindent\textbf{UDR1.} The product shall include an installation guide that
-explains how to install the extension, connect the AI coding assistant through
-MCP, and set up the LLM service.
+explains how to install the extension and set up the LLM service, and a usage
+guide that explains how to give an implementation handoff to an AI coding
+assistant.
 
 \medskip
 \noindent\textbf{UDR2.} The product shall include a user guide that explains
@@ -1739,9 +2023,8 @@ The following ideas are not planned for the current project, but may be
 considered in future versions.
 
 \begin{itemize}
-  \item \textbf{Feature Group B.} More advanced explanation of
-  generated code, automated verification against contracts, and support for
-  incremental changes to existing code. (AS1).
+  \item \textbf{Explaining generated code.} Explain generated code to the
+  developer and support incremental changes to existing code (AS1).
   \item \textbf{UML round-trip engineering.} Keep UML diagrams in sync with the
   intent model, so that changes to the requirements update the class
   relationships, methods, and types shown in the diagrams.
@@ -1753,11 +2036,10 @@ considered in future versions.
   each change affects.
   \item \textbf{Team use.} Support several developers working on the same intent
   model (AS4).
-  \item \textbf{More IDEs, languages, and assistants.} Support PyCharm,
-  additional programming languages for the contract stage, and additional AI
-  coding assistants.
+  \item \textbf{More IDEs and languages.} Support PyCharm and additional
+  programming languages for the contract stage.
   \item \textbf{Other forms of input.} Accept engineering input other than
-  natural language, such as Petri nets (AR2).
+  natural language, such as Petri nets (ADR2).
   \item \textbf{Locally hosted models.} Run refinement with an LLM hosted on the
   developer's machine, for projects whose code cannot be sent to an external
   service.
@@ -1773,17 +2055,17 @@ requirements, and will be decided in the Design Document.
   and approvals and returns to earlier stages are edges, matching the state
   machine model of the process.
   \item \textbf{Intent model as files in the workspace.} Store each artifact as a
-  structured file, such as JSON or Markdown (SCR3), so that it can be versioned
+  structured file, such as JSON or Markdown (STDR3), so that it can be versioned
   and reviewed with Git.
   \item \textbf{Dependency links between artifacts.} Record which artifact each
   artifact refines (BR7), so the product can find the later artifacts that need
   to be reviewed again after a change (BR3).
   \item \textbf{Contracts written into the code.} Write contracts as JML
-  comments in Java or as icontract decorators in Python, so that existing tools
-  can check them.
-  \item \textbf{MCP tools for the coding assistant.} Expose the approved
-  contracts to the AI coding assistant through MCP tools, so it generates code
-  from them.
+  comments in Java interfaces (STDR1), so that OpenJML can check them.
+  \item \textbf{Handoff as workspace files.} Write the approved interfaces with
+  their JML contracts into the source tree, and an implementation brief into the
+  workspace, so that any coding assistant can generate code from them. An
+  MCP channel that only reads approved artifacts may be added later (LC6, OI1).
   \item \textbf{Templates for each stage.} Use EARS for requirements and
   Architecture Decision Records for architecture decisions.
 \end{itemize}
@@ -1805,8 +2087,11 @@ spelling, and formatting issues, which affected the written style throughout the
 document. The claude tools were used to draw and generate diagrams from detailed
 natural-language descriptions and information provided for the Scope of Work Section, more specifically the
 current-situation diagram, the context diagram, the V-model, and the validation
-flow. No requirements, technical assertions, or design decisions were generated
-by the tools. Those were written and decided by the team.
+flow. In version 1.0, no requirements, technical assertions, or design decisions were
+generated by the tools. In revision 1.2, Claude Sonnet 5 drafted proposed fixed wording of
+the rewritten and new requirements (BR1, AS1, FR2, FR7, FR8, FR10, FR12 to FR20,
+SR1, ACR1, IAS2, STDR1, MIG3, MIG4, UDR1), PUC6, PUC9, the Likely and Unlikely
+Changes section, and the vector context diagram.
 
 \subsection{Verification of AI-Generated Content}
 

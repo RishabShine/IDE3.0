@@ -13,6 +13,7 @@
 \usepackage{caption}
 \usepackage{fullpage}
 \usepackage{array}
+\setlength{\emergencystretch}{3em}
 
 \hypersetup{
 bookmarks=true,
@@ -45,6 +46,17 @@ urlcolor=cyan
 Nov 13, 2026 & 0.1 & Tyler Yue: Drafted Rev~-1 and ensured MIS syntax for all leaf modules
 aligned with the Module Guide.\\
 Nov 13, 2026 & 0.2 & Tyler Yue: Edited the Rev~-1 to ensure it is aligned with the rubric and the Module Guide.\\
+Nov 17, 2026 & 0.3 & Qusay Qadir: Aligned the MIS with Module Guide version
+0.3. Updated the Host IDE Interface, Workflow Controller, Review Panel, Intent Model Store, Traceability Manager, and Contract
+Verifier for the implementation handoff.\\ 
+Nov 17, 2026 & 0.4 & Rishab Shine: Updated the Persona type to include its
+stakeholder reference and added persona evaluation to the User and Goal
+Modelling Module interface (M6).\\
+Nov 18, 2026 & 0.5 & Vedant Patel: Aligned M6 with FR14 in SRS revision 1.3
+(capture of developer-provided stakeholders and personas, evaluation rounds,
+approval with unresolved feedback). Removed the state of M5 and M6 that
+duplicated the Intent Model Store. Added a table defining every exception.
+Expanded the Generative AI disclosure.\\
 \bottomrule
 \end{tabularx}
 
@@ -52,8 +64,7 @@ Nov 13, 2026 & 0.2 & Tyler Yue: Edited the Rev~-1 to ensure it is aligned with t
 
 \section{Symbols, Abbreviations and Acronyms}
 
-See also the SRS (\texttt{docs/SRS-Volere/SRS.tex}) and Module Guide
-(\texttt{docs/Design/SoftArchitecture/MG.tex}).
+
 
 \begin{center}
 \begin{tabular}{l p{10cm}}
@@ -64,8 +75,10 @@ MG & Module Guide\\
 MIS & Module Interface Specification\\
 AO & Abstract Object\\
 FR & Functional Requirement\\
+HA-SR & Safety and Security Requirement (Hazard Analysis)\\
 JML & Java Modeling Language\\
 LLM & Large Language Model\\
+SRS & Software Requirements Specification\\
 $\mathbb{B}$ & Boolean\\
 $\mathbb{Z}$ & Integer\\
 $\mathbb{N}$ & Natural number\\
@@ -85,9 +98,13 @@ seq of $X$ & Sequence of values of type $X$\\
 \section{Introduction}
 
 This document gives the Module Interface Specifications for \progname{}, a
-VS~Code extension that captures engineering intent, requires human approval of
-proposed artifacts, stores a versioned intent model with rationale and
-traceability, and verifies AI-generated changes against that model.
+VS~Code extension that guides a developer through the requirements elicitation
+phase, from a statement of need to reviewed requirements, and then through an
+architecture and Java interfaces with JML contracts. The developer approves
+every artifact before it is used. Approved interfaces and contracts are released
+as an implementation handoff, which is a set of files in the workspace that any
+AI coding assistant can read. It stores a versioned intent model with rationale and traceability,
+and verifies the implementation against the approved contracts afterwards.
 
 Complementary documents include the Software Requirements Specification, Hazard
 Analysis, Module Guide, and VnV Plan. The repository is
@@ -112,17 +129,17 @@ qualities~\citep{HoffmanAndStrooper1995}, applied as follows:
     the Module Guide; constructor-style or framework lifecycle names are not
     exported.
   \item \textbf{Generality.} Programs speak in terms of Request, Proposal,
-    Decision, ContractSet, and related derived types so a future host or
-    assistant binding does not change the MIS signatures.
+    Decision, InterfaceSpec, and related derived types, so a new host, LLM
+    provider, or handoff channel does not change the MIS signatures.
   \item \textbf{Minimality.} Leaf modules export only the operations needed by
     their users in the MG uses hierarchy; convenience wrappers that duplicate
     another module's secret are omitted.
   \item \textbf{High cohesion / low coupling.} State owned by a module is
     accessible only through that module's programs; uses relations match
     the Module Guide uses hierarchy and introduce no cycles.
-  \item \textbf{Opacity.} Encodings (file layout, host widget APIs, assistant
-    message formats, checker invocation) remain secrets of the owning module;
-    clients never construct those encodings.
+  \item \textbf{Opacity.} Encodings (file layout, host widget APIs, handoff
+    file format, LLM provider calls, checker invocation) remain secrets of the
+    owning module. Clients never construct those encodings.
 \end{itemize}
 
 Abstraction is kept above implementation syntax: the MIS does not prescribe
@@ -163,47 +180,124 @@ These types name conceptual values exchanged between modules. Their concrete
 encoding is a secret of the owning module (typically Intent Model Store or Host
 IDE Interface) and is not prescribed here.
 
-\begin{center}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{l p{9.5cm}}
+{\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{l p{10.5cm}}
 \toprule
 \textbf{Type} & \textbf{Description}\\
 \midrule
-Request & A developer submission (natural language and/or supported artifact
-reference).\\
-RequestId & Opaque identifier of an in-progress workflow request.\\
-Proposal & A draft set of requirements, constraints, and related items awaiting
-decision.\\
-Artifact & A stored intent-model entry (requirement, constraint, rationale, or
-related record) as seen by clients.\\
+\endhead
+Request & A developer submission in natural language or in a supported artifact
+form.\\
+RequestId & Opaque identifier of a workflow request that is in progress.\\
+Stage & A stage of the workflow, one of \{\textit{need}, \textit{usersAndGoals},
+\textit{specification}, \textit{qualityCheck}, \textit{architecture},
+\textit{contracts}, \textit{release}, \textit{verification}\}. The first four
+form the requirements elicitation phase.\\
+Proposal & A draft set of artifacts from one stage, awaiting a decision.\\
+Artifact & A stored intent model entry as seen by clients, with its ArtifactStatus.\\
 ArtifactId & Identifier of an Artifact in the intent model.\\
+ArtifactStatus & One of \{\textit{draft}, \textit{pending}, \textit{approved},
+\textit{rejected}, \textit{needsReview}, \textit{unapproved}\}.\\
 ArtifactHistory & Ordered recoverable revisions of an Artifact.\\
-Decision & One of $\{\mathrm{approve}, \mathrm{edit}, \mathrm{reject}\}$ with
-optional edit payload.\\
-Feedback & Developer refinement input applied to a Proposal.\\
-Rationale & Developer-supplied justification recorded with an approval.\\
-Note & Short developer-facing explanation (for example a revision request).\\
-Stage & Workflow stage:
-$\{\mathrm{capture}, \mathrm{review}, \mathrm{gate}, \mathrm{generate},
-\mathrm{verify}\}$.\\
-GateState & Whether generation is $\mathrm{blocked}$ or $\mathrm{released}$ for a
-request.\\
-PanelContent & Structured content presented on a host interactive surface
-(encoding is a Host IDE Interface secret).\\
-WorkspacePath & Reference to a workspace location relative to the open project
-root (encoding is a Host IDE Interface secret).\\
-WorkspaceContent & Contents obtained from a WorkspacePath.\\
-Context & Prior approved or draft intent supplied to elicitation.\\
-ContractSet & Compiled executable contracts derived from approved artifacts.\\
-ImplCandidate & A candidate implementation (or change set) to be checked.\\
-VerifyResult & Structured evidence of pass, fail, or inconclusive verification.\\
-TraceLink & A justified association among artifacts, code paths, or tests.\\
-LogEvent & A diagnostic record of a failure or significant interaction.\\
-StatusMsg & A human-readable status or error message for the IDE surface.\\
-SchemaId & Identifier of a supported intent-model schema.\\
+Decision & One of $\{\mathrm{approve}, \mathrm{edit}, \mathrm{reject}\}$ with an
+optional edit.\\
+Feedback & Developer input that refines a Proposal.\\
+Rationale & Developer justification recorded with a decision.\\
+Note & A short message for the developer, such as a request to revise.\\
+Evaluation & A verdict and score against the criteria of one stage, with
+feedback for the developer.\\
+Statement & The single statement of need.\\
+Problem & A numbered problem of the current situation, with its source.\\
+Benefit & A numbered expected benefit, with the problems it addresses, its
+measure if one is given, and its source.\\
+Stakeholder & A person or group with an interest in the system, with its
+category and source.\\
+Persona & A representative user of a key user group, with a reference to its
+corresponding stakeholder, role, goals, and concerns.\\
+Goal & A goal with its owner, its linked benefit, and whether it is hard or
+soft.\\
+UseCase & A use case for a hard goal, with a main success scenario,
+alternatives, and exceptions.\\
+OpenQuestion & A question the developer has not answered yet.\\
+Specification & The draft requirements, each with an identifier, a type, and
+source links, together with the domain model and glossary.\\
+QualityScore & The scores of one requirement on each quality criterion.\\
+Component & A unit of the architecture with the requirements allocated to it.\\
+ArchitectureProposal & The proposed components, the allocation of requirements to
+them, and the uses between components.\\
+ContractClause & One JML precondition, postcondition, or invariant, with the
+requirement it was derived from.\\
+InterfaceSpec & A Java interface for one component, given as its methods and
+their ContractClause values.\\
+Handoff & A released set of interface specifications and its implementation
+brief.\\
+HandoffId & Identifier of a released Handoff.\\
+Implementation & Code in the workspace that implements released interfaces.\\
+ClauseResult & The outcome for one ContractClause, one of \{\textit{passed},
+\textit{failed}, \textit{notChecked}\}, with evidence.\\
+TraceLink & A justified link of one kind: refines, source, clause to
+requirement, or implements.\\
+Prompt & The instructions and content sent to the LLM.\\
+OutputSchema & The structure that an LLM result must follow.\\
+LLMResult & A value that follows a given OutputSchema.\\
+PanelContent & Structured content presented on a host surface (encoding is a
+Host IDE Interface secret).\\
+StatusMsg & A readable status or error message for the IDE surface.\\
+LogEvent & A diagnostic record of a failure or significant event.\\
+SchemaId & Identifier of a supported intent model schema.\\
+PeopleKind & One of \{\textit{stakeholders}, \textit{personas}\}, the two
+drafts of User and Goal Modelling that are evaluated in rounds.\\
 \bottomrule
-\end{tabular}
-\end{center}
+\end{longtable}}
+
+\subsection{Exceptions}
+
+Each exception below is raised by the access programs that list it. An
+exception leaves the state of the raising module unchanged unless its module
+section says otherwise.
+
+{\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{l p{10.5cm}}
+\toprule
+\textbf{Exception} & \textbf{Raised when}\\
+\midrule
+\endhead
+AccessDenied & The workspace intent model cannot be opened for reading and writing.\\
+AllocationIncomplete & A revised architecture leaves an approved functional requirement unallocated.\\
+ApprovedLocked & A discard would remove an approved artifact.\\
+Cancelled & The developer dismisses a prompt without answering.\\
+DisplayFailed & The host surface cannot show the content.\\
+HostUnavailable & No host session is bound, or the host IDE stops responding.\\
+IllegalStage & A return or merge names a stage that is not allowed from the current stage.\\
+IncompleteElicitation & A stage of the requirements elicitation phase has not been approved.\\
+InvalidDecision & A decision is not approve, edit, or reject, or an edit is missing its content.\\
+InvalidLink & A trace link has no justification or is of the wrong kind for its two ends.\\
+InvalidOutput & The LLM result still does not follow the OutputSchema after repair.\\
+InvalidRequest & A request is empty, larger than \texttt{MAX\_REQUEST\_SIZE}, or in an unsupported form.\\
+MissingType & A contract needs a type that the approved domain model does not define.\\
+ModelUnavailable & The LLM service cannot be reached or times out after the retries.\\
+NoApprovedNeed & The statement of need has not been approved.\\
+NoRequirements & There are no approved requirements to allocate.\\
+NoStakeholders & There are no approved stakeholders.\\
+NoStatement & No statement of need has been captured for the request.\\
+NotApproved & The component or its requirements are not approved.\\
+NotFound & The named artifact, link, handoff, or saved progress does not exist.\\
+NotReleasable & At least one item lacks a required approval or a complete refinement chain.\\
+NotResumable & The saved progress of the request cannot be restored.\\
+NothingReleased & No handoff has been released for the component or request.\\
+RateLimited & The LLM service still refuses requests after the retries.\\
+SchemaInvalid & A write does not follow \texttt{SUPPORTED\_SCHEMA}.\\
+SoftGoal & Use cases are requested for a soft goal.\\
+StageIncomplete & The proposal of the current stage has not been approved.\\
+StoreFailed & The Intent Model Store could not record the decision.\\
+TooFewRounds & Approval with unresolved feedback is requested before \texttt{MIN\_ROUNDS\_BEFORE\_OVERRIDE} completed evaluation rounds.\\
+UnknownId & No request in progress has the given RequestId.\\
+UnknownItem & The proposal has no item with the given ArtifactId.\\
+UnknownQuestion & The question is not open for the request.\\
+UnsupportedArtifact & The request is in an input form the module does not accept.\\
+WriteFailed & A handoff file could not be written. No file is left partly written.\\
+\bottomrule
+\end{longtable}}
 
 \section{Module Decomposition}
 
@@ -218,17 +312,20 @@ The following table is taken from the Module Guide for this project.
 Hardware-Hiding Module & Host IDE Interface Module\\
 \midrule
 Behaviour-Hiding Module & Workflow Controller Module\\
- & Intent Capture Module\\
+ & Need Capture Module\\
+ & User and Goal Modelling Module\\
+ & Requirements Specification Module\\
+ & Requirement Quality Check Module\\
+ & Architecture Proposal Module\\
+ & Interface and Contract Derivation Module\\
  & Review Panel Module\\
- & Approval Gate Module\\
- & Verification Report Module\\
+ & Release Gate Module\\
 \midrule
 Software Decision Module & Intent Model Store Module\\
  & Traceability Manager Module\\
- & Elicitation Engine Module\\
- & Contract Compiler Module\\
+ & LLM Gateway Module\\
+ & Implementation Handoff Module\\
  & Contract Verifier Module\\
- & Coding Assistant Adapter Module\\
  & Diagnostic Log Module\\
 \bottomrule
 \end{tabular}
@@ -241,7 +338,7 @@ Behaviour-Hiding, Software Decision) are organizational and are not implemented.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Host IDE Interface Module} \label{MISHost}
+\section{MIS of Host IDE Interface Module (M2)} \label{MISHost}
 
 \subsection{Module}
 
@@ -249,7 +346,7 @@ HostIDEInterface
 
 \subsection{Uses}
 
-None (uses host OS / IDE services as environment).
+None.
 
 \subsection{Syntax}
 
@@ -260,17 +357,16 @@ None.
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.4cm} p{3.5cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
 bindHostSession & - & - & HostUnavailable \\
 presentContent & title: StatusMsg, body: PanelContent & - & HostUnavailable \\
 presentStatus & msg: StatusMsg & - & - \\
-promptDecision & proposal: Proposal & Decision & Cancelled, HostUnavailable \\
-readWorkspace & path: WorkspacePath & WorkspaceContent & NotFound,
-AccessDenied \\
-observeWorkspace & - & - & HostUnavailable \\
+readInput & prompt: StatusMsg & string & Cancelled, HostUnavailable \\
+notifyFailure & msg: StatusMsg & - & - \\
 \hline
 \end{tabular}
 \end{center}
@@ -279,28 +375,26 @@ observeWorkspace & - & - & HostUnavailable \\
 
 \subsubsection{State Variables}
 
-$bound$: $\mathbb{B}$ --- whether a host session is bound for this extension
-activation.\\
-$observed$: $\mathbb{B}$ --- whether workspace observation is active.
+$bound$: $\mathbb{B}$, whether a host session is bound for this extension activation.
 
 \subsubsection{Environment Variables}
 
-$hostSurface$: the interactive command and presentation surface of the host IDE.\\
-$workspaceRoot$: the open project folder in the host IDE.
+$hostSurface$: the panels, commands, and notifications of the host IDE.\\
+$backEnd$: the channel between the extension and the back end. Its encoding is
+a secret of this module.
 
 \subsubsection{Assumptions}
 
 Access programs other than \texttt{bindHostSession} are called only when
-$bound = \mathrm{True}$.
+$bound = \mathrm{True}$. This module provides surfaces only. It does not decide
+what is shown or collected.
 
 \subsubsection{Access Routine Semantics}
 
-Formal transition/output rules will be completed in Revision~0. For Rev~-1:
-\texttt{bindHostSession} attaches to the host surface;
-\texttt{presentContent} and \texttt{presentStatus} update the developer-visible
-environment; \texttt{promptDecision} returns the developer's Decision or raises
-\texttt{Cancelled}; workspace programs read or observe locations under
-$workspaceRoot$. Host widget APIs remain secrets of this module.
+To be formalized in Revision~0. \texttt{bindHostSession} attaches to the host
+surface. \texttt{presentContent}, \texttt{presentStatus}, and
+\texttt{notifyFailure} update what the developer sees. \texttt{readInput}
+returns the developer's text or raises \texttt{Cancelled}.
 
 \subsubsection{Local Functions}
 
@@ -308,7 +402,7 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Workflow Controller Module} \label{MISControl}
+\section{MIS of Workflow Controller Module (M4)} \label{MISControl}
 
 \subsection{Module}
 
@@ -316,28 +410,33 @@ WorkflowController
 
 \subsection{Uses}
 
-IntentCapture, ReviewPanel, ApprovalGate, VerificationReport, HostIDEInterface,
-DiagnosticLog
+NeedCapture, UserAndGoalModelling, RequirementsSpecification,
+RequirementQualityCheck, ArchitectureProposal, InterfaceAndContractDerivation,
+ReviewPanel, ReleaseGate, ContractVerifier, IntentModelStore, DiagnosticLog
 
 \subsection{Syntax}
 
 \subsubsection{Exported Constants}
 
-\texttt{STAGE\_ORDER}: seq of Stage --- the only legal stage succession for a
-request.
+\texttt{MAX\_REQUEST\_SIZE}: $\mathbb{N}$, the largest request accepted by
+\texttt{startRequest}. Its value is defined in the VnV Plan.
 
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
 startRequest & req: Request & RequestId & InvalidRequest \\
-advance & id: RequestId & Stage & IllegalStage, UnknownId \\
-resumeDraft & id: RequestId & Stage & UnknownId, NotResumable \\
+advance & id: RequestId & Stage & StageIncomplete, UnknownId \\
+returnTo & id: RequestId, s: Stage & - & IllegalStage, UnknownId \\
+recordMerge & id: RequestId, s: seq of Stage & - & IllegalStage, UnknownId \\
+resume & id: RequestId & Stage & UnknownId, NotResumable \\
 discardDraft & id: RequestId & - & UnknownId, ApprovedLocked \\
 currentStage & id: RequestId & Stage & UnknownId \\
+verify & id: RequestId, impl: Implementation & seq of ClauseResult & NothingReleased, UnknownId \\
 \hline
 \end{tabular}
 \end{center}
@@ -347,7 +446,8 @@ currentStage & id: RequestId & Stage & UnknownId \\
 \subsubsection{State Variables}
 
 $active$: map from RequestId to Stage.\\
-$draftOpen$: map from RequestId to $\mathbb{B}$.
+$merged$: map from RequestId to set of Stage, the stages the developer chose to
+merge.
 
 \subsubsection{Environment Variables}
 
@@ -355,15 +455,17 @@ None.
 
 \subsubsection{Assumptions}
 
-Callers invoke \texttt{startRequest} before other programs for a given request.
-\texttt{discardDraft} does not remove already-approved intent held by the Intent
-Model Store. \texttt{advance} may move only according to \texttt{STAGE\_ORDER}.
+Callers invoke \texttt{startRequest} before other programs for a given
+request. \texttt{discardDraft} never removes approved artifacts. The order of the
+stages is a secret of this module, so it is not exported.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0. Stages follow capture $\rightarrow$ review
-$\rightarrow$ gate $\rightarrow$ generate/verify as described in the Module
-Guide.
+To be formalized in Revision~0. \texttt{advance} moves to the next stage only
+when the proposal of the current stage is approved, and raises
+\texttt{StageIncomplete} otherwise. \texttt{returnTo} reopens an earlier stage.
+\texttt{verify} runs the Contract Verifier and passes the results to the Review
+Panel. Failures are recorded in the Diagnostic Log.
 
 \subsubsection{Local Functions}
 
@@ -371,15 +473,15 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Intent Capture Module} \label{MISCapture}
+\section{MIS of Need Capture Module (M5)} \label{MISNeed}
 
 \subsection{Module}
 
-IntentCapture
+NeedCapture
 
 \subsection{Uses}
 
-ElicitationEngine, IntentModelStore, HostIDEInterface
+LLMGateway, TraceabilityManager, IntentModelStore
 
 \subsection{Syntax}
 
@@ -390,15 +492,17 @@ None.
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-submitRequest & req: Request & proposal: Proposal & UnsupportedArtifact,
-InvalidRequest \\
-refine & proposal: Proposal, feedback: Feedback & proposal: Proposal &
-RefineFailed \\
-saveDraft & proposal: Proposal & ArtifactId & StoreRejected \\
+captureStatement & id: RequestId, req: Request & Statement & UnsupportedArtifact, ModelUnavailable \\
+evaluateStatement & id: RequestId & Evaluation & NoStatement, ModelUnavailable \\
+captureProblems & id: RequestId, req: Request & seq of Problem & ModelUnavailable \\
+captureBenefits & id: RequestId, req: Request & seq of Benefit & ModelUnavailable \\
+evaluateContext & id: RequestId & Evaluation & ModelUnavailable \\
+uncoveredProblems & id: RequestId & seq of Problem & - \\
 \hline
 \end{tabular}
 \end{center}
@@ -407,7 +511,9 @@ saveDraft & proposal: Proposal & ArtifactId & StoreRejected \\
 
 \subsubsection{State Variables}
 
-$lastProposal$: Proposal $\cup \{\mathrm{nil}\}$.
+None. The statement, problems, and benefits of each request are stored in
+IntentModelStore under its RequestId, which is the only module that holds the
+intent model.
 
 \subsubsection{Environment Variables}
 
@@ -415,15 +521,16 @@ None.
 
 \subsubsection{Assumptions}
 
-Supported artifact kinds are those listed in the SRS intent-capture
-requirements; unsupported kinds raise \texttt{UnsupportedArtifact}.
+Every captured item records the developer message it came from, and an item
+whose source is not in that message is not added. Identifiers of problems and
+benefits are never reused.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0. \texttt{submitRequest} and \texttt{refine}
-delegate extraction/refinement to ElicitationEngine and return a draft Proposal
-suitable for review. How natural language or artifacts become Proposal fields
-is a secret of ElicitationEngine, not of this module's syntax.
+To be formalized in Revision~0. The evaluation programs grade the captured
+items against the fixed definitions of the statement of need, the current
+situation, and the expected benefits. \texttt{uncoveredProblems} returns the
+problems that no benefit addresses and that are not marked out of scope.
 
 \subsubsection{Local Functions}
 
@@ -431,15 +538,94 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Review Panel Module} \label{MISReview}
+\section{MIS of User and Goal Modelling Module (M6)} \label{MISUsers}
 
 \subsection{Module}
 
-ReviewPanel
+UserAndGoalModelling
 
 \subsection{Uses}
 
-HostIDEInterface, IntentModelStore
+LLMGateway, TraceabilityManager, IntentModelStore
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\texttt{MIN\_ROUNDS\_BEFORE\_OVERRIDE}: $\mathbb{N} = 2$, the number of
+completed evaluation rounds after which stakeholders or personas may be
+approved with unresolved feedback (FR14).
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+captureStakeholders & id: RequestId, req: Request & seq of Stakeholder & NoApprovedNeed, ModelUnavailable \\
+evaluateStakeholders & id: RequestId & Evaluation & ModelUnavailable \\
+capturePersonas & id: RequestId, req: Request & seq of Persona & NoStakeholders, ModelUnavailable \\
+evaluatePersonas & id: RequestId & Evaluation & ModelUnavailable \\
+completedRounds & id: RequestId, k: PeopleKind & $\mathbb{N}$ & UnknownId \\
+approveWithFeedback & id: RequestId, k: PeopleKind, r: Rationale & - & TooFewRounds, UnknownId \\
+deriveGoals & id: RequestId & seq of Goal & NoStakeholders, ModelUnavailable \\
+deriveUseCases & id: RequestId, g: Goal & seq of UseCase & SoftGoal, ModelUnavailable \\
+openQuestions & id: RequestId & seq of OpenQuestion & - \\
+answer & id: RequestId, q: OpenQuestion, req: Request & - & UnknownQuestion \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics (Revision~-1 outline)}
+
+\subsubsection{State Variables}
+
+None. Stakeholders, personas, goals, use cases, open questions, evaluations,
+and the number of completed evaluation rounds are stored in IntentModelStore
+under the RequestId, which is the only module that holds the intent model.
+
+\subsubsection{Environment Variables}
+
+None.
+
+\subsubsection{Assumptions}
+
+Goals are derived only from an approved need and approved stakeholders. The
+module never answers an OpenQuestion itself. Only the developer answers it
+through \texttt{answer}. Stakeholders and personas start from what the
+developer provides, and every Persona references a captured Stakeholder.
+\texttt{approveWithFeedback} is called only by WorkflowController, after the
+developer chooses this option through ReviewPanel.
+
+\subsubsection{Access Routine Semantics}
+
+To be formalized in Revision~0. \texttt{deriveUseCases} raises
+\texttt{SoftGoal} for a soft goal, because use cases are derived for hard goals
+only. A call to \texttt{evaluateStakeholders} or \texttt{evaluatePersonas} that
+returns an Evaluation adds one completed round for that PeopleKind. A call that
+raises \texttt{ModelUnavailable} does not. \texttt{approveWithFeedback} raises
+\texttt{TooFewRounds} while \texttt{completedRounds} is below
+\texttt{MIN\_ROUNDS\_BEFORE\_OVERRIDE}. Otherwise it records the approval with
+the developer's rationale and keeps every unmet criterion with its feedback,
+never changing it to a passing verdict.
+
+\subsubsection{Local Functions}
+
+None.
+
+%----------------------------------------------------------------------
+\newpage
+\section{MIS of Requirements Specification Module (M7)} \label{MISSpec}
+
+\subsection{Module}
+
+RequirementsSpecification
+
+\subsection{Uses}
+
+LLMGateway, TraceabilityManager, IntentModelStore
 
 \subsection{Syntax}
 
@@ -450,16 +636,250 @@ None.
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-present & proposal: Proposal & - & DisplayFailed \\
-collectDecision & proposal: Proposal & Decision & Cancelled \\
-amendItem & proposal: Proposal, item: ArtifactId, feedback: Feedback &
-proposal: Proposal & UnknownItem \\
-removeItem & proposal: Proposal, item: ArtifactId & proposal: Proposal &
-UnknownItem \\
+writeSpecification & id: RequestId & Specification & IncompleteElicitation, ModelUnavailable \\
+revise & id: RequestId, spec: Specification, fb: Feedback & Specification & ModelUnavailable \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics (Revision~-1 outline)}
+
+\subsubsection{State Variables}
+
+None.
+
+\subsubsection{Environment Variables}
+
+None.
+
+\subsubsection{Assumptions}
+
+\texttt{writeSpecification} is called only after the stages of the
+requirements elicitation phase are approved. The template of the specification
+is a secret of this module.
+
+\subsubsection{Access Routine Semantics}
+
+To be formalized in Revision~0. Every requirement in the result has an
+identifier, a type, and links to the elicitation items it came from, and the
+result includes the domain model and glossary.
+
+\subsubsection{Local Functions}
+
+None.
+
+%----------------------------------------------------------------------
+\newpage
+\section{MIS of Requirement Quality Check Module (M8)} \label{MISQuality}
+
+\subsection{Module}
+
+RequirementQualityCheck
+
+\subsection{Uses}
+
+LLMGateway, TraceabilityManager, IntentModelStore
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\texttt{QUALITY\_THRESHOLD}: $\mathbb{N}$, the lowest acceptable score on each
+criterion. Its value is defined in the VnV Plan.
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+check & spec: Specification & seq of QualityScore & ModelUnavailable \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics (Revision~-1 outline)}
+
+\subsubsection{State Variables}
+
+None.
+
+\subsubsection{Environment Variables}
+
+None.
+
+\subsubsection{Assumptions}
+
+The criteria are unambiguous, verifiable, consistent, traceable to a goal,
+and free of design detail.
+
+\subsubsection{Access Routine Semantics}
+
+To be formalized in Revision~0. \texttt{check} scores every requirement on
+every criterion. A requirement with any score below
+\texttt{QUALITY\_THRESHOLD} is shown to the developer as flagged.
+
+\subsubsection{Local Functions}
+
+None.
+
+%----------------------------------------------------------------------
+\newpage
+\section{MIS of Architecture Proposal Module (M9)} \label{MISArch}
+
+\subsection{Module}
+
+ArchitectureProposal
+
+\subsection{Uses}
+
+LLMGateway, TraceabilityManager, IntentModelStore
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None.
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+propose & id: RequestId & ArchitectureProposal & NoRequirements, ModelUnavailable \\
+revise & id: RequestId, ap: ArchitectureProposal, fb: Feedback & ArchitectureProposal & AllocationIncomplete, ModelUnavailable \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics (Revision~-1 outline)}
+
+\subsubsection{State Variables}
+
+None.
+
+\subsubsection{Environment Variables}
+
+None.
+
+\subsubsection{Assumptions}
+
+\texttt{propose} uses only approved requirements and the approved domain
+model.
+
+\subsubsection{Access Routine Semantics}
+
+To be formalized in Revision~0. Every approved functional requirement is
+allocated to exactly one component. A result that leaves a requirement
+unallocated raises \texttt{AllocationIncomplete}.
+
+\subsubsection{Local Functions}
+
+None.
+
+%----------------------------------------------------------------------
+\newpage
+\section{MIS of Interface and Contract Derivation Module (M10)} \label{MISDerive}
+
+\subsection{Module}
+
+InterfaceAndContractDerivation
+
+\subsection{Uses}
+
+LLMGateway, TraceabilityManager, IntentModelStore
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None.
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+derive & id: RequestId, c: Component & InterfaceSpec & NotApproved, MissingType, ModelUnavailable \\
+revise & id: RequestId, spec: InterfaceSpec, fb: Feedback & InterfaceSpec & ModelUnavailable \\
+uncovered & spec: InterfaceSpec & seq of ArtifactId & - \\
+unsourced & spec: InterfaceSpec & seq of ContractClause & - \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics (Revision~-1 outline)}
+
+\subsubsection{State Variables}
+
+None.
+
+\subsubsection{Environment Variables}
+
+None.
+
+\subsubsection{Assumptions}
+
+\texttt{derive} uses only the types of the approved domain model and raises
+\texttt{MissingType} when a needed type is absent. The JML notation is a secret
+of this module.
+
+\subsubsection{Access Routine Semantics}
+
+To be formalized in Revision~0. \texttt{uncovered} returns the allocated
+requirements with no contract clause, and \texttt{unsourced} returns the clauses
+with no requirement, so both can be flagged before approval.
+
+\subsubsection{Local Functions}
+
+None.
+
+%----------------------------------------------------------------------
+\newpage
+\section{MIS of Review Panel Module (M11)} \label{MISReview}
+
+\subsection{Module}
+
+ReviewPanel
+
+\subsection{Uses}
+
+HostIDEInterface, TraceabilityManager, IntentModelStore
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None.
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+present & p: Proposal & - & DisplayFailed \\
+collectDecision & p: Proposal & Decision, Rationale & Cancelled \\
+amendItem & item: ArtifactId, p: Proposal, fb: Feedback & Proposal & UnknownItem \\
+removeItem & item: ArtifactId, p: Proposal & Proposal & UnknownItem \\
+askRevision & id: RequestId & Note & Cancelled \\
+showTrace & item: ArtifactId & - & NotFound \\
+presentReport & results: seq of ClauseResult & - & DisplayFailed \\
 \hline
 \end{tabular}
 \end{center}
@@ -472,18 +892,19 @@ $visibleProposal$: Proposal $\cup \{\mathrm{nil}\}$.
 
 \subsubsection{Environment Variables}
 
-None (presentation uses HostIDEInterface; the host surface is that module's
-environment).
+None. The host surface is the environment of HostIDEInterface.
 
 \subsubsection{Assumptions}
 
 \texttt{collectDecision} is called only for a proposal that is currently
-presented. Decisions originate from the developer via the host UI, not from the
-coding assistant.
+presented. Decisions come only from the developer through this module.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0.
+To be formalized in Revision~0. \texttt{present} shows each item with its
+source and quality flags. \texttt{presentReport} maps each clause result to its
+requirement and states what was not checked. A result of
+$\mathrm{notChecked}$ is never shown as passed.
 
 \subsubsection{Local Functions}
 
@@ -491,16 +912,15 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Approval Gate Module} \label{MISGate}
+\section{MIS of Release Gate Module (M12)} \label{MISGate}
 
 \subsection{Module}
 
-ApprovalGate
+ReleaseGate
 
 \subsection{Uses}
 
-IntentModelStore, CodingAssistantAdapter, ContractCompiler, HostIDEInterface,
-DiagnosticLog
+TraceabilityManager, ImplementationHandoff, IntentModelStore
 
 \subsection{Syntax}
 
@@ -511,15 +931,15 @@ None.
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.4cm} p{3.6cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-recordDecision & id: RequestId, d: Decision & GateState &
-InvalidDecision, StoreFailed \\
-generationAllowed & id: RequestId & $\mathbb{B}$ & UnknownId \\
-releaseToAssistant & id: RequestId & - & Blocked, AssistFailed \\
-requestRevision & id: RequestId, note: Note & - & AssistFailed \\
+recordDecision & id: RequestId, p: Proposal, d: Decision, r: Rationale & - & InvalidDecision, StoreFailed \\
+missingApprovals & items: seq of ArtifactId & seq of ArtifactId & UnknownItem \\
+release & items: seq of ArtifactId & HandoffId & NotReleasable, WriteFailed \\
+markChanged & item: ArtifactId & seq of ArtifactId & NotFound \\
 \hline
 \end{tabular}
 \end{center}
@@ -528,8 +948,7 @@ requestRevision & id: RequestId, note: Note & - & AssistFailed \\
 
 \subsubsection{State Variables}
 
-$decision$: map from RequestId to Decision $\cup \{\mathrm{nil}\}$.\\
-$gate$: map from RequestId to GateState.
+None. Decisions and their times are held by IntentModelStore.
 
 \subsubsection{Environment Variables}
 
@@ -537,13 +956,17 @@ None.
 
 \subsubsection{Assumptions}
 
-\texttt{releaseToAssistant} requires a recorded $\mathrm{approve}$ decision.
-On communication failure, the gate remains blocked and both the intent model and
-assistant instruction are left unchanged (Hazard Analysis SR8).
+A release and its update of the intent model happen together or not at all.
+On \texttt{WriteFailed} nothing is changed.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0.
+To be formalized in Revision~0. \texttt{missingApprovals} returns every
+requirement, component, or contract in the set that is not approved, or whose
+refinement chain is incomplete without a recorded merge. \texttt{release} raises
+\texttt{NotReleasable} when that result is not empty. \texttt{markChanged} marks
+every artifact derived from the item, and every released handoff that includes
+it, as needing review, and returns them.
 
 \subsubsection{Local Functions}
 
@@ -551,62 +974,7 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Verification Report Module} \label{MISReport}
-
-\subsection{Module}
-
-VerificationReport
-
-\subsection{Uses}
-
-ContractVerifier, HostIDEInterface
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-None.
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
-\hline
-\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-\hline
-runAndPresent & candidate: ImplCandidate, id: RequestId &
-VerifyResult & VerifyFailed \\
-present & result: VerifyResult & - & DisplayFailed \\
-\hline
-\end{tabular}
-\end{center}
-
-\subsection{Semantics (Revision~-1 outline)}
-
-\subsubsection{State Variables}
-
-$lastResult$: VerifyResult $\cup \{\mathrm{nil}\}$.
-
-\subsubsection{Environment Variables}
-
-None.
-
-\subsubsection{Assumptions}
-
-An inconclusive result from the verifier is presented as inconclusive, never as
-pass (Hazard Analysis SR11).
-
-\subsubsection{Access Routine Semantics}
-
-To be formalized in Revision~0.
-
-\subsubsection{Local Functions}
-
-None.
-
-%----------------------------------------------------------------------
-\newpage
-\section{MIS of Intent Model Store Module} \label{MISStore}
+\section{MIS of Intent Model Store Module (M14)} \label{MISStore}
 
 \subsection{Module}
 
@@ -620,23 +988,27 @@ None.
 
 \subsubsection{Exported Constants}
 
-\texttt{SUPPORTED\_SCHEMA}: SchemaId --- identifier of the schema this store
-accepts for writes.
+\texttt{SUPPORTED\_SCHEMA}: SchemaId, the schema this store accepts for
+writes.
 
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.4cm} p{3.6cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
 openWorkspaceModel & - & - & AccessDenied \\
-putDraft & proposal: Proposal & ArtifactId & SchemaInvalid \\
-putApproved & proposal: Proposal, rationale: Rationale & seq of ArtifactId &
-SchemaInvalid \\
-get & id: ArtifactId & Artifact & NotFound \\
-history & id: ArtifactId & ArtifactHistory & NotFound \\
-validate & proposal: Proposal & $\mathbb{B}$ & - \\
+putDraft & p: Proposal & seq of ArtifactId & SchemaInvalid \\
+update & item: ArtifactId, a: Artifact & - & SchemaInvalid, NotFound \\
+setStatus & item: ArtifactId, s: ArtifactStatus, r: Rationale & - & NotFound \\
+get & item: ArtifactId & Artifact & NotFound \\
+history & item: ArtifactId & ArtifactHistory & NotFound \\
+approvedContracts & c: Component & InterfaceSpec & NotFound \\
+outsideEdits & - & seq of ArtifactId & - \\
+saveProgress & id: RequestId, s: Stage & - & - \\
+loadProgress & id: RequestId & Stage & NotFound \\
 \hline
 \end{tabular}
 \end{center}
@@ -645,24 +1017,25 @@ validate & proposal: Proposal & $\mathbb{B}$ & - \\
 
 \subsubsection{State Variables}
 
-$model$: the set of stored artifacts and drafts.\\
-$open$: $\mathbb{B}$ --- whether the workspace model is open for this session.
+$model$: the set of stored artifacts with their status and history.\\
+$open$: $\mathbb{B}$, whether the workspace model is open for this session.
 
 \subsubsection{Environment Variables}
 
-$workspaceStore$: the workspace-backed store that holds persisted intent-model
-entries (Git-friendly project storage). Path layout and encoding are secrets.
+$workspaceStore$: the project storage that holds the intent model. Its layout
+and encoding are secrets of this module.
 
 \subsubsection{Assumptions}
 
-Writers call \texttt{openWorkspaceModel} once per workspace session before other
-programs. Schema-invalid writes raise \texttt{SchemaInvalid} and leave $model$
-unchanged. Clients receive Artifact values, never raw encodings.
+Callers invoke \texttt{openWorkspaceModel} once per session before other
+programs. Every write takes effect completely or not at all. A write that breaks
+the schema raises \texttt{SchemaInvalid} and leaves $model$ unchanged.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0. Persistence layout is a secret of this module
-(Module Guide anticipated change for schema).
+To be formalized in Revision~0. \texttt{outsideEdits} returns the approved
+artifacts and released contracts that were changed outside the review workflow,
+and marks them $\mathrm{unapproved}$.
 
 \subsubsection{Local Functions}
 
@@ -670,7 +1043,7 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Traceability Manager Module} \label{MISTrace}
+\section{MIS of Traceability Manager Module (M15)} \label{MISTrace}
 
 \subsection{Module}
 
@@ -689,13 +1062,16 @@ None.
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
 addLink & link: TraceLink & - & InvalidLink, NotFound \\
-linksFrom & id: ArtifactId & seq of TraceLink & NotFound \\
-linksTo & id: ArtifactId & seq of TraceLink & NotFound \\
+linksFrom & item: ArtifactId & seq of TraceLink & NotFound \\
+linksTo & item: ArtifactId & seq of TraceLink & NotFound \\
+dependents & item: ArtifactId & seq of ArtifactId & NotFound \\
+chainComplete & item: ArtifactId & $\mathbb{B}$ & NotFound \\
 reportBroken & - & seq of TraceLink & - \\
 \hline
 \end{tabular}
@@ -713,14 +1089,15 @@ None.
 
 \subsubsection{Assumptions}
 
-Endpoints of a link must exist in the Intent Model Store (or denote an allowed
-code/test reference form defined at Revision~0). How link justifications are
-stored is a secret of this module.
+Both ends of a link exist in the intent model, or name a class or file of the
+implementation. How justifications are stored is a secret of this module.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0. \texttt{reportBroken} returns missing, broken,
-or unjustified links (Hazard Analysis SR10).
+To be formalized in Revision~0. \texttt{dependents} returns every artifact
+derived from the given one. \texttt{chainComplete} holds when the refinement
+links reach the statement of need. \texttt{reportBroken} returns missing,
+broken, or unjustified links.
 
 \subsubsection{Local Functions}
 
@@ -728,74 +1105,15 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Elicitation Engine Module} \label{MISElicit}
+\section{MIS of LLM Gateway Module (M16)} \label{MISLLM}
 
 \subsection{Module}
 
-ElicitationEngine
+LLMGateway
 
 \subsection{Uses}
-
-IntentModelStore, DiagnosticLog
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-\texttt{MAX\_CONTEXT\_UNITS}: $\mathbb{N}$ --- upper bound on Context size
-accepted by \texttt{extract} before raising \texttt{BoundExceeded}.
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
-\hline
-\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-\hline
-extract & req: Request, context: Context & proposal: Proposal &
-ModelUnavailable, BoundExceeded \\
-applyFeedback & proposal: Proposal, feedback: Feedback & proposal: Proposal &
-ModelUnavailable \\
-\hline
-\end{tabular}
-\end{center}
-
-\subsection{Semantics (Revision~-1 outline)}
-
-\subsubsection{State Variables}
-
-None required beyond transient computation.
-
-\subsubsection{Environment Variables}
-
-$llmService$: external language-model service used for extraction (optional at
-runtime; unavailability raises \texttt{ModelUnavailable}). Prompt templates and
-orchestration structure are secrets of this module, not exported constants.
-
-\subsubsection{Assumptions}
-
-Egress of project content to $llmService$ respects the privacy policy of Hazard
-Analysis SR12. Oversized inputs raise \texttt{BoundExceeded}.
-
-\subsubsection{Access Routine Semantics}
-
-To be formalized in Revision~0.
-
-\subsubsection{Local Functions}
 
 None.
-
-%----------------------------------------------------------------------
-\newpage
-\section{MIS of Contract Compiler Module} \label{MISCompile}
-
-\subsection{Module}
-
-ContractCompiler
-
-\subsection{Uses}
-
-IntentModelStore, TraceabilityManager
 
 \subsection{Syntax}
 
@@ -806,12 +1124,12 @@ None.
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-compile & ids: seq of ArtifactId & ContractSet & IncompleteIntent,
-CompileFailed \\
+run & prompt: Prompt, schema: OutputSchema & LLMResult & ModelUnavailable, RateLimited, InvalidOutput \\
 \hline
 \end{tabular}
 \end{center}
@@ -824,19 +1142,19 @@ None.
 
 \subsubsection{Environment Variables}
 
-None.
+$llmService$: the external LLM service. The provider and model are secrets
+of this module.
 
 \subsubsection{Assumptions}
 
-All ArtifactIds passed to \texttt{compile} refer to approved artifacts. The
-compiled ContractSet remains associated with those source ids through the
-Traceability Manager.
+Content that must not leave the machine is removed before a prompt is sent.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0. Choice of contract notation and the mapping from
-intent artifacts to checkable obligations are secrets of this module (Module
-Guide anticipated change for contracts).
+To be formalized in Revision~0. \texttt{run} retries on rate limits and
+timeouts before raising \texttt{RateLimited} or \texttt{ModelUnavailable}, and
+repairs output that does not follow the schema before raising
+\texttt{InvalidOutput}.
 
 \subsubsection{Local Functions}
 
@@ -844,7 +1162,66 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Contract Verifier Module} \label{MISVerify}
+\section{MIS of Implementation Handoff Module (M17)} \label{MISHandoff}
+
+\subsection{Module}
+
+ImplementationHandoff
+
+\subsection{Uses}
+
+IntentModelStore
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None.
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+write & items: seq of ArtifactId, specs: seq of InterfaceSpec & HandoffId & WriteFailed \\
+markStale & h: HandoffId & - & NotFound \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics (Revision~-1 outline)}
+
+\subsubsection{State Variables}
+
+None.
+
+\subsubsection{Environment Variables}
+
+$sourceTree$: the project's source tree, which receives the interfaces.\\
+$workspace$: the project folder, which receives the implementation brief. The
+format and location of both are secrets of this module.
+
+\subsubsection{Assumptions}
+
+\texttt{write} is called only by ReleaseGate, after every required approval
+is recorded.
+
+\subsubsection{Access Routine Semantics}
+
+To be formalized in Revision~0. \texttt{write} places the interfaces in the
+source tree and writes a brief that lists the approved requirement identifiers.
+On \texttt{WriteFailed} no file is left partly written.
+
+\subsubsection{Local Functions}
+
+None.
+
+%----------------------------------------------------------------------
+\newpage
+\section{MIS of Contract Verifier Module (M18)} \label{MISVerify}
 
 \subsection{Module}
 
@@ -852,7 +1229,7 @@ ContractVerifier
 
 \subsection{Uses}
 
-IntentModelStore, TraceabilityManager, DiagnosticLog
+IntentModelStore
 
 \subsection{Syntax}
 
@@ -863,12 +1240,13 @@ None.
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
-check & candidate: ImplCandidate, contracts: ContractSet & VerifyResult &
-CheckerUnavailable \\
+check & impl: Implementation, c: Component & seq of ClauseResult & NothingReleased \\
+differences & c: Component & seq of ContractClause & NothingReleased \\
 \hline
 \end{tabular}
 \end{center}
@@ -881,18 +1259,20 @@ None.
 
 \subsubsection{Environment Variables}
 
-$checker$: external contract-checking tool available to this module. Selection
-and invocation details are secrets.
+$checker$: the external contract checker. Its selection and invocation are
+secrets of this module.
 
 \subsubsection{Assumptions}
 
-If $checker$ is unavailable or fails infrastructurally, the result is
-inconclusive and \texttt{CheckerUnavailable} may be raised; this must not be
-interpreted as pass.
+\texttt{check} uses the approved contracts held in the intent model, not the
+copy in the source tree.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0.
+To be formalized in Revision~0. If $checker$ fails or is unavailable, each
+affected clause is reported as $\mathrm{notChecked}$, never as
+$\mathrm{passed}$. \texttt{differences} returns the clauses whose copy in the
+source tree differs from the approved one.
 
 \subsubsection{Local Functions}
 
@@ -900,65 +1280,7 @@ None.
 
 %----------------------------------------------------------------------
 \newpage
-\section{MIS of Coding Assistant Adapter Module} \label{MISAssist}
-
-\subsection{Module}
-
-CodingAssistantAdapter
-
-\subsection{Uses}
-
-IntentModelStore, DiagnosticLog
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-None.
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-\begin{tabular}{p{3.6cm} p{3.4cm} p{3.4cm} p{2.2cm}}
-\hline
-\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-\hline
-sendApproved & id: RequestId, ids: seq of ArtifactId & - &
-NotApproved, ChannelFailed \\
-sendRevisionRequest & id: RequestId, note: Note & - & ChannelFailed \\
-receiveProposal & - & ImplCandidate & Timeout, ChannelFailed \\
-\hline
-\end{tabular}
-\end{center}
-
-\subsection{Semantics (Revision~-1 outline)}
-
-\subsubsection{State Variables}
-
-$connected$: $\mathbb{B}$.
-
-\subsubsection{Environment Variables}
-
-$assistantChannel$: communication channel to the AI coding assistant. Message
-encoding and tool registration are secrets of this module.
-
-\subsubsection{Assumptions}
-
-\texttt{sendApproved} is invoked only when the Approval Gate has released
-generation. Approve/reject are not exposed as assistant-callable operations
-(Hazard Analysis SR7).
-
-\subsubsection{Access Routine Semantics}
-
-To be formalized in Revision~0.
-
-\subsubsection{Local Functions}
-
-None.
-
-%----------------------------------------------------------------------
-\newpage
-\section{MIS of Diagnostic Log Module} \label{MISLog}
+\section{MIS of Diagnostic Log Module (M19)} \label{MISLog}
 
 \subsection{Module}
 
@@ -972,13 +1294,14 @@ None.
 
 \subsubsection{Exported Constants}
 
-\texttt{MAX\_RECENT}: $\mathbb{N}$ --- maximum length returned by
+\texttt{MAX\_RECENT}: $\mathbb{N}$, the largest number of events returned by
 \texttt{recent}.
 
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-\begin{tabular}{p{3.2cm} p{3.8cm} p{3.4cm} p{2.2cm}}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.7cm}}
 \hline
 \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 \hline
@@ -996,18 +1319,18 @@ $events$: seq of LogEvent.
 
 \subsubsection{Environment Variables}
 
-$logSink$: optional persistent sink for diagnostic records; location and format
-are secrets of this module.
+$logSink$: optional persistent storage for diagnostic records. Its location
+and format are secrets of this module.
 
 \subsubsection{Assumptions}
 
-Logging must not record secret material from Git-ignored content (aligned with
-HA-SR12). If $n > \texttt{MAX\_RECENT}$, \texttt{recent} returns at most
-\texttt{MAX\_RECENT} events.
+Only WorkflowController calls \texttt{record}. Records never contain content
+from files that Git ignores.
 
 \subsubsection{Access Routine Semantics}
 
-To be formalized in Revision~0.
+To be formalized in Revision~0. If $n$ exceeds \texttt{MAX\_RECENT},
+\texttt{recent} returns at most \texttt{MAX\_RECENT} events.
 
 \subsubsection{Local Functions}
 
@@ -1021,7 +1344,9 @@ None.
 \subsection{AI Tools Used}
 
 \begin{itemize}
-  \item Cursor and Claude, used in the writing process for this MIS.
+  \item Cursor and Claude, used in the writing process for versions 0.1 and
+    0.2 of this MIS.
+  \item Claude Opus 5.5 for version 0.5.
 \end{itemize}
 
 \subsection{How and Where Used}
@@ -1035,6 +1360,9 @@ None.
   \item \textbf{Rubric review.} Used to evaluate the document against the
     Design Documentation rubric and to suggest areas of improvement, which
     the author then accepted, revised, or rejected.
+  \item \textbf{Version 0.5.} Used as a consistency check against SRS
+    revision 1.3 and the Module Guide, and to help word the M6 update and the
+    Exceptions table.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}
@@ -1048,6 +1376,12 @@ None.
   \item Spot-checked that Uses lists remain consistent with the Module Guide
     and that Formal $:=$ access-routine semantics remain deferred to
     Revision~0 per Des.\ Doc.\ Rev~-1 scope (syntax only).
+  \item For version 0.5, checked that every exception named in an access
+    program table appears exactly once in the Exceptions table, and that the
+    table names no exception that no program raises.
+  \item For version 0.5, read the M6 access programs and semantics against the
+    FR14 text and fit criterion in SRS revision 1.3, and checked that the M5
+    and M6 module types in the Module Guide agree with their state variables.
 \end{enumerate}
 
 These steps are intended to convince a reader of the accuracy, completeness,
@@ -1066,3 +1400,4 @@ team's module.
 \bibliography{../../../refs/References}
 
 \end{document}
+

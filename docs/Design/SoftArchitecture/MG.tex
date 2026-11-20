@@ -8,7 +8,7 @@
 \usepackage{float}
 \usepackage{longtable}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta}
+\usetikzlibrary{positioning,arrows.meta,fit}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks,
@@ -17,6 +17,7 @@
     linkcolor=red,
     urlcolor=blue
 }
+\setlength{\emergencystretch}{3em}
 
 \input{../../Comments.text}
 \commentsfalse
@@ -27,8 +28,8 @@
 \newcommand{\acref}[1]{AC\ref{#1}}
 
 \newcounter{ucnum}
-\newcommand{\uctheucnum}{UC\theucnum}
-\newcommand{\uref}[1]{UC\ref{#1}}
+\newcommand{\uctheucnum}{UL\theucnum}
+\newcommand{\uref}[1]{UL\ref{#1}}
 
 \newcounter{mnum}
 \newcommand{\mthemnum}{M\themnum}
@@ -46,15 +47,35 @@
 
 \section{Revision History}
 
-\begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
+\begin{longtable}{p{2.6cm}p{1.7cm}p{\dimexpr\textwidth-4.3cm-6\tabcolsep\relax}}
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
+\endhead
 Nov 13, 2026 & 0.1 & Tyler Yue: Initial Rev~-1 draft including anticipated and
 unlikely changes, module hierarchy, secrets/services, requirements connection,
 traceability matrices, and uses hierarchy.\\
 Nov 13, 2026 & 0.2 & Tyler Yue: Edited the Rev~-1 to ensure it is aligned with the rubric and the Module Guide.\\
+Nov 17, 2026 & 0.3 & Qusay Qadir: Revised the module decomposition for SRS
+revision 1.2 and Hazard Analysis. Replaced the Intent Capture and Elicitation Engine
+modules with four stage modules (Need Capture, User and Goal Modelling,
+Requirements Specification, Requirement Quality Check) and added the
+Architecture Proposal module. Merged the Verification Report
+into the Review Panel and added the LLM Gateway. 
+Rewrote the anticipated changes to cover SRS LC1 to LC10, matched the
+unlikely changes to SRS UL1 to UL6, and renamed their prefix from UC to UL. 
+Traced every functional, nonfunctional, business rule, and Hazard Analysis requirement,
+one row each.
+Drew the complete uses relation in layers, recorded the design decisions that
+the SRS left to the design, and added a module timeline with owners and
+dates.\\
+Nov 18, 2026 & 0.4 & Vedant Patel: Aligned the User and Goal Modelling
+Module with SRS revision 1.3 (FR14): developer-provided stakeholders and
+personas, persona-to-stakeholder links, and approval with unresolved feedback
+after two completed evaluation rounds. Changed Need Capture and User and Goal
+Modelling to library modules, since the intent model is held only by the
+Intent Model Store. Fixed typos and expanded the Generative AI disclosure.\\
 \bottomrule
-\end{tabularx}
+\end{longtable}
 
 \newpage
 
@@ -71,20 +92,24 @@ This section records information for easy reference.
   \midrule
   AC & Anticipated Change\\
   AO & Abstract Object\\
+  BR & Business Rule (SRS)\\
   DAG & Directed Acyclic Graph\\
   FR & Functional Requirement (SRS)\\
   HA & Hazard Analysis\\
+  HA-SR & Safety and Security Requirement (Hazard Analysis)\\
   IDE & Integrated Development Environment\\
   JML & Java Modeling Language\\
+  LC & Likely Change (SRS)\\
   LLM & Large Language Model\\
   M & Module\\
   MG & Module Guide\\
   MIS & Module Interface Specification\\
   NFR & Nonfunctional Requirement (SRS)\\
   OS & Operating System\\
+  PUC & Product Use Case (SRS)\\
+  SR & Style Requirement (SRS)\\
   SRS & Software Requirements Specification\\
-  SR & Safety/Security Requirement (Hazard Analysis)\\
-  UC & Unlikely Change\\
+  UL & Unlikely Change\\
   VnV & Verification and Validation\\
   \bottomrule
 \end{tabular}\\
@@ -92,10 +117,10 @@ This section records information for easy reference.
 \subsection{Related Documents}
 
 \begin{itemize}
-  \item Software Requirements Specification (Volere):
+  \item Software Requirements Specification (Volere), revision 1.2:
   \texttt{docs/SRS-Volere/SRS.tex}
   \item Hazard Analysis: \texttt{docs/HazardAnalysis/HazardAnalysis.tex}
-  \item Verification and Validation Plan: \texttt{docs/VnVPlan/VnVPlan.tex}
+  \item Verification and Validation Plan, revision 1.4: \texttt{docs/VnVPlan/VnVPlan.tex}
   \item Module Interface Specification:
   \texttt{docs/Design/SoftDetailedDes/MIS.tex}
   \item Development Plan: \texttt{docs/DevelopmentPlan/DevelopmentPlan.tex}
@@ -146,21 +171,27 @@ as follows:
   decomposition.
 \end{itemize}
 
-\progname{} is a VS~Code extension that captures engineering intent from a
-developer request, requires human approval of proposed artifacts, stores an
-intent model with rationale and traceability, and verifies AI-generated changes
-against that model. This Rev~-1 Module Guide records the architecture
-(secrets, services, uses relation, and requirement traceability). Detailed
-interface syntax appears in the companion MIS. Full MIS semantics and design
-reflection are deferred to Revision~0, consistent with the course Des.\ Doc.\
-Rev~-1 requirements.
+\progname{} is a VS~Code extension that guides a developer through the
+requirements stages of CS/SE 3RA3, a McMaster University Requirements Engineering course,
+from a statement of need to reviewed requirements, an architecture, and Java interfaces with JML contracts. Every
+artifact is approved by the developer before it is used. Once approved, the
+interfaces and contracts are released as an implementation handoff, which is a
+set of files in the workspace that any AI coding assistant can read.
+\progname{} does not communicate with or control the assistant. It records
+the intent model with rationale and traceability, and verifies the
+implementation against the approved contracts afterwards. This Rev~-1 Module
+Guide records the architecture (secrets, services, uses relation, and
+requirement traceability). Detailed interface syntax appears in the companion
+MIS. Full MIS semantics and design reflection are deferred to Revision~0,
+consistent with the course Des.\ Doc.\ Rev~-1 requirements.
 
 The rest of the document is organized as follows. Section~\ref{SecChange} lists
 anticipated and unlikely changes. Section~\ref{SecMH} summarizes the module
 hierarchy. Section~\ref{SecConnection} records design decisions that connect
 requirements to the architecture. Section~\ref{SecMD} describes each module's
 secrets and services. Section~\ref{SecTM} gives traceability matrices.
-Section~\ref{SecUse} describes the uses hierarchy.
+Section~\ref{SecUse} describes the uses hierarchy. Section~\ref{SecTimeline}
+gives the timeline.
 
 \section{Anticipated and Unlikely Changes} \label{SecChange}
 
@@ -168,60 +199,79 @@ Section~\ref{SecUse} describes the uses hierarchy.
 
 Anticipated changes are the source of the information hidden inside modules.
 Ideally, changing one anticipated change requires changing only the module that
-hides the associated decision.
+hides the associated decision. The list covers every likely change in SRS
+Section~18 (LC1 to LC10), named in brackets, and adds the design decisions that
+the SRS does not state.
 
 \begin{description}
-\item[\refstepcounter{acnum} \actheacnum \label{acHostIDE}:] The host IDE and
-  its extension API (currently VS~Code; Cursor and other hosts may be added).
-\item[\refstepcounter{acnum} \actheacnum \label{acInputForms}:] The set of
-  supported engineering-artifact input forms beyond natural language (for
-  example UML or Petri-net submissions).
-\item[\refstepcounter{acnum} \actheacnum \label{acElicitation}:] The elicitation
-  strategy and orchestration used to refine a request into requirements and
-  constraints (prompts, graph structure, clarification policy).
-\item[\refstepcounter{acnum} \actheacnum \label{acSchema}:] The schema and file
-  layout of the versioned intent model in the workspace.
-\item[\refstepcounter{acnum} \actheacnum \label{acAssistant}:] The integration
-  mechanism used to instruct and receive proposals from an AI coding assistant
-  (the concrete protocol and message shapes are hidden by the adapter module).
-\item[\refstepcounter{acnum} \actheacnum \label{acContracts}:] The executable
-  contract language and compilation strategy used for approved requirements
-  (the concrete notation is a secret of the Contract Compiler).
-\item[\refstepcounter{acnum} \actheacnum \label{acVerifier}:] The external
-  checker used to verify generated implementations against contracts (the tool
-  choice and invocation details are secrets of the Contract Verifier).
+\item[\refstepcounter{acnum} \actheacnum \label{acHostIDE}:] The host IDE, its
+  extension API, and the channel between the extension and the back end
+  (LC7).
+\item[\refstepcounter{acnum} \actheacnum \label{acStages}:] The order of the
+  stages, the returns allowed between them, and the rules for merging stages
+  on a small request (BR1, BR3, AS8).
+\item[\refstepcounter{acnum} \actheacnum \label{acNeed}:] The definitions and
+  evaluation criteria for the statement of need, the current situation, and
+  the expected benefits (LC2).
+\item[\refstepcounter{acnum} \actheacnum \label{acUsersGoals}:] The definitions
+  and rules for stakeholders, personas, goals, and use cases (LC2).
+\item[\refstepcounter{acnum} \actheacnum \label{acTemplate}:] The template of
+  the requirements specification and the rules for extracting and classifying
+  requirements, including the domain model and glossary (LC3).
+\item[\refstepcounter{acnum} \actheacnum \label{acQuality}:] The requirement
+  quality criteria and their threshold (LC2).
+\item[\refstepcounter{acnum} \actheacnum \label{acArch}:] The rule for grouping
+  requirements into components.
+\item[\refstepcounter{acnum} \actheacnum \label{acContracts}:] The mapping from
+  requirements to interfaces and contracts, and the contract notation (Java
+  and JML now, LC4).
 \item[\refstepcounter{acnum} \actheacnum \label{acReviewUX}:] The presentation
-  and interaction design of the review panel inside the host IDE.
-\item[\refstepcounter{acnum} \actheacnum \label{acTrace}:] The representation and
-  justification format of traceability links between intent elements, code, and
-  tests.
-\item[\refstepcounter{acnum} \actheacnum \label{acPrivacy}:] The policy for what
-  project content may leave the machine for LLM or tracing services.
+  and interaction design of the review interface, including how verification
+  evidence is shown (LC10).
+\item[\refstepcounter{acnum} \actheacnum \label{acRelease}:] The set of
+  approvals required before a release.
+\item[\refstepcounter{acnum} \actheacnum \label{acSchema}:] The schema and file
+  layout of the versioned intent model, and how approvals are fingerprinted
+  (LC8).
+\item[\refstepcounter{acnum} \actheacnum \label{acTrace}:] The representation
+  of traceability links and of their justification.
+\item[\refstepcounter{acnum} \actheacnum \label{acLLM}:] The LLM provider and
+  model, and the policy for what project content may be sent to it (LC1).
+\item[\refstepcounter{acnum} \actheacnum \label{acHandoff}:] The format and
+  delivery channel of the implementation handoff (workspace files now, and an
+  MCP channel that only reads approved artifacts is possible, LC6).
+\item[\refstepcounter{acnum} \actheacnum \label{acVerifier}:] The contract
+  checker and how its results are interpreted (OpenJML now, LC5).
 \item[\refstepcounter{acnum} \actheacnum \label{acLogging}:] The diagnostic log
-  format and retention policy for failures and significant interactions.
+  format and retention policy.
+\item[\refstepcounter{acnum} \actheacnum \label{acInputForms}:] The forms of
+  engineering input accepted beyond natural language, such as UML diagrams or
+  Petri nets (LC9).
 \end{description}
 
 \subsection{Unlikely Changes} \label{SecUchange}
 
 The following decisions are fixed for this architecture. Changing them would
-force widespread redesign.
+force widespread redesign. They are the unlikely changes UL1 to UL6 of SRS
+Section~18, with the same numbers.
 
 \begin{description}
 \item[\refstepcounter{ucnum} \uctheucnum \label{ucHumanGate}:] A human developer
-  must approve, edit, or reject proposed engineering artifacts before they may
-  guide code generation (human-in-the-loop gate).
-\item[\refstepcounter{ucnum} \uctheucnum \label{ucLocalWorkspace}:] The product
-  operates on a single local developer workspace; multi-user concurrent editing
-  of one intent model is out of scope for the capstone.
-\item[\refstepcounter{ucnum} \uctheucnum \label{ucIntentSource}:] Approved intent
-  is the source of truth for what the AI coding assistant may implement; chat
-  history alone is not authoritative.
+  approves every artifact before it is released for implementation.
+\item[\refstepcounter{ucnum} \uctheucnum \label{ucContractsFirst}:] Code is
+  generated only from approved interfaces and contracts, never directly from
+  the initial request.
+\item[\refstepcounter{ucnum} \uctheucnum \label{ucNoAssistant}:] \progname{}
+  does not integrate with or control the coding assistant. The handoff is
+  passive.
+\item[\refstepcounter{ucnum} \uctheucnum \label{ucLocalWorkspace}:] One
+  developer works in a local workspace. Several users editing one intent model
+  at the same time is out of scope for the capstone.
 \item[\refstepcounter{ucnum} \uctheucnum \label{ucGitVersioning}:] The intent
-  model is versioned with the project using Git-compatible storage in the
-  workspace.
+  model is stored in the workspace and versioned with Git.
 \item[\refstepcounter{ucnum} \uctheucnum \label{ucExtensionForm}:] The primary
-  user interaction surface is an IDE extension embedded in the host editor,
-  not a standalone desktop application.
+  user interface is an extension inside the host IDE, not a standalone
+  application.
 \end{description}
 
 \section{Module Hierarchy} \label{SecMH}
@@ -238,17 +288,20 @@ be implemented.
 \item [\refstepcounter{mnum} \mthemnum \label{mHost}:] Host IDE Interface Module
 \item [\refstepcounter{mnum} \mthemnum \label{mBH}:] Behaviour-Hiding Module
 \item [\refstepcounter{mnum} \mthemnum \label{mControl}:] Workflow Controller Module
-\item [\refstepcounter{mnum} \mthemnum \label{mCapture}:] Intent Capture Module
+\item [\refstepcounter{mnum} \mthemnum \label{mNeed}:] Need Capture Module
+\item [\refstepcounter{mnum} \mthemnum \label{mUsers}:] User and Goal Modelling Module
+\item [\refstepcounter{mnum} \mthemnum \label{mSpec}:] Requirements Specification Module
+\item [\refstepcounter{mnum} \mthemnum \label{mQuality}:] Requirement Quality Check Module
+\item [\refstepcounter{mnum} \mthemnum \label{mArch}:] Architecture Proposal Module
+\item [\refstepcounter{mnum} \mthemnum \label{mDerive}:] Interface and Contract Derivation Module
 \item [\refstepcounter{mnum} \mthemnum \label{mReview}:] Review Panel Module
-\item [\refstepcounter{mnum} \mthemnum \label{mGate}:] Approval Gate Module
-\item [\refstepcounter{mnum} \mthemnum \label{mReport}:] Verification Report Module
+\item [\refstepcounter{mnum} \mthemnum \label{mGate}:] Release Gate Module
 \item [\refstepcounter{mnum} \mthemnum \label{mSD}:] Software Decision Module
 \item [\refstepcounter{mnum} \mthemnum \label{mStore}:] Intent Model Store Module
 \item [\refstepcounter{mnum} \mthemnum \label{mTrace}:] Traceability Manager Module
-\item [\refstepcounter{mnum} \mthemnum \label{mElicit}:] Elicitation Engine Module
-\item [\refstepcounter{mnum} \mthemnum \label{mCompile}:] Contract Compiler Module
+\item [\refstepcounter{mnum} \mthemnum \label{mLLM}:] LLM Gateway Module
+\item [\refstepcounter{mnum} \mthemnum \label{mHandoff}:] Implementation Handoff Module
 \item [\refstepcounter{mnum} \mthemnum \label{mVerify}:] Contract Verifier Module
-\item [\refstepcounter{mnum} \mthemnum \label{mAssist}:] Coding Assistant Adapter Module
 \item [\refstepcounter{mnum} \mthemnum \label{mLog}:] Diagnostic Log Module
 \end{description}
 
@@ -261,17 +314,20 @@ be implemented.
 Hardware-Hiding Module & Host IDE Interface Module\\
 \midrule
 Behaviour-Hiding Module & Workflow Controller Module\\
- & Intent Capture Module\\
+ & Need Capture Module\\
+ & User and Goal Modelling Module\\
+ & Requirements Specification Module\\
+ & Requirement Quality Check Module\\
+ & Architecture Proposal Module\\
+ & Interface and Contract Derivation Module\\
  & Review Panel Module\\
- & Approval Gate Module\\
- & Verification Report Module\\
+ & Release Gate Module\\
 \midrule
 Software Decision Module & Intent Model Store Module\\
  & Traceability Manager Module\\
- & Elicitation Engine Module\\
- & Contract Compiler Module\\
+ & LLM Gateway Module\\
+ & Implementation Handoff Module\\
  & Contract Verifier Module\\
- & Coding Assistant Adapter Module\\
  & Diagnostic Log Module\\
 \bottomrule
 \end{tabular}
@@ -281,34 +337,73 @@ Software Decision Module & Intent Model Store Module\\
 
 \section{Connection Between Requirements and Design} \label{SecConnection}
 
-The design satisfies the SRS and related Hazard Analysis safety requirements
-through the following explicit decisions made between requirements and
-architecture:
+The design satisfies the SRS and the Hazard Analysis safety requirements through
+the following decisions. The first group records the decisions that the SRS
+Ideas for Solution section left to the design.
 
+\paragraph{Decisions left to the design by the SRS.}
 \begin{itemize}
-  \item \textbf{Human approval before generation (FR7, FR8, SCR1, HA-SR6,
-  HA-SR7).} The Approval Gate Module is the sole authority that records a
-  developer decision and releases an instruction to the coding assistant. The
-  assistant adapter never exposes approve/reject as assistant-callable tools.
-  \item \textbf{Intent model as source of truth (FR9, FR11, HA-SR9).} Approved
-  artifacts, rationale, and history live only in the Intent Model Store. Other
-  modules obtain intent exclusively through that module's access programs.
-  \item \textbf{Traceability as a first-class structure (FR9, FR11, EUR3,
-  HA-SR10).} Links and justifications are owned by the Traceability Manager so
-  that missing or broken links can be reported independently of storage format.
-  \item \textbf{Executable contracts for constrained generation (FR12,
-  HA-SR11).} Approved requirements are compiled into checkable contracts by the
-  Contract Compiler; the Contract Verifier reports pass/fail evidence without
-  treating infrastructure failure as success.
-  \item \textbf{Host isolation (AR1, ACCR1, MR2).} All IDE-specific presentation
-  and workspace I/O go through the Host IDE Interface so that host migration
-  does not rewrite behavioural modules.
-  \item \textbf{Assistant replaceability (MR3, FR8).} Encoding and transport
-  details for talking to an AI coding assistant are confined to the Coding
-  Assistant Adapter.
-  \item \textbf{Privacy of egress (HA-SR12, PRR1).} Content sent to external LLM
-  or tracing services is minimized and controlled at the elicitation and logging
-  boundaries rather than scattered through UI code.
+  \item \textbf{The workflow runs as a LangGraph graph.} Each refinement stage
+  is a node, and approvals and returns to earlier stages are edges. LangGraph is
+  a secret of the Workflow Controller (\mref{mControl}), so no other module
+  depends on it.
+  \item \textbf{The intent model is stored as files in the workspace} and
+  versioned with Git (\uref{ucGitVersioning}, STDR3). The file layout is a
+  secret of the Intent Model Store (\mref{mStore}).
+  \item \textbf{Contracts are JML clauses in Java interfaces} (STDR1), checked
+  by OpenJML (AS2). The notation is a secret of \mref{mDerive}, and the
+  checker is a secret of \mref{mVerify}.
+  \item \textbf{The handoff is a set of workspace files}, the interfaces in the
+  source tree and an implementation brief (FR8, IAS2). The MCP tools listed in
+  earlier drafts of the SRS are not used. An MCP channel that only reads
+  approved artifacts may be added later by changing \mref{mHandoff} alone
+  (\acref{acHandoff}).
+  \item \textbf{The requirements stages follow requirements elicitation
+  principles and two published designs.} The ReqInOne design (summary, requirement extraction,
+  classification, and per requirement quality scoring) shapes
+  \mref{mSpec} and \mref{mQuality}. The Goal2Story design (one step per stage,
+  each step reviewed) shapes \mref{mUsers}.
+\end{itemize}
+
+\paragraph{Decisions that satisfy the requirements.}
+\begin{itemize}
+  \item \textbf{One module per stage family (BR1, FR13 to FR18).} Each stage
+  hides the lecture definitions it applies, so a change to one stage's rules
+  changes one module. The stages are \mref{mNeed} to \mref{mDerive}.
+  \item \textbf{Human approval before release (FR5, FR7, FR8, SCR1, BR4, BR5,
+  HA-SR1, HA-SR6, HA-SR7).} Decisions are collected only by the Review Panel
+  (\mref{mReview}). The Release Gate (\mref{mGate}) is the only module that
+  asks for a handoff to be written, and it does so only when every required
+  approval is recorded. \progname{} cannot stop an assistant from writing
+  code (\uref{ucNoAssistant}). It withholds the handoff, and the Intent Model
+  Store detects approved files that were changed outside the review workflow
+  (FR20).
+  \item \textbf{The intent model is the source of truth (FR9, FR11, IR1 to IR4,
+  HA-SR9).} Approved artifacts, rationale, history, and approval fingerprints
+  live only in the Intent Model Store. Other modules obtain them through its
+  access programs.
+  \item \textbf{Traceability is a first class structure (BR7, FR9, FR16, EUR3,
+  HA-SR10, HA-SR14).} The Traceability Manager (\mref{mTrace}) owns every link:
+  from each artifact to the item it refines and to the developer message it
+  came from, from each contract clause to its requirement, and from each class
+  to the interface it implements. Missing and broken links are reported in one
+  place.
+  \item \textbf{Verification uses the approved copy (FR10, HA-SR11,
+  HA-SR13).} The Contract Verifier (\mref{mVerify}) checks the implementation
+  against the contracts held in the intent model, not the copy in the source
+  tree, which the assistant can edit. A checker failure is reported as
+  ``could not be checked'', never as a pass.
+  \item \textbf{The LLM is behind one module (LC1, MR2, HA-SR12).} All
+  model calls go through the LLM Gateway (\mref{mLLM}), which hides the
+  provider and model and limits what content leaves the machine. This is the
+  wrapper that VnV Plan test MT-1 inspects for.
+  \item \textbf{Host isolation (IAS1, ACCR1, MR2).} All IDE specific
+  presentation and the channel to the back end go through the Host IDE
+  Interface (\mref{mHost}), so a change of host does not rewrite behavioural
+  modules.
+  \item \textbf{Assistant independence (IAS2, MR3, ADR1, MIG3).} Supporting a new
+  assistant needs no code, because the handoff is plain files. Only
+  \mref{mHandoff} knows their format.
 \end{itemize}
 
 \section{Module Decomposition} \label{SecMD}
@@ -319,6 +414,8 @@ hidden by the module. The \emph{Services} field states \emph{what} the module
 does without documenting \emph{how}. \emph{Implemented By} is OS when the
 service is supplied by the operating system or standard libraries,
 \progname{} when the team implements it, or a dash when the entry is not a leaf.
+Where code already exists, \emph{Implemented By} names its folder under
+\texttt{src/agentic\_flow/}.
 
 Only leaf modules must be implemented.
 
@@ -335,12 +432,14 @@ Only leaf modules must be implemented.
 \subsubsection{Host IDE Interface Module (\mref{mHost})}
 
 \begin{description}
-\item[Secrets:]How interactive surfaces, notifications, command invocation, and
-  workspace observation are obtained from the host IDE. The concrete host API
-  and widget toolkit are hidden so behavioural modules do not depend on them.
-\item[Services:]Present review content and status to the developer; solicit
-  decisions; read and observe workspace artifacts needed by the intent workflow.
-\item[Implemented By:] \progname{}
+\item[Secrets:]How panels, commands, and notifications are obtained from the
+  host IDE, and how the extension reaches the back end. The host API, the
+  widget toolkit, and the channel between the two processes are hidden.
+\item[Services:]Show content and status in the IDE, run commands, read the
+  developer's input, and notify the developer of failures. It provides
+  surfaces only and does not decide what is shown or collected.
+\item[Implemented By:] \progname{}. The terminal version used by the proof of
+  concept is \texttt{core/shared\_nodes.py}.
 \item[Type of Module:] Abstract Object
 \end{description}
 
@@ -356,62 +455,127 @@ Only leaf modules must be implemented.
 \subsubsection{Workflow Controller Module (\mref{mControl})}
 
 \begin{description}
-\item[Secrets:]The allowed stage order of the intent workflow
-  (capture $\rightarrow$ review $\rightarrow$ gate $\rightarrow$ generation /
-  verification) and how interrupted drafts are resumed or discarded.
-\item[Services:]Start and advance a request through the workflow; ensure later
-  stages cannot run without prior stage completion; coordinate resume/discard of
-  drafts without losing already-approved intent.
-\item[Implemented By:] \progname{}
+\item[Secrets:]The stage graph: the order of the stages, the returns allowed
+  between them, the condition for completing each stage, and the rule for
+  merging stages on a small request.
+\item[Services:]Start a request, advance it when a stage is approved, return to
+  an earlier stage on request, refuse to skip a stage unless the developer
+  records the merge, resume an interrupted request, and run verification when
+  the developer asks for it.
+\item[Implemented By:] \progname{} (\texttt{graph.py}, LangGraph)
 \item[Type of Module:] Abstract Object
 \end{description}
 
-\subsubsection{Intent Capture Module (\mref{mCapture})}
+\subsubsection{Need Capture Module (\mref{mNeed})}
 
 \begin{description}
-\item[Secrets:]How a developer request (natural language or supported artifact)
-  is accepted and turned into a reviewable draft proposal.
-\item[Services:]Accept a request; produce a draft proposal of requirements,
-  constraints, and related artifacts for review; support iterative refinement
-  until the draft is ready for decision.
+\item[Secrets:]The intent capture definitions and evaluation criteria for
+  the statement of need, the current situation, and the expected benefits, and
+  the rule that links each benefit to the problems it addresses.
+\item[Services:]Capture and evaluate the statement of need, the problems, and
+  the benefits, record the developer message each item came from, and accept
+  the supported forms of engineering input.
+\item[Implemented By:] \progname{} (\texttt{capture\_intent/})
+\item[Type of Module:] Library (captured items are stored in \mref{mStore})
+\end{description}
+
+\subsubsection{User and Goal Modelling Module (\mref{mUsers})}
+
+\begin{description}
+\item[Secrets:]The CS/SE 3RA3 rules for stakeholders, personas, goals and soft goals, and use cases with
+  alternatives and exceptions, and the rule for when stakeholders or personas
+  may be approved with unresolved feedback.
+\item[Services:]Capture and refine the stakeholders and personas the developer
+  provides, link each persona to its stakeholder, evaluate both, and count the
+  completed evaluation rounds so that drafts may be approved with unresolved
+  feedback after two rounds, keeping any unmet criteria. Derive goals with
+  owners and benefit links, classify them as hard or soft, derive use cases
+  for each hard goal, and keep unanswered questions open instead of answering
+  them.
+\item[Implemented By:] \progname{} (\texttt{user\_modelling/} for
+  stakeholders, the rest to be built)
+\item[Type of Module:] Library (captured items are stored in \mref{mStore})
+\end{description}
+
+\subsubsection{Requirements Specification Module (\mref{mSpec})}
+
+\begin{description}
+\item[Secrets:]The template of the specification and the rules for extracting
+  requirements from the elicitation record and classifying them, including how
+  the domain model and glossary are written.
+\item[Services:]From the approved elicitation record, write a draft
+  specification in which each requirement has an identifier, a type, and links
+  to the items it came from, together with the domain model and glossary.
 \item[Implemented By:] \progname{}
-\item[Type of Module:] Abstract Object
+\item[Type of Module:] Library
+\end{description}
+
+\subsubsection{Requirement Quality Check Module (\mref{mQuality})}
+
+\begin{description}
+\item[Secrets:]The quality criteria (unambiguous, verifiable, consistent,
+  traceable to a goal, free of design detail), the scoring scale, and the
+  threshold.
+\item[Services:]Score each draft requirement on each criterion and flag every
+  requirement below the threshold with the criterion it failed.
+\item[Implemented By:] \progname{}
+\item[Type of Module:] Library
+\end{description}
+
+\subsubsection{Architecture Proposal Module (\mref{mArch})}
+
+\begin{description}
+\item[Secrets:]The rule for grouping approved requirements into components and
+  for deciding which component uses which.
+\item[Services:]Propose components, allocate each approved functional
+  requirement to exactly one of them, and state the uses between components.
+\item[Implemented By:] \progname{}
+\item[Type of Module:] Library
+\end{description}
+
+\subsubsection{Interface and Contract Derivation Module (\mref{mDerive})}
+
+\begin{description}
+\item[Secrets:]How the requirements allocated to a component become Java
+  interfaces with JML preconditions, postconditions, and invariants, and the
+  JML notation itself.
+\item[Services:]Derive the interface of each approved component from its
+  requirements and the domain model types, and record the requirement behind
+  each contract clause.
+\item[Implemented By:] \progname{}
+\item[Type of Module:] Library
+\item[Exception:] This module hides two decisions, the mapping and the
+  notation. The notation is fixed by STDR1 and is less likely to change than
+  the mapping. When a second target language is added (\acref{acContracts}),
+  the notation becomes its own module.
 \end{description}
 
 \subsubsection{Review Panel Module (\mref{mReview})}
 
 \begin{description}
-\item[Secrets:]How proposals and decisions are presented and collected in the
-  IDE UI.
-\item[Services:]Display draft and approved artifacts; collect approve, edit, and
-  reject actions for a proposal or individual items; show available actions at
-  each stage.
+\item[Secrets:]How drafts, decisions, trace information, and verification
+  evidence are presented to the developer and how decisions are collected.
+\item[Services:]Present each draft with its sources and quality flags, collect
+  approve, edit, and reject decisions for a whole proposal or one item, ask the
+  developer how to revise after a rejection, show the code and tests linked to
+  an artifact, and present a verification report that maps each clause result
+  to its requirement and states what was not checked. It is the only place where decisions are collected.
 \item[Implemented By:] \progname{}
 \item[Type of Module:] Abstract Object
 \end{description}
 
-\subsubsection{Approval Gate Module (\mref{mGate})}
+\subsubsection{Release Gate Module (\mref{mGate})}
 
 \begin{description}
-\item[Secrets:]The policy that binds generation to a recorded human decision.
-\item[Services:]Record approve/edit/reject outcomes; block assistant generation
-  until approval exists; on approval, release the approved intent to the
-  assistant path; on rejection, request revision rather than implementation;
-  keep the gate closed on timeout or lost connection.
+\item[Secrets:]The policy that binds a release to recorded approvals: which
+  approvals are required, when a refinement chain counts as complete, and when
+  a released handoff becomes stale.
+\item[Services:]Record each decision with its rationale and time, check whether
+  a set of contracts may be released, release it together with the intent model
+  update or not at all, write nothing on error or timeout, and mark dependent
+  artifacts and released handoffs for review when an approved artifact changes.
 \item[Implemented By:] \progname{}
-\item[Type of Module:] Abstract Object
-\end{description}
-
-\subsubsection{Verification Report Module (\mref{mReport})}
-
-\begin{description}
-\item[Secrets:]How verification evidence is summarized for the developer.
-\item[Services:]Present whether a proposed or generated change satisfies the
-  intent model; show what was checked; state limits when behaviour outside the
-  checked requirements was not verified; never present infrastructure failure as
-  a pass.
-\item[Implemented By:] \progname{}
-\item[Type of Module:] Abstract Object
+\item[Type of Module:] Library
 \end{description}
 
 \subsection{Software Decision Module (\mref{mSD})}
@@ -427,12 +591,13 @@ Only leaf modules must be implemented.
 \subsubsection{Intent Model Store Module (\mref{mStore})}
 
 \begin{description}
-\item[Secrets:]The schema, persistence layout, and versioning strategy of the
-  intent model (including how drafts are distinguished from approved artifacts
-  and how history is recovered). Concrete encodings are hidden from clients.
-\item[Services:]Create, read, update, and validate intent-model entries;
-  preserve recoverable history; reject invalid writes; support workspace
-  versioning of approved intent.
+\item[Secrets:]The schema, file layout, and versioning of the intent model,
+  including how drafts are told apart from approved artifacts and how each
+  approval is fingerprinted.
+\item[Services:]Create, read, and update artifacts and their status, reject
+  invalid writes, apply each change completely or not at all, keep a
+  recoverable history, and detect approved artifacts or released contracts that were
+  changed outside the review workflow.
 \item[Implemented By:] \progname{}
 \item[Type of Module:] Abstract Object
 \end{description}
@@ -440,36 +605,36 @@ Only leaf modules must be implemented.
 \subsubsection{Traceability Manager Module (\mref{mTrace})}
 
 \begin{description}
-\item[Secrets:]How traceability links and justifications are represented and
-  checked for completeness.
-\item[Services:]Create and query links among requirements, rationale, code, and
-  tests; detect and report missing, broken, or unjustified links.
+\item[Secrets:]How traceability links and their justifications are represented
+  and checked for completeness.
+\item[Services:]Create and query links from an artifact to the item it refines,
+  to its source message, from a contract clause to its requirement, and from a
+  class to the interface it implements. Find every artifact derived from a
+  given one, and report missing, broken, or unjustified links.
 \item[Implemented By:] \progname{}
 \item[Type of Module:] Abstract Object
 \end{description}
 
-\subsubsection{Elicitation Engine Module (\mref{mElicit})}
+\subsubsection{LLM Gateway Module (\mref{mLLM})}
 
 \begin{description}
-\item[Secrets:]The internal strategy for extracting and refining structured
-  artifacts from a request (orchestration, clarification selection, and use of
-  external language-model services).
-\item[Services:]Given a request and prior context, produce candidate
-  requirements, constraints, and clarification needs; incorporate developer
-  feedback into a revised candidate set.
-\item[Implemented By:] \progname{}
-\item[Type of Module:] Abstract Object
+\item[Secrets:]The LLM provider and model, how structured output is requested
+  and repaired, how rate limits and timeouts are retried, and which project
+  content may be sent.
+\item[Services:]Run a prompt and return a structured result or a failure,
+  and remove content that must not leave the machine.
+\item[Implemented By:] \progname{} (\texttt{core/models.py})
+\item[Type of Module:] Library
 \end{description}
 
-\subsubsection{Contract Compiler Module (\mref{mCompile})}
+\subsubsection{Implementation Handoff Module (\mref{mHandoff})}
 
 \begin{description}
-\item[Secrets:]How approved requirements and constraints are compiled into
-  executable contracts, including the choice of contract notation and the
-  mapping from intent artifacts to checkable obligations.
-\item[Services:]From approved intent, produce contract artifacts that an
-  implementation must satisfy; keep contracts linked to their source
-  requirements.
+\item[Secrets:]The format and location of the handoff files and the channel
+  through which an assistant reads them.
+\item[Services:]Write the approved interfaces into the source tree and the
+  implementation brief into the workspace, and mark a released handoff as
+  stale.
 \item[Implemented By:] \progname{}
 \item[Type of Module:] Library
 \end{description}
@@ -477,127 +642,206 @@ Only leaf modules must be implemented.
 \subsubsection{Contract Verifier Module (\mref{mVerify})}
 
 \begin{description}
-\item[Secrets:]How an external checker is selected, invoked, and how its raw
-  outcomes are interpreted as pass, fail, or inconclusive evidence.
-\item[Services:]Check a candidate implementation against compiled contracts;
-  return structured evidence of satisfaction or violation; treat checker or
-  infrastructure failure as inconclusive, not as a pass.
-\item[Implemented By:] \progname{}
-\item[Type of Module:] Abstract Object
-\end{description}
-
-\subsubsection{Coding Assistant Adapter Module (\mref{mAssist})}
-
-\begin{description}
-\item[Secrets:]How instructions and proposals are exchanged with an AI coding
-  assistant. Encoding, transport, and tool-registration details are confined
-  here so other modules depend only on abstract send/receive services.
-\item[Services:]Send approved-implementation instructions or revision requests;
-  receive assistant proposals for verification.
-\item[Implemented By:] \progname{}
-\item[Type of Module:] Abstract Object
+\item[Secrets:]How the external checker is invoked and how its raw output is
+  interpreted as passed, failed, or could not be checked.
+\item[Services:]Check an implementation against the approved contracts held in
+  the intent model, report the result for each contract clause, and report any
+  difference between the approved contracts and the copy in the source tree.
+\item[Implemented By:] \progname{} (invoking OpenJML)
+\item[Type of Module:] Library
 \end{description}
 
 \subsubsection{Diagnostic Log Module (\mref{mLog})}
 
 \begin{description}
-\item[Secrets:]The format and storage of diagnostic records for failures and
-  significant interactions.
-\item[Services:]Record structured log events for failures, gate decisions, and
-  verification outcomes to support diagnosis during development and maintenance.
+\item[Secrets:]The format and storage of diagnostic records.
+\item[Services:]Record the failures and significant events that the Workflow
+  Controller reports, including LLM failures, releases, and verification
+  outcomes, for diagnosis during development and maintenance. Other modules
+  return their failures to their callers, so logging happens in one place.
 \item[Implemented By:] \progname{}
 \item[Type of Module:] Abstract Object
 \end{description}
 
 \section{Traceability Matrix} \label{SecTM}
 
-\begin{table}[H]
-\centering
-\begin{tabular}{p{0.18\textwidth} p{0.72\textwidth}}
+Every requirement of the SRS and the Hazard Analysis has its own row. A row
+marked N/A names a requirement that is met by the process, the documentation,
+or the packaging, not by a module, with the reason.
+
+\begin{longtable}{p{0.18\textwidth} p{0.72\textwidth}}
+\caption{Trace between functional requirements and modules} \label{TblRT}\\
 \toprule
 \textbf{Req.} & \textbf{Modules}\\
 \midrule
-FR1 & \mref{mCapture}, \mref{mHost}, \mref{mControl}\\
-FR2 & \mref{mCapture}, \mref{mElicit}, \mref{mStore}\\
-FR3 & \mref{mCapture}, \mref{mStore}, \mref{mReview}\\
+\endhead
+FR1 & \mref{mHost}, \mref{mControl}, \mref{mNeed}\\
+FR2 & \mref{mSpec}, \mref{mLLM}, \mref{mTrace}, \mref{mStore}\\
+FR3 & \mref{mReview}, \mref{mStore}\\
 FR4 & \mref{mReview}, \mref{mHost}\\
 FR5 & \mref{mReview}, \mref{mGate}, \mref{mStore}\\
 FR6 & \mref{mReview}, \mref{mStore}\\
-FR7 & \mref{mGate}, \mref{mAssist}\\
-FR8 & \mref{mGate}, \mref{mAssist}, \mref{mStore}\\
+FR7 & \mref{mGate}, \mref{mTrace}, \mref{mStore}\\
+FR8 & \mref{mGate}, \mref{mHandoff}, \mref{mReview}, \mref{mStore}\\
 FR9 & \mref{mStore}, \mref{mTrace}\\
-FR10 & \mref{mVerify}, \mref{mReport}, \mref{mTrace}, \mref{mStore}\\
-FR11 & \mref{mStore}, \mref{mTrace}\\
-FR12 & \mref{mCompile}, \mref{mStore}, \mref{mTrace}\\
+FR10 & \mref{mVerify}, \mref{mReview}, \mref{mStore}, \mref{mTrace}\\
+FR11 & \mref{mGate}, \mref{mStore}, \mref{mTrace}\\
+FR12 & \mref{mDerive}, \mref{mTrace}, \mref{mStore}\\
+FR13 & \mref{mNeed}, \mref{mLLM}\\
+FR14 & \mref{mUsers}, \mref{mLLM}\\
+FR15 & \mref{mUsers}, \mref{mLLM}, \mref{mStore}\\
+FR16 & \mref{mNeed}, \mref{mUsers}, \mref{mSpec}, \mref{mTrace}\\
+FR17 & \mref{mQuality}, \mref{mLLM}, \mref{mTrace}\\
+FR18 & \mref{mArch}, \mref{mLLM}, \mref{mTrace}\\
+FR19 & \mref{mGate}, \mref{mTrace}, \mref{mStore}, \mref{mHandoff}\\
+FR20 & \mref{mStore}, \mref{mVerify}, \mref{mReview}\\
 \bottomrule
-\end{tabular}
-\caption{Trace Between Functional Requirements and Modules}
-\label{TblRT}
-\end{table}
+\end{longtable}
 
-\begin{table}[H]
-\centering
-\begin{tabular}{p{0.22\textwidth} p{0.68\textwidth}}
+\begin{longtable}{p{0.18\textwidth} p{0.72\textwidth}}
+\caption{Trace between business rules and modules} \label{TblBR}\\
+\toprule
+\textbf{Rule} & \textbf{Modules}\\
+\midrule
+\endhead
+BR1 & \mref{mControl}\\
+BR2 & \mref{mControl}, \mref{mReview}, \mref{mGate}\\
+BR3 & \mref{mControl}, \mref{mGate}, \mref{mTrace}\\
+BR4 & \mref{mGate}\\
+BR5 & \mref{mReview}, \mref{mGate}, \mref{mStore}\\
+BR6 & \mref{mReview}, \mref{mNeed}\\
+BR7 & \mref{mTrace}\\
+\bottomrule
+\end{longtable}
+
+\begin{longtable}{p{0.18\textwidth} p{0.72\textwidth}}
+\caption{Trace between nonfunctional requirements and modules} \label{TblNFR}\\
 \toprule
 \textbf{Req.} & \textbf{Modules}\\
 \midrule
-AR1, AR2, SR1, SR2 & \mref{mReview}, \mref{mHost}\\
-EUR1, EUR2 & \mref{mControl}, \mref{mReview}, \mref{mCapture}\\
-EUR3 & \mref{mTrace}, \mref{mReview}\\
-PR1, PR2 & \mref{mControl}, \mref{mHost}, \mref{mElicit}\\
+\endhead
+AR1, AR2 & \mref{mReview}, \mref{mHost}\\
+SR1, SR2 & \mref{mReview}, \mref{mHost}\\
+EUR1, EUR2 & \mref{mControl}, \mref{mReview}\\
+EUR3 & \mref{mReview}, \mref{mTrace}\\
+PIR1 & \mref{mNeed} to \mref{mReview} (wording of questions and views)\\
+LR1, LR2 & \mref{mControl}, \mref{mReview}\\
+UPR1 & \mref{mNeed} to \mref{mReview}\\
+UPR2 & \mref{mNeed}, \mref{mUsers}, \mref{mStore}\\
+ACCR1 & \mref{mHost}\\
+ACCR2 & \mref{mHost}, \mref{mReview}\\
+PR1 & \mref{mControl}, \mref{mLLM}\\
+PR2 & \mref{mReview}, \mref{mHost}\\
 SCR1 & \mref{mGate}\\
-MR1--MR3 & All leaf modules (modular boundaries)\\
-MR4 & Documentation accompanying each module (MG/MIS)\\
-SUPR1 & \mref{mHost}, \mref{mLog}, \mref{mGate}\\
+PAR1 & \mref{mNeed} to \mref{mDerive}\\
+RFR1 & \mref{mStore}\\
+RFR2 & \mref{mStore}, \mref{mLLM}\\
+RFR3 & \mref{mControl}, \mref{mStore}\\
+CR1 & \mref{mStore}, \mref{mTrace}\\
+CR2 & \mref{mSpec}\\
+SER1 & \mref{mStore}, \mref{mTrace}\\
+SER2 & \mref{mLLM}, \mref{mHandoff}, \mref{mDerive}\\
+LGR1 & \mref{mLLM}, \mref{mHandoff}, \mref{mDerive}\\
+IAS1 & \mref{mHost}\\
+IAS2 & \mref{mHandoff}\\
+IAS3 & \mref{mStore}\\
+PRD1 to PRD3 & N/A. Packaging and marketplace publishing are build steps, not
+modules.\\
+REL1 & N/A. Release notes are documentation.\\
+REL2 & \mref{mStore}\\
+MR1 & All leaf modules (one secret each)\\
+MR2 & \mref{mLLM}, \mref{mHost}, \mref{mVerify}\\
+MR3 & \mref{mHandoff}\\
+MR4 & N/A. Met by this MG and the MIS.\\
+SUPR1 & \mref{mHost}, \mref{mReview}, \mref{mLog}\\
 SUPR2 & \mref{mLog}\\
-ACR1--ACR3 & \mref{mStore}, \mref{mHost}\\
-AUR1--AUR3 & \mref{mStore}, \mref{mGate}, \mref{mVerify}, \mref{mLog}\\
-IMR1, IMR2 & \mref{mElicit}, \mref{mGate}, \mref{mHost}, \mref{mLog}\\
-RFR1 & \mref{mControl}, \mref{mStore}\\
+ADR1 & \mref{mHandoff}\\
+ADR2 & \mref{mNeed}, \mref{mHost}\\
+ACR1 & \mref{mReview}, \mref{mGate}, \mref{mStore}\\
+ACR2, ACR3 & \mref{mStore}\\
+IR1 & \mref{mStore}, \mref{mGate}\\
+IR2 to IR4 & \mref{mStore}\\
+PRR1 & \mref{mStore}, \mref{mLLM}\\
+AUR1 & \mref{mGate}, \mref{mStore}\\
+AUR2 & \mref{mStore}\\
+AUR3 & \mref{mVerify}, \mref{mStore}\\
+AUR4 & N/A. Several users are out of scope (\uref{ucLocalWorkspace}).\\
+IMR1 & \mref{mControl}, \mref{mLLM}\\
+IMR2 & \mref{mGate}, \mref{mLLM}, \mref{mHost}\\
+IMR3 & N/A. Dependency upkeep is a process.\\
+CULR1, CULR2 & \mref{mNeed} to \mref{mReview}\\
+LEGR1 & N/A. Licence compliance is a process.\\
+STDR1 & \mref{mDerive}, \mref{mVerify}\\
+STDR2 & \mref{mHost}\\
+STDR3 & \mref{mStore}\\
+STDR4 & \mref{mHost}, \mref{mReview}\\
+MIG1 & \mref{mHandoff}\\
+MIG2 & \mref{mControl}\\
+MIG3 & \mref{mHandoff}\\
+MIG4 & \mref{mHandoff}, \mref{mStore}\\
+UDR1 to UDR5 & N/A. User and maintainer documentation.\\
+TRR1 & N/A. A sample project.\\
+TRR2 & \mref{mReview}\\
 \bottomrule
-\end{tabular}
-\caption{Trace Between Selected Nonfunctional Requirements and Modules}
-\label{TblNFR}
-\end{table}
+\end{longtable}
 
-\begin{table}[H]
-\centering
-\begin{tabular}{p{0.18\textwidth} p{0.72\textwidth}}
+\begin{longtable}{p{0.18\textwidth} p{0.72\textwidth}}
+\caption{Trace between Hazard Analysis safety requirements and modules} \label{TblHA}\\
 \toprule
 \textbf{HA Req.} & \textbf{Modules}\\
 \midrule
-HA-SR1--SR5 & \mref{mReview}, \mref{mCapture}, \mref{mControl}, \mref{mHost}\\
-HA-SR6--SR8 & \mref{mGate}, \mref{mAssist}, \mref{mStore}\\
+\endhead
+HA-SR1 & \mref{mReview}, \mref{mGate}\\
+HA-SR2 & \mref{mReview}\\
+HA-SR3 & \mref{mNeed}, \mref{mUsers}, \mref{mSpec}, \mref{mReview}, \mref{mTrace}\\
+HA-SR4 & \mref{mHost}, \mref{mReview}, \mref{mLog}\\
+HA-SR5 & \mref{mControl}, \mref{mStore}\\
+HA-SR6 & \mref{mGate}, \mref{mHandoff}\\
+HA-SR7 & \mref{mReview}, \mref{mStore}\\
+HA-SR8 & \mref{mGate}, \mref{mStore}, \mref{mHandoff}\\
 HA-SR9 & \mref{mStore}\\
 HA-SR10 & \mref{mTrace}\\
-HA-SR11 & \mref{mVerify}, \mref{mReport}, \mref{mCompile}\\
-HA-SR12 & \mref{mElicit}, \mref{mLog}\\
+HA-SR11 & \mref{mVerify}, \mref{mReview}\\
+HA-SR12 & \mref{mLLM}\\
+HA-SR13 & \mref{mVerify}, \mref{mStore}\\
+HA-SR14 & \mref{mDerive}, \mref{mTrace}\\
+HA-SR15 & \mref{mGate}, \mref{mTrace}, \mref{mControl}\\
+HA-SR16 & \mref{mReview}, \mref{mStore}\\
 \bottomrule
-\end{tabular}
-\caption{Trace Between Hazard Analysis Safety Requirements and Modules}
-\label{TblHA}
-\end{table}
+\end{longtable}
+
+Table~\ref{TblACT} maps each anticipated change to the module that hides it.
+The mapping is one to one, with one exception. \mref{mNeed} hides both
+\acref{acNeed} and \acref{acInputForms}, because a request in a new input form
+enters the workflow at the need stage. If several input forms are added, they
+become their own module.
 
 \begin{table}[H]
 \centering
 \begin{tabular}{p{0.22\textwidth} p{0.68\textwidth}}
 \toprule
-\textbf{AC} & \textbf{Modules}\\
+\textbf{AC} & \textbf{Module}\\
 \midrule
 \acref{acHostIDE} & \mref{mHost}\\
-\acref{acInputForms} & \mref{mCapture}\\
-\acref{acElicitation} & \mref{mElicit}\\
-\acref{acSchema} & \mref{mStore}\\
-\acref{acAssistant} & \mref{mAssist}\\
-\acref{acContracts} & \mref{mCompile}\\
-\acref{acVerifier} & \mref{mVerify}\\
+\acref{acStages} & \mref{mControl}\\
+\acref{acNeed} & \mref{mNeed}\\
+\acref{acUsersGoals} & \mref{mUsers}\\
+\acref{acTemplate} & \mref{mSpec}\\
+\acref{acQuality} & \mref{mQuality}\\
+\acref{acArch} & \mref{mArch}\\
+\acref{acContracts} & \mref{mDerive}\\
 \acref{acReviewUX} & \mref{mReview}\\
+\acref{acRelease} & \mref{mGate}\\
+\acref{acSchema} & \mref{mStore}\\
 \acref{acTrace} & \mref{mTrace}\\
-\acref{acPrivacy} & \mref{mElicit}, \mref{mLog}\\
+\acref{acLLM} & \mref{mLLM}\\
+\acref{acHandoff} & \mref{mHandoff}\\
+\acref{acVerifier} & \mref{mVerify}\\
 \acref{acLogging} & \mref{mLog}\\
+\acref{acInputForms} & \mref{mNeed}\\
 \bottomrule
 \end{tabular}
-\caption{Trace Between Anticipated Changes and Modules}
+\caption{Trace between anticipated changes and modules}
 \label{TblACT}
 \end{table}
 
@@ -608,80 +852,77 @@ In this section, the uses hierarchy between modules is provided.
 correct execution of $B$ may be necessary for $A$ to complete the task described
 in its specification. The relation is a directed acyclic graph (DAG).
 
-Drawing every edge of this DAG in one figure produces unreadable crossings
-(especially fan-in to the Intent Model Store, Host IDE Interface, and
-Diagnostic Log). Figure~\ref{FigUH} therefore shows only the \emph{primary
-structural} uses as four non-crossing lanes. The complete uses relation ---
-including shared services --- is listed without omission in
-Table~\ref{TblUses}.
+Figure~\ref{FigUH} draws every edge of the relation in four layers, with every
+arrow pointing down. The six stage modules \mref{mNeed} to \mref{mDerive} use
+exactly the same three modules, so they are drawn inside one dashed box, and an
+arrow leaving the box stands for an arrow from each of the six.
+Table~\ref{TblUses} lists the same relation module by module.
 
 \begin{figure}[H]
 \centering
-% Box width ~2.1cm; centres spaced >= 3.6cm so nodes cannot overlap.
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
   >=Latex,
-  box/.style={
-    draw, rounded corners=2pt, align=center,
-    font=\scriptsize\sffamily, inner sep=2.5pt,
-    minimum height=0.95cm, text width=2.05cm
-  },
-  arr/.style={->, thick},
-  shared/.style={box, fill=gray!12, text width=2.2cm}
+  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize\sffamily,
+    inner sep=2.5pt, minimum height=0.9cm, text width=2.0cm},
+  stage/.style={box, fill=green!8},
+  arr/.style={->, thick}
 ]
-\node[box, fill=blue!8] (ctrl) at (0,0)
-  {\textbf{M4}\\Workflow Controller};
-
-\node[box, fill=green!8] (cap)  at (-5.4,-1.7)
-  {\textbf{M5}\\Intent Capture};
-\node[box, fill=green!8] (rev)  at (-1.8,-1.7)
-  {\textbf{M6}\\Review Panel};
-\node[box, fill=green!8] (gate) at (1.8,-1.7)
-  {\textbf{M7}\\Approval Gate};
-\node[box, fill=green!8] (rep)  at (5.4,-1.7)
-  {\textbf{M8}\\Verification Report};
-
-% Assist under Review column; Comp under Gate --- centres 3.6cm apart
-\node[box, fill=orange!10] (elicit) at (-5.4,-3.5)
-  {\textbf{M12}\\Elicitation Engine};
-\node[box, fill=orange!10] (assist) at (-1.8,-3.5)
-  {\textbf{M15}\\Assistant Adapter};
-\node[box, fill=orange!10] (comp)   at (1.8,-3.5)
-  {\textbf{M13}\\Contract Compiler};
-\node[box, fill=orange!10] (ver)    at (5.4,-3.5)
-  {\textbf{M14}\\Contract Verifier};
-
-\node[shared] (store) at (-3.6,-5.4)
-  {\textbf{M10}\\Intent Model Store};
-\node[shared] (trace) at (0.0,-5.4)
-  {\textbf{M11}\\Traceability Manager};
-\node[shared] (host)  at (3.6,-5.4)
-  {\textbf{M2}\\Host IDE Interface};
-\node[shared] (log)   at (0.0,-6.9)
-  {\textbf{M16}\\Diagnostic Log};
-
-\node[font=\scriptsize\itshape, text=gray!55!black, align=center]
-  at (0,-6.05)
-  {shared services --- inbound uses in Table~\ref{TblUses}};
-
-\coordinate (stem) at (0,-0.55);
-\coordinate (bus) at (0,-1.0);
-\draw[arr] (ctrl.south) -- (stem);
-\draw (stem) -- (bus);
-\draw (cap.north |- bus) -- (rep.north |- bus);
-\draw[arr] (cap.north |- bus) -- (cap.north);
-\draw[arr] (rev.north |- bus) -- (rev.north);
-\draw[arr] (gate.north |- bus) -- (gate.north);
-\draw[arr] (rep.north |- bus) -- (rep.north);
-
-\draw[arr] (cap) -- (elicit);
-% Gate->Comp vertical; Gate->Assist exits west so stems do not share a T-junction
-\draw[arr] (gate) -- (comp);
-\draw[arr] (gate.west) -- ++(-0.45,0) |- (assist.north);
-\draw[arr] (rep) -- (ver);
-\draw[arr] (trace) -- (store);
-\end{tikzpicture}
-\caption{Primary structural uses (arrow from $A$ to $B$ means $A$ uses $B$).
-Module IDs match Section~\ref{SecMH}. Secondary uses of resources are listed in Table~\ref{TblUses}.}
+% Layer 4
+\node[box, fill=blue!8] (ctrl) at (0,0) {\textbf{M4}\\Workflow Controller};
+% Layer 3
+\node[stage] (need) at (-9.4,-2.0) {\textbf{M5}\\Need Capture};
+\node[stage] (users) at (-7.0,-2.0) {\textbf{M6}\\User and Goal Modelling};
+\node[stage] (spec) at (-4.6,-2.0) {\textbf{M7}\\Requirements Specification};
+\node[stage] (qual) at (-9.4,-3.6) {\textbf{M8}\\Requirement Quality Check};
+\node[stage] (arch) at (-7.0,-3.6) {\textbf{M9}\\Architecture Proposal};
+\node[stage] (der) at (-4.6,-3.6) {\textbf{M10}\\Interface and Contract Derivation};
+\node[draw, dashed, rounded corners=4pt, inner sep=5pt,
+  fit=(need) (users) (spec) (qual) (arch) (der)] (stages) {};
+\node[box, fill=green!8] (rev) at (-0.4,-2.9) {\textbf{M11}\\Review Panel};
+\node[box, fill=green!8] (gate) at (2.8,-2.9) {\textbf{M12}\\Release Gate};
+% Layer 2
+\node[box, fill=orange!10] (llm) at (-8.6,-6.4) {\textbf{M16}\\LLM Gateway};
+\node[box, fill=orange!10] (trace) at (-4.4,-6.4) {\textbf{M15}\\Traceability Manager};
+\node[box, fill=gray!12] (host) at (-0.4,-6.4) {\textbf{M2}\\Host IDE Interface};
+\node[box, fill=orange!10] (hand) at (3.6,-6.4) {\textbf{M17}\\Implementation Handoff};
+\node[box, fill=orange!10] (ver) at (6.0,-6.4) {\textbf{M18}\\Contract Verifier};
+% Layer 1
+\node[box, fill=orange!10, text width=5.0cm] (store) at (-2.4,-9.0) {\textbf{M14}\\Intent Model Store};
+\node[box, fill=orange!10] (log) at (6.0,-10.6) {\textbf{M19}\\Diagnostic Log};
+% Lanes
+\coordinate (laneC) at (-2.9,0);
+\coordinate (laneR) at (-2.0,0);
+\coordinate (laneS) at (-6.6,0);
+\coordinate (laneG) at (-0.4,0);
+% Controller
+\draw[arr] (ctrl.west) -| (stages.north);
+\draw[arr] (ctrl) -- (rev);
+\draw[arr] (ctrl) -- (gate);
+\draw[arr] (ctrl.east) -| (ver.north);
+\draw[arr] ([yshift=-3mm]ctrl.west) -| (laneC |- store.north);
+\draw[arr] ([yshift=3mm]ctrl.east) -- (8.2,0.3) |- (log.east);
+% Stage modules
+\draw[arr] (stages.south -| llm.north) -- (llm.north);
+\draw[arr] (stages.south -| trace.north) -- (trace.north);
+\draw[arr] (stages.south -| laneS) |- (store.west);
+% Review Panel
+\draw[arr] (rev.south) -- (host.north);
+\draw[arr] (rev.south west) -- (trace.north east);
+\draw[arr] (rev.west) -| (laneR |- store.north);
+% Release Gate
+\draw[arr] (gate.south) -- (hand.north);
+\draw[arr] (gate.south west) -- (trace.north east);
+\draw[arr] ([xshift=-7mm]gate.south) |- (laneG |- 0,-7.9) -- (laneG |- store.north);
+% Layer 2 to layer 1
+\draw[arr] (trace.south) -- (trace.south |- store.north);
+\draw[arr] (hand.south) |- ([yshift=2mm]store.east);
+\draw[arr] (ver.south) |- ([yshift=-2mm]store.east);
+\end{tikzpicture}}
+\caption{Uses hierarchy (an arrow from $A$ to $B$ means $A$ uses $B$). The
+dashed box holds the six stage modules, and an arrow from the box means each
+of them uses the target. Green modules hide behaviour, orange modules hide
+software decisions, and grey hides the host.}
 \label{FigUH}
 \end{figure}
 
@@ -691,72 +932,107 @@ Module IDs match Section~\ref{SecMH}. Secondary uses of resources are listed in 
 \toprule
 \textbf{Module} & \textbf{Uses}\\
 \midrule
-M4 Workflow Controller & M5, M6, M7, M8, M2, M16\\
-M5 Intent Capture & M12, M10, M2\\
-M6 Review Panel & M2, M10\\
-M7 Approval Gate & M10, M15, M13, M2, M16\\
-M8 Verification Report & M14, M2\\
-M12 Elicitation Engine & M10, M16\\
-M13 Contract Compiler & M10, M11\\
-M14 Contract Verifier & M10, M11, M16\\
-M15 Coding Assistant Adapter & M10, M16\\
-M11 Traceability Manager & M10\\
-M10 Intent Model Store & ---\\
-M2 Host IDE Interface & ---\\
-M16 Diagnostic Log & ---\\
+M4 Workflow Controller & M5 to M10, M11, M12, M18, M14, M19\\
+M5 Need Capture & M16, M15, M14\\
+M6 User and Goal Modelling & M16, M15, M14\\
+M7 Requirements Specification & M16, M15, M14\\
+M8 Requirement Quality Check & M16, M15, M14\\
+M9 Architecture Proposal & M16, M15, M14\\
+M10 Interface and Contract Derivation & M16, M15, M14\\
+M11 Review Panel & M2, M15, M14\\
+M12 Release Gate & M15, M17, M14\\
+M18 Contract Verifier & M14\\
+M15 Traceability Manager & M14\\
+M16 LLM Gateway & None\\
+M17 Implementation Handoff & M14\\
+M2 Host IDE Interface & None\\
+M14 Intent Model Store & None\\
+M19 Diagnostic Log & None\\
 \bottomrule
 \end{tabular}
-\caption{Complete uses relation (matches MIS Uses subsections).}
+\caption{Complete uses relation}
 \label{TblUses}
 \end{table}
 
+Every software decision module is used by at least one behaviour hiding module.
+Only the Workflow Controller uses the Diagnostic Log, because every failure is
+returned to it.
+The Workflow Controller is the only module at the top, and no module uses it.
+
 \section{User Interfaces}
 
-Primary interaction is through host-IDE panels and commands provided by the
-Host IDE Interface and Review Panel modules. Wireframe exploration of those
-surfaces is the subject of the Fall Custom Document (Wireframe Report) and is
-not duplicated here. The MG requires only that UI behaviour remain behind
-\mref{mHost} and \mref{mReview} so that look-and-feel changes do not leak into
-storage or verification modules.
+Primary interaction is through host IDE panels and commands provided by the
+Host IDE Interface (\mref{mHost}) and the Review Panel (\mref{mReview}).
+Wireframe exploration of those surfaces is the subject of the Fall Custom
+Document (Wireframe Report) and is not duplicated here. The MG requires only
+that what is shown and collected stays in \mref{mReview} and how it is drawn
+stays in \mref{mHost}, so that a change of look and feel does not reach storage
+or verification modules.
 
 \section{Design of Communication Protocols}
 
-Communication with the AI coding assistant is confined to the Coding Assistant
-Adapter module (\mref{mAssist}). The adapter hides encoding, transport, and
-tool-registration decisions (\acref{acAssistant}). Behavioural modules depend
-only on abstract services such as ``send approved implementation instruction''
-or ``send revision request.'' No other module constructs assistant-channel
-messages, which keeps coupling low and preserves replaceability of the
-assistant (\acref{acAssistant}, MR3).
+\progname{} has no protocol with the AI coding assistant (\uref{ucNoAssistant}).
+The assistant reads the implementation handoff as ordinary files, and their
+format is a secret of \mref{mHandoff} (\acref{acHandoff}). Two channels
+remain. The channel between the extension front end and the back end is a
+secret of the Host IDE Interface (\mref{mHost}). The channel to the LLM service
+is a secret of the LLM Gateway (\mref{mLLM}). No other module constructs
+messages for either channel.
 
 \section{Database Design}
 
-\progname{} does not use a separate database server for the intent model. The
-Intent Model Store (\mref{mStore}) persists structured artifacts in the project
-workspace and versions them with Git (\uref{ucGitVersioning}). Schema, file
-layout, and encoding of drafts versus approved artifacts are secrets of
-\mref{mStore} (\acref{acSchema}); other modules obtain intent only through that
-module's access programs.
+\progname{} does not use a separate database server. The Intent Model Store
+(\mref{mStore}) keeps structured artifacts as files in the project workspace
+and versions them with Git (\uref{ucGitVersioning}). The schema, the file
+layout, the distinction between drafts and approved artifacts, and the
+approval fingerprints are secrets of \mref{mStore} (\acref{acSchema}). The
+released interfaces live in the project's source tree, written by
+\mref{mHandoff}. The approved copy of every contract stays in the intent
+model, which is what verification uses.
 
-\section{Timeline}
+\section{Timeline} \label{SecTimeline}
 
-Work is tracked on the team GitHub project board and issues. For Design
-Document Rev~-1:
-\begin{itemize}
-  \item Complete MG decomposition, uses relation, and traceability (this
-    document).
-  \item Complete MIS syntax for every leaf module.
-  \item Align Wireframe Report insights with \mref{mReview} and \mref{mHost}.
-\end{itemize}
-Revision~0 will add MIS semantics, formal specification of at least one module,
-and design reflection after peer module implementation.
+Table~\ref{TblTimeline} gives the phase, owner, and target date of each leaf
+module, following the phases and dates of the SRS. Owners marked ``to be
+assigned'' will be named at the next team meeting and recorded here. Work is
+tracked on the team GitHub project board.
+
+\begin{longtable}{p{0.36\textwidth} p{0.2\textwidth} p{0.36\textwidth}}
+\caption{Module timeline} \label{TblTimeline}\\
+\toprule
+\textbf{Module} & \textbf{Owner} & \textbf{Phase and target date}\\
+\midrule
+\endhead
+\mref{mNeed} Need Capture & Qusay Qadir & Proof of Concept, Nov 23 to Dec 4, 2026\\
+\mref{mUsers} User and Goal Modelling & Rishab Shine & Proof of Concept for stakeholders, Revision~0 for the rest\\
+\mref{mControl} Workflow Controller & To be assigned & Proof of Concept, extended in Revision~0\\
+\mref{mLLM} LLM Gateway & To be assigned & Proof of Concept\\
+\mref{mHost} Host IDE Interface & To be assigned & Terminal version for the Proof of Concept, VS~Code in Revision~0\\
+\mref{mSpec} Requirements Specification & To be assigned & Revision~0, Feb 3 to Feb 12, 2027\\
+\mref{mQuality} Requirement Quality Check & To be assigned & Revision~0\\
+\mref{mArch} Architecture Proposal & To be assigned & Revision~0\\
+\mref{mDerive} Interface and Contract Derivation & To be assigned & Revision~0\\
+\mref{mReview} Review Panel & To be assigned & Revision~0\\
+\mref{mGate} Release Gate & To be assigned & Revision~0\\
+\mref{mStore} Intent Model Store & To be assigned & Revision~0\\
+\mref{mTrace} Traceability Manager & To be assigned & Revision~0\\
+\mref{mHandoff} Implementation Handoff & To be assigned & Revision~0\\
+\mref{mLog} Diagnostic Log & To be assigned & Revision~0\\
+\mref{mVerify} Contract Verifier & To be assigned & Final Demonstration, Mar 18 to Mar 20, 2027\\
+\bottomrule
+\end{longtable}
+
+Revision~0 will add MIS semantics, a formal specification of at least one
+module, and design reflection after peer module implementation.
 
 \section{Generative AI Use Disclosure}
 
 \subsection{AI Tools Used}
 
 \begin{itemize}
-  \item Cursor and Claude, used in the writing process for this Module Guide.
+  \item Cursor and Claude, used in the writing process for versions 0.1 and 0.2
+  of this Module Guide.
+  \item Claude Sonnet 5 (Anthropic) for version 0.3.
 \end{itemize}
 
 \subsection{How and Where Used}
@@ -771,6 +1047,10 @@ and design reflection after peer module implementation.
   \item \textbf{Rubric review.} Used to evaluate the document against the
     Design Documentation rubric and to suggest areas of improvement, which
     the author then accepted, revised, or rejected.
+  \item \textbf{Version 0.3.} Reviewed version 0.2 against the
+    rubric, the MG checklist, the revised SRS and Hazard Analysis.
+  \item \textbf{Version 0.4.} Claude Opus 5.5 was used as a consistency
+    check against SRS revision 1.3 and to help word the M6 update.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}
@@ -783,6 +1063,12 @@ and design reflection after peer module implementation.
   \item Confirmed that low-level implementation detail was not introduced into
     secrets or services where the document should stay at the design-decision
     level.
+  \item For version 0.4, checked every requirement identifier in the
+    traceability tables against the identifiers defined in SRS revision 1.3
+    and the Hazard Analysis, so that no requirement is missing or invented.
+  \item For version 0.4, read the revised M6 secrets and services against the
+    FR14 text and its fit criterion, and checked that the M5 and M6 module
+    types agree with the MIS state variables.
 \end{enumerate}
 
 \newpage{}
@@ -791,3 +1077,4 @@ and design reflection after peer module implementation.
 \bibliography{../../../refs/References}
 
 \end{document}
+

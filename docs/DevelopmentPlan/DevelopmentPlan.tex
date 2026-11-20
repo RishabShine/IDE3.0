@@ -27,7 +27,7 @@ September 26 & Rishab Shine & Proof of Concept, Coding Standard, Team Building, 
 September 25 & Qusay Qadir & Use of AI, In Case of Emergency, Expected Technology. \\
 September 27 & Tyler Yue & Added IP, license, team member role sections and updated team meeting plan section. \\
 September 27 & Vedant Patel & Project Decomposition and Scheduling, Verification of AI-Generated Content. \\
-... & ... & ...\\
+November 17 & Qusay Qadir & Expected Technology: removed the MCP Python SDK, since \progname{} now releases approved interfaces and contracts as workspace files instead of integrating with the coding assistant. Added Java and OpenJML for the JML contracts and their verification. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -252,7 +252,9 @@ Therefore, for our proof of concept, we will focus on demonstrating this underly
   \hline
   Framework & React & 19.3 & Webview user interface and diagram rendering \\
   \hline
-  Library & MCP Python SDK & 2.2 & Exposing the intent model to AI coding assistants \\
+  Language & Java (JDK) & TBD & Target language of the generated interfaces and of the case study implementation \\
+  \hline
+  Tool & OpenJML & TBD & Checking implementations against the approved JML contracts \\
   \hline
   Framework & LangGraph & 1.2 & Agent orchestration with human-in-the-loop approval \\
   \hline
@@ -349,8 +351,7 @@ Functionality developed as part of the project will include accompanying documen
   This was used as a checklist aid. 
 
   \item Idea refinement (Claude). Claude was used to refine and strengthen
-  ideas the team had already drafted, including clarifying how they were
-  formulated and assist with reasoning validation. 
+  ideas the team had already drafted, including assisting with reasoning validation.
 \end{itemize}
 
 \subsection{Verification of AI-Generated Content}
