@@ -117,7 +117,9 @@ def _new_id(meta, level, parent_id) -> str:
 
 
 def _article(noun: str) -> str:
-    if noun.lower().startswith(("a ", "an ", "the ")):
+    lower = noun.lower()
+    # "As Students, ..." reads better than "As a Students, ..."
+    if lower.startswith(("a ", "an ", "the ")) or (lower.endswith("s") and not lower.endswith("ss")):
         return noun
     return ("an " if noun[:1].lower() in "aeiou" else "a ") + noun
 
