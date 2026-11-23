@@ -338,7 +338,7 @@ class Goal2StoryFlowTests(unittest.TestCase):
         self.assertIn("review the impacts", self.message(result))
         self.assertEqual(len(self.stubs[ActorList].calls), 1)
 
-    def test_parent_graph_runs_sson_then_stakeholders_then_goal2story(self):
+    def test_parent_graph_runs_prd_then_sson_then_stakeholders_then_goal2story(self):
         from agentic_flow.capture_intent import node as capture_node
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat

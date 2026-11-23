@@ -51,7 +51,7 @@ class AgentState(TypedDict):
     #! older from the iterative process, can remove once we fix functionality got PRD
     project_context: str
 
-    # Raw project description supplied by PRD intake.
+    # Raw PRD text, before any artifact extraction.
     prd: NotRequired[str]
 
     # Capture Intent State
