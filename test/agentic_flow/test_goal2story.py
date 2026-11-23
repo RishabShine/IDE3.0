@@ -338,7 +338,7 @@ class Goal2StoryFlowTests(unittest.TestCase):
         self.assertIn("review the impacts", self.message(result))
         self.assertEqual(len(self.stubs[ActorList].calls), 1)
 
-    def test_parent_graph_runs_sson_then_stakeholders_then_goal2story(self):
+    def test_parent_graph_runs_prd_then_sson_then_stakeholders_then_goal2story(self):
         from agentic_flow.capture_intent import node as capture_node
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat
@@ -361,6 +361,7 @@ class Goal2StoryFlowTests(unittest.TestCase):
         )), patch.object(stakeholder_node, "stakeholder_response_processor", processor), \
                 patch.object(stakeholder_node, "stakeholder_evaluator", evaluator):
             self.graph.invoke({}, self.config)
+            self.resume("Library booking PRD.")
             self.resume("Students book rooms without staff help.")
             self.resume("Front-desk staff handle bookings and know the rules.")
             result = self.resume("APPROVE")  # stakeholders

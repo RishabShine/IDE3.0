@@ -242,7 +242,7 @@ class StakeHolderFlowTests(unittest.TestCase):
         self.assertIsNone(metadata["evaluation"])
         self.assertFalse(metadata["user_confirmed"])
 
-    def test_parent_graph_runs_sson_then_stakeholders_then_hands_off(self):
+    def test_parent_graph_runs_prd_then_sson_then_stakeholders_then_hands_off(self):
         from agentic_flow.capture_intent import node as capture_node
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat
@@ -260,6 +260,10 @@ class StakeHolderFlowTests(unittest.TestCase):
             with_structured_output=lambda schema: sson_evaluator
         )):
             result = self.start()
+            self.assertIn("Provide your PRD", self.message(result))
+            prd = "Library booking PRD.\nStudents book rooms without staff help."
+            result = self.resume(prd)
+            self.assertEqual(result["prd"], prd)
             self.assertIn("Single Statement of Need", self.message(result))
             result = self.resume("Students book rooms without staff help.")
             self.assertEqual(self.message(result), prompt.STAKEHOLDER_STARTER_PROMPT)
@@ -270,6 +274,7 @@ class StakeHolderFlowTests(unittest.TestCase):
         # stakeholders are done; the flow now waits in Goal2Story (lane 3)
         self.assertIn("Goal2Story", self.message(result))
         self.assertEqual(result["intent_metadata"]["evaluation_of_statement"], "met")
+        self.assertEqual(result["prd"], prd)
         self.assertTrue(result["stakeholder_metadata"]["user_confirmed"])
         self.assertEqual(result["stakeholder_metadata"]["intent_context"], self.context)
         self.assertEqual(self.graph.get_state(self.config).next, ("goal2story_graph",))
@@ -297,6 +302,7 @@ class StakeHolderFlowTests(unittest.TestCase):
             with_structured_output=lambda schema: sson_evaluator
         )):
             self.start()
+            self.resume("Library booking PRD.")
             result = self.resume("A booking app.")
             self.assertIn("Who needs", self.message(result))
             result = self.resume("Students book rooms without staff help.")

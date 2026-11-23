@@ -55,6 +55,9 @@ class AgentState(TypedDict):
 
     project_context: str
 
+    # Raw PRD text, before any artifact extraction.
+    prd: NotRequired[str]
+
     # Capture Intent State
     intent_metadata: IntentCapture
 
