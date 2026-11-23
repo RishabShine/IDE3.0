@@ -171,7 +171,7 @@ def initialize_goal2story(state: AgentState) -> AgentState:
     #! full upstream context (goals, benefits, scope, personas) can be read here
     # when lanes 1 and 2 provide it; for now, use everything currently available
     captured = state.get("captured_intent")
-    stakeholders = (state.get("stakeholder_metadata") or {}).get("finalized_stakeholders", [])
+    stakeholders = (state.get("stakeholder_metadata") or {}).get("stakeholders", [])
     statement = (state.get("intent_metadata") or {}).get("single_statement_intent", "")
     context = {
         "statement_of_need": statement,

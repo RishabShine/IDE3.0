@@ -122,7 +122,7 @@ class Goal2StoryFlowTests(unittest.TestCase):
             "project_context": "Mills Library has 20 study rooms.",
             "intent_metadata": {"single_statement_intent": "Let students book rooms without staff."},
             "captured_intent": {"goals": ["Cut staff time on bookings to under 1 h/week"]},
-            "stakeholder_metadata": {"finalized_stakeholders": STAKEHOLDERS},
+            "stakeholder_metadata": {"instructions": "", "stakeholders": STAKEHOLDERS},
         }
 
     def start(self, **changes):
@@ -343,14 +343,17 @@ class Goal2StoryFlowTests(unittest.TestCase):
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat
         from agentic_flow.user_modelling.stakeholders import node as stakeholder_node
-        from test_stakeholders import StubModel as QueueModel, draft, evaluation, response
+        from agentic_flow.user_modelling.stakeholders.schema import StakeHolderResponse
 
-        sson_evaluator, processor, evaluator = QueueModel(), QueueModel(), QueueModel()
+        sson_evaluator, extractor = StubModel(), StubModel()
         sson_evaluator.responses.append(IntentSSONEvaluation(
             evaluation_of_statement="met", evaluation_of_statement_feedback="Clear."
         ))
-        processor.responses.append(response([draft()]))
-        evaluator.responses.append(evaluation())
+        extractor.responses.append(StakeHolderResponse(stakeholders=[{
+            "name": "Front-desk library staff", "involvement": "direct",
+            "summary": "Handle bookings and know the rules.",
+            "justification": "Inform the booking workflow.",
+        }]))
         self.stubs[ActorList].default = lambda m: actors(
             ("Front-desk staff", "Front-desk library staff")
         )
@@ -358,13 +361,10 @@ class Goal2StoryFlowTests(unittest.TestCase):
 
         with patch.object(capture_node, "base_model", SimpleNamespace(
             with_structured_output=lambda schema: sson_evaluator
-        )), patch.object(stakeholder_node, "stakeholder_response_processor", processor), \
-                patch.object(stakeholder_node, "stakeholder_evaluator", evaluator):
-            self.graph.invoke({}, self.config)
-            self.resume("Library booking PRD.")
-            self.resume("Students book rooms without staff help.")
-            self.resume("Front-desk staff handle bookings and know the rules.")
-            result = self.resume("APPROVE")  # stakeholders
+        )), patch.object(stakeholder_node, "stakeholder_extractor", extractor):
+            self.graph.invoke({"prd": "Front-desk staff handle bookings and know the rules."},
+                              self.config)
+            result = self.resume("Students book rooms without staff help.")
             self.assertIn("What goal should we break down?", self.message(result))
             self.resume("Cut staff time on bookings")
             result = self.approve_all()
