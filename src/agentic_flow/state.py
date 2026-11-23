@@ -48,7 +48,11 @@ class Goal2StoryMetadata(TypedDict):
 # the total agent memory state, which is a dictionary of all the states of the agent
 class AgentState(TypedDict):
 
+    #! older from the iterative process, can remove once we fix functionality got PRD
     project_context: str
+
+    # Raw project description supplied by PRD intake.
+    prd: NotRequired[str]
 
     # Capture Intent State
     intent_metadata: IntentCapture
