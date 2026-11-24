@@ -1,8 +1,9 @@
-"""Run PRD-to-stakeholder extraction locally with a sample PRD and intent.
+"""Run stakeholder extraction, optionally followed by personas, on sample data.
 
 From the repository root, with Ollama running and the selected model installed:
     PYTHONPATH=src .venv/bin/python test/local_testing/user_modelling/stakeholders.py
     PYTHONPATH=src .venv/bin/python test/local_testing/user_modelling/stakeholders.py --example repairs
+    PYTHONPATH=src .venv/bin/python test/local_testing/user_modelling/stakeholders.py --example repairs --with-personas
 
 IDE3_MODEL selects the model through the existing application configuration.
 This script makes a real model call only when run directly.
@@ -12,6 +13,7 @@ import argparse
 import json
 
 from agentic_flow.user_modelling.stakeholders.graph import build_stakeholders
+from agentic_flow.user_modelling.graph import build_user_modelling
 
 
 SAMPLE_PRD = """Library Group Study-Room Booking
@@ -147,6 +149,20 @@ receive monthly expenditure summaries. They will not operate the portal.
 An existing accounting package stores expenditure records; the portal exports
 a monthly CSV for that package. Buying replacement equipment and paying
 contractors remain outside the portal's scope.
+
+User-profile notes:
+Asha is a resident of a council-owned flat. She is comfortable using a phone
+browser but does not know technical repair terminology. She usually checks
+repair progress in the evening after work. She wants to describe a fault in
+plain language and know whether it has been assigned, without calling the
+council again. Her main concern is not knowing what is happening after she
+reports a problem.
+
+Morgan is described in a separate, incomplete profile note. Morgan checks
+read-only job summaries on a shared workstation each morning and wants to
+distinguish current work from completed work quickly. The note does not identify
+Morgan's job, organization, or relationship to the residents, coordinators,
+technicians, or finance staff. That relationship has not been established.
 """
 
 # Synthetic intent for a second domain, using the teammate's output structure.
@@ -210,6 +226,8 @@ REPAIRS_INTENT = {
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--example", choices=["library", "repairs"], default="library")
+    parser.add_argument("--with-personas", action="store_true",
+                        help="run the full user-modelling graph and print personas too")
     args = parser.parse_args()
     prd, intent = (
         (REPAIRS_PRD, REPAIRS_INTENT)
@@ -218,11 +236,15 @@ def main():
     )
     print("Example PRD:\n")
     print(prd)
-    print("Extracting stakeholders using the sample captured intent...", flush=True)
-    graph = build_stakeholders()
+    steps = "stakeholders and personas" if args.with_personas else "stakeholders"
+    print(f"Extracting {steps} using the sample captured intent...", flush=True)
+    graph = build_user_modelling() if args.with_personas else build_stakeholders()
     result = graph.invoke({"prd": prd, "captured_intent": intent})
     print("\nExtracted stakeholders:\n")
     print(json.dumps(result["stakeholder_metadata"]["stakeholders"], indent=2))
+    if args.with_personas:
+        print("\nExtracted personas:\n")
+        print(json.dumps(result["persona_metadata"]["personas"], indent=2))
 
 
 if __name__ == "__main__":

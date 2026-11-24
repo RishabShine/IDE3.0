@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from agentic_flow.user_modelling.graph import build_user_modelling
 from agentic_flow.user_modelling.personas import node, prompt
 from agentic_flow.user_modelling.personas.graph import build_personas
+from agentic_flow.user_modelling.personas.schema import PersonaResponse
 from agentic_flow.user_modelling.stakeholders import node as stakeholder_node
 
 
@@ -43,7 +44,7 @@ class PersonaFlowTests(unittest.TestCase):
 
     def test_extracts_and_checkpoints_profiles_without_forcing_links(self):
         self.extractor.invoke.return_value = {"personas": [
-            profile("Stakeholder-1"), profile(None), profile("Stakeholder-999"),
+            profile("Stakeholder-1"), profile(), profile("Stakeholder-999"),
         ]}
         result = self.graph.invoke(self.state, self.config)
         self.assertNotIn("__interrupt__", result)
@@ -67,9 +68,15 @@ class PersonaFlowTests(unittest.TestCase):
         self.assertIn(json.dumps(self.state["captured_intent"]), messages[1].content)
 
     def test_extracts_unlinked_profiles_without_a_stakeholder_list(self):
-        self.extractor.invoke.return_value = {"personas": [profile("Stakeholder-1")]}
+        self.extractor.invoke.return_value = {"personas": [profile()]}
         result = self.graph.invoke({"prd": self.state["prd"]}, self.config)
         self.assertIsNone(result["persona_metadata"]["personas"][0]["stakeholder_id"])
+
+    def test_response_schema_accepts_null_link_without_losing_profile_details(self):
+        response = PersonaResponse.model_validate({"personas": [profile(None)]})
+        self.assertIsNone(response.personas[0].stakeholder_id)
+        self.assertEqual(response.personas[0].gmc, "Avoid duplicate assignments.")
+        self.assertEqual(response.personas[0].usage_patterns, "Assign repair jobs.")
 
     def test_invalid_output_does_not_save_partial_personas(self):
         self.extractor.invoke.return_value = {"personas": [profile(), profile(role=[])]}
