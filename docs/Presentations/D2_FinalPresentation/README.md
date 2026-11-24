@@ -1,7 +1,4 @@
-# Final Presentation
+# D2 — Final Presentation
 
-The folders and files for this folder are as follows:
-
-Describe ...
-
-This folder will typically contain a slideshow.  The file format for the slideshow is not prescribed.
+Slideshow and supporting materials for the final course presentation. File
+format is not prescribed by the course.

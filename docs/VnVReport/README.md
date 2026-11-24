@@ -1,5 +1,8 @@
-# Test Report
+# Verification and Validation Report (IDE3.0)
 
-The folders and files for this folder are as follows:
+| File | Description |
+|------|-------------|
+| `VnVReport.tex` | Results of executing the VnV Plan (filled later in the course) |
+| `VnVReport.pdf` | Built PDF (also under `pdfs/VnVReport/`) |
 
-Describe ...
+Plan document: `../VnVPlan/`.

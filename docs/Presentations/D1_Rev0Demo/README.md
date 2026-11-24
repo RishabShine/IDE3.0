@@ -1,3 +1,4 @@
-# REV0 Presentation
+# D1 — Rev 0 Demonstration
 
-The Rev0 presentation typically does not contain a presentation slideshow.  This folder can be used to store relevant files for the presentation, like a script, or sample input files.
+Materials for the Rev 0 demo (script, sample inputs, notes). Slideshows are
+typically not required for Rev 0; prefer a live product demonstration.

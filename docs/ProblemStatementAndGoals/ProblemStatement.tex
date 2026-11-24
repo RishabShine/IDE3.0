@@ -25,7 +25,7 @@
 Sept 22, 26 & Qusay Qadir & problem statement, environments, goals\\
 Sept 27, 26 & Vedant Patel & Custom Documents (CDs)\\
 Nov 16, 26 & Vedant Patel & Corrected CDs to match the course registration (Wireframe Report, Usability Report)\\
-... & ... & ...\\
+Nov 24, 26 & Tyler Yue & Added PoC risks and planned PoC demonstration sections\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -120,6 +120,66 @@ helps if developers are willing to capture and review intent inside their IDE:
 These selections match the team's registration in the course repository
 (TeamComposition.csv). Any change requires an approved merge request to that
 file.
+
+\section{Proof of Concept}
+
+\subsection{Risks for the PoC Demo}
+
+The long-term feasibility risk for \progname{} is whether the team can
+construct and maintain a model that accurately represents relationships between
+a software system's implementation and engineering intent (requirements,
+constraints, and design decisions), including justifications for those links as
+the code evolves. That risk is also recorded in the Development Plan.
+
+For the PoC milestone specifically, the nearer-term risks are:
+
+\begin{itemize}
+  \item Whether the team can capture engineering intent in a structured,
+    revisable form (Single Statement of Need / PRD context) that is good enough
+    to drive later stakeholder, persona, and user-story work.
+  \item Whether local LLM inference (Ollama) is reliable enough for a live
+    demonstration of the agentic workflow under time constraints.
+  \item Whether the elicited artifacts (stakeholders, personas, Goal2Story
+    impact map) remain coherent enough to show that intent is becoming an
+    inspectable project model, not just chat history.
+\end{itemize}
+
+If the live LLM path fails during the demo, the fallback is to show (i)~the
+unit-tested graph behaviour and (ii)~the Wireframe CD clickable prototype under
+\texttt{docs/CDs/Wireframe/prototype/}, then explain how those UI panels map to
+the same workflow stages.
+
+\subsection{Planned PoC Demonstration}
+
+The PoC demo does \emph{not} yet show full intent-to-implementation
+traceability. It demonstrates the foundation of the intent model: capturing
+and refining engineering intent, then deriving early project artifacts from it.
+The live code lives in the repository at
+\url{https://github.com/RishabShine/IDE3.0} under \texttt{src/agentic\_flow/}.
+
+The demonstration covers:
+
+\begin{itemize}
+  \item \textbf{PRD intake.} Collect raw product/requirements context into
+    agent state (\texttt{src/agentic\_flow/prd\_intake/}).
+  \item \textbf{Intent capture (SSON).} Elicit and evaluate a Single Statement
+    of Need until the evaluation is met
+    (\texttt{src/agentic\_flow/capture\_intent/}).
+  \item \textbf{User modelling.} Derive stakeholders and personas from the
+    captured intent (\texttt{src/agentic\_flow/user\_modelling/}).
+  \item \textbf{Goal2Story.} Decompose a confirmed goal into actors, impacts,
+    deliverables, and user stories with human review gates
+    (\texttt{src/agentic\_flow/goal2story/}), including the terminal demo
+    entry point \texttt{python -m agentic\_flow.goal2story.demo}.
+  \item \textbf{UI context.} Optionally show the Wireframe CD prototype as the
+    intended IDE surface for the same stages.
+\end{itemize}
+
+A short demo path is
+\texttt{python -m agentic\_flow.goal2story.demo --n 1} (sample upstream state).
+The full pipeline path is the same command with \texttt{--full}. Graph behaviour
+is also covered by unit tests under \texttt{test/agentic\_flow/} that run
+without a live model.
 
 \newpage{}
 

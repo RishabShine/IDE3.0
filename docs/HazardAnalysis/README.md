@@ -1,5 +1,8 @@
-# Hazard Analysis
+# Hazard Analysis (IDE3.0)
 
-The folders and files for this folder are as follows:
+| File | Description |
+|------|-------------|
+| `HazardAnalysis.tex` | Hazards, FMEA-style analysis, and safety/security requirements |
+| `HazardAnalysis.pdf` | Built PDF (also under `pdfs/HazardAnalysis/`) |
 
-Describe ...
+Safety requirements here feed the SRS and design (MG/MIS) traceability.
