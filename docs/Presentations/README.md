@@ -1,8 +1,11 @@
-# Presentations/demonstrations about your software
+# Presentations and demonstrations
 
-The folders and files for this folder are as follows:
+| Folder | Milestone |
+|--------|-----------|
+| `D0_ProofOfConceptDemo/` | PoC demo (live agentic flow; no slides) |
+| `D1_Rev0Demo/` | Rev 0 demonstration |
+| `D2_FinalPresentation/` | Final presentation |
+| `D3_EXPO/` | Capstone EXPO materials |
 
-- D0_ProofOfConceptDemo
-- D1_Rev0Demo
-- D2_FinalPresentation
-- D3_EXPO
+PoC run instructions: see `D0_ProofOfConceptDemo/README.md` and the root
+`README.md`.

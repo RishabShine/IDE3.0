@@ -1,5 +1,6 @@
-# Development Plan
+# Reflect and Trace (IDE3.0)
 
-The folders and files for this folder are as follows:
-
-Describe ...
+| File | Description |
+|------|-------------|
+| `ReflectAndTrace.tex` | Reflection and requirements/design/code traceability (later) |
+| `ReflectAndTrace.pdf` | Built PDF (also under `pdfs/ReflectAndTrace/`) |

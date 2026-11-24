@@ -1,12 +1,7 @@
-# Software Requirements Specification (SRS)
+# SRS (Scientific Computing template — unused)
 
-<The SRS is for a single product, not a family of products. A Commonality Analysis is
-more appropriate for a family of products.>
+This folder holds the Scientific Computing SRS template from the course
+capTemplate. **IDE3.0 uses the Volere SRS** in `../SRS-Volere/`.
 
-<The template in this folder is suited to Scientific Computing (also known as 
-Research Software) projects>
-
-The folders and files for this folder are as follows:
-
-Describe ...
-
+Keep or remove this folder per course Makefile/PDF workflow conventions; do not
+treat it as the active requirements document.

@@ -1,5 +1,9 @@
-# Problem Statement
+# Problem Statement and Goals
 
-The folders and files for this folder are as follows:
+| File | Description |
+|------|-------------|
+| `ProblemStatement.tex` | Problem statement, goals, CDs, **PoC risks**, and **planned PoC demo** |
+| `ProblemStatement.pdf` | Local build output (also under `pdfs/ProblemStatementAndGoals/`) |
 
-Describe ...
+The PoC sections describe the feasibility risks for the demonstration and the
+live agentic-flow demo path under `src/agentic_flow/`.

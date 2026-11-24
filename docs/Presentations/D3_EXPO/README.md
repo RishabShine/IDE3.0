@@ -1,5 +1,5 @@
-# EXPO Poster
+# D3 — Capstone EXPO
 
-The folders and files for this folder are as follows:
-
-expo.pdf - the poster as printed for the expo event
+| File | Description |
+|------|-------------|
+| `expo.pdf` | Poster as printed for the EXPO event (add when ready) |
