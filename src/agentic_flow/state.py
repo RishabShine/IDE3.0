@@ -24,6 +24,24 @@ class StakeHolderMetadata(TypedDict):
     stakeholders: list[StakeHolderRecord]
 
 
+class PersonaRecord(TypedDict):
+    persona_id: str
+    stakeholder_id: str | None
+    name: str
+    role: str
+    status_and_trust_level: str
+    demographics: str
+    ksa: str
+    gmc: str
+    usage_patterns: str
+
+
+class PersonaMetadata(TypedDict):
+    # Prepared instructions and input context for the initial PRD extraction.
+    instructions: str
+    personas: list[PersonaRecord]
+
+
 class Goal2StoryMetadata(TypedDict):
     initialized: bool
     n_per_parent: int
@@ -62,6 +80,9 @@ class AgentState(TypedDict):
 
     # Initial stakeholder extraction from the PRD, saved by the checkpointer.
     stakeholder_metadata: NotRequired[StakeHolderMetadata]
+
+    # PRD-extracted personas; unresolved stakeholder links remain null.
+    persona_metadata: NotRequired[PersonaMetadata]
 
     # Goal2Story impact map, review state and approved stories.
     goal2story_metadata: NotRequired[Goal2StoryMetadata]
