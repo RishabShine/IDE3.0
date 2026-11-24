@@ -5,7 +5,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import ValidationError
 
-from agentic_flow.user_modelling.graph import build_user_modelling
+from agentic_flow.user_modelling.stakeholders.graph import build_stakeholders
 from agentic_flow.user_modelling.stakeholders import node, prompt
 
 
@@ -15,7 +15,7 @@ class StakeHolderFlowTests(unittest.TestCase):
         patcher = patch.object(node, "stakeholder_extractor", self.extractor)
         patcher.start()
         self.addCleanup(patcher.stop)
-        self.graph = build_user_modelling(InMemorySaver())
+        self.graph = build_stakeholders(InMemorySaver())
         self.config = {"configurable": {"thread_id": self.id()}}
         self.state = {"prd": "Dispatchers assign jobs.\nTechnicians perform the work."}
 

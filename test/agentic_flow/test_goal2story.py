@@ -343,9 +343,11 @@ class Goal2StoryFlowTests(unittest.TestCase):
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.graph import build_ide3_chat
         from agentic_flow.user_modelling.stakeholders import node as stakeholder_node
+        from agentic_flow.user_modelling.personas import node as persona_node
         from agentic_flow.user_modelling.stakeholders.schema import StakeHolderResponse
 
         sson_evaluator, extractor = StubModel(), StubModel()
+        persona_extractor = StubModel(default=lambda messages: {"personas": []})
         sson_evaluator.responses.append(IntentSSONEvaluation(
             evaluation_of_statement="met", evaluation_of_statement_feedback="Clear."
         ))
@@ -361,9 +363,10 @@ class Goal2StoryFlowTests(unittest.TestCase):
 
         with patch.object(capture_node, "base_model", SimpleNamespace(
             with_structured_output=lambda schema: sson_evaluator
-        )), patch.object(stakeholder_node, "stakeholder_extractor", extractor):
-            self.graph.invoke({"prd": "Front-desk staff handle bookings and know the rules."},
-                              self.config)
+        )), patch.object(stakeholder_node, "stakeholder_extractor", extractor), \
+                patch.object(persona_node, "persona_extractor", persona_extractor):
+            self.graph.invoke({}, self.config)
+            self.resume("Front-desk staff handle bookings and know the rules.")
             result = self.resume("Students book rooms without staff help.")
             self.assertIn("What goal should we break down?", self.message(result))
             self.resume("Cut staff time on bookings")
@@ -374,6 +377,7 @@ class Goal2StoryFlowTests(unittest.TestCase):
         self.assertEqual(meta["context"]["confirmed_stakeholders"][0]["name"],
                          "Front-desk library staff")
         self.assertEqual(len(meta["finalized_stories"]), 4)
+        self.assertEqual(len(persona_extractor.calls), 1)
         self.assertEqual(self.graph.get_state(self.config).next, ())
 
 

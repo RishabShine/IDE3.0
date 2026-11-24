@@ -22,8 +22,8 @@ def prepare_stakeholder_request(state: AgentState) -> AgentState:
     if not isinstance(prd, str) or not prd.strip():
         raise ValueError("A non-empty PRD is required for stakeholder extraction.")
 
-    #! REPLACE WITH ACTUAL INTENT DATA WHEN MERGED
-    intent_context = {}
+    #! CONNECT TO ACTUAL INTENT OUTPUT WHEN MERGED; accepts a supplied snapshot for now.
+    intent_context = state.get("captured_intent", {})
     instructions = prompt.STAKEHOLDER_EXTRACTION_PROMPT.format(
         prd=prd,
         intent_context=json.dumps(intent_context, ensure_ascii=False),

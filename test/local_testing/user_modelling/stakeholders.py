@@ -1,8 +1,8 @@
 """Run PRD-to-stakeholder extraction locally with a sample PRD and intent.
 
 From the repository root, with Ollama running and the selected model installed:
-    PYTHONPATH=src .venv/bin/python test/agentic_flow/test_local_run.py
-    PYTHONPATH=src .venv/bin/python test/agentic_flow/test_local_run.py --example repairs
+    PYTHONPATH=src .venv/bin/python test/local_testing/user_modelling/stakeholders.py
+    PYTHONPATH=src .venv/bin/python test/local_testing/user_modelling/stakeholders.py --example repairs
 
 IDE3_MODEL selects the model through the existing application configuration.
 This script makes a real model call only when run directly.
@@ -11,7 +11,7 @@ This script makes a real model call only when run directly.
 import argparse
 import json
 
-from agentic_flow.user_modelling.graph import build_user_modelling
+from agentic_flow.user_modelling.stakeholders.graph import build_stakeholders
 
 
 SAMPLE_PRD = """Library Group Study-Room Booking
@@ -219,7 +219,7 @@ def main():
     print("Example PRD:\n")
     print(prd)
     print("Extracting stakeholders using the sample captured intent...", flush=True)
-    graph = build_user_modelling()
+    graph = build_stakeholders()
     result = graph.invoke({"prd": prd, "captured_intent": intent})
     print("\nExtracted stakeholders:\n")
     print(json.dumps(result["stakeholder_metadata"]["stakeholders"], indent=2))
