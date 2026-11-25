@@ -342,9 +342,10 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
         self.assertIn("review the impacts", self.message(result))
         self.assertEqual(len(self.stubs[ActorList].calls), 1)
 
-    def test_parent_graph_runs_prd_then_sson_then_stakeholders_then_goal2story(self):
+    def test_parent_graph_runs_user_modelling_then_goals_then_goal2story(self):
         from agentic_flow.capture_intent import node as capture_node
         from agentic_flow.capture_intent.schema import IntentSSONEvaluation
+        from agentic_flow.goals import node as goal_node
         from agentic_flow.graph import build_ide3_chat
         from agentic_flow.user_modelling.stakeholders import node as stakeholder_node
         from agentic_flow.user_modelling.personas import node as persona_node
@@ -352,6 +353,10 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
 
         sson_evaluator, extractor = StubModel(), StubModel()
         persona_extractor = StubModel(default=lambda messages: {"personas": []})
+        goal_extractor = StubModel(default=lambda messages: {"goals": [{
+            "statement": "Cut staff time", "actors": [], "goal_type": "hard",
+            "resources": [], "plans": "", "justification": "",
+        }]})
         sson_evaluator.responses.append(IntentSSONEvaluation(
             evaluation_of_statement="met", evaluation_of_statement_feedback="Clear."
         ))
@@ -368,7 +373,8 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
         with patch.object(capture_node, "base_model", SimpleNamespace(
             with_structured_output=lambda schema: sson_evaluator
         )), patch.object(stakeholder_node, "stakeholder_extractor", extractor), \
-                patch.object(persona_node, "persona_extractor", persona_extractor):
+                patch.object(persona_node, "persona_extractor", persona_extractor), \
+                patch.object(goal_node, "goal_extractor", goal_extractor):
             self.graph.invoke({}, self.config)
             self.resume("Front-desk staff handle bookings and know the rules.")
             self.stubs[ExtractedGoal].responses.append(ExtractedGoal(goal="Cut staff time"))
@@ -384,6 +390,10 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
                          "Front-desk library staff")
         self.assertEqual(len(meta["finalized_stories"]), 4)
         self.assertEqual(len(persona_extractor.calls), 1)
+        self.assertEqual(len(goal_extractor.calls), 1)
+        self.assertIn('"stakeholder_id": "Stakeholder-1"', goal_extractor.calls[0][1].content)
+        self.assertEqual(result["goal_metadata"]["goals"][0]["goal_id"], "Goal-1")
+        self.assertEqual(result["goal_metadata"]["goals"][0]["statement"], "Cut staff time")
         self.assertEqual(self.graph.get_state(self.config).next, ())
 
 
