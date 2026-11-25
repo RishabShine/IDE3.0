@@ -11,6 +11,7 @@ from agentic_flow.capture_intent.graph import (
     build_capture_intent
 )
 from agentic_flow.user_modelling.graph import build_user_modelling
+from agentic_flow.goals.graph import build_goals
 from agentic_flow.goal2story.graph import build_goal2story
 
 def build_ide3_chat(checkpointer=None):
@@ -21,6 +22,7 @@ def build_ide3_chat(checkpointer=None):
     builder.add_node("prd_intake_graph", build_prd_intake())
     builder.add_node("capture_intent_graph", build_capture_intent())
     builder.add_node("user_modelling_graph", build_user_modelling())
+    builder.add_node("goals_graph", build_goals())
     builder.add_node("goal2story_graph", build_goal2story())
 
     builder.add_edge(START, "prd_intake_graph")
@@ -28,7 +30,8 @@ def build_ide3_chat(checkpointer=None):
     builder.add_edge("prd_intake_graph", "capture_intent_graph")
 
     builder.add_edge("capture_intent_graph", "user_modelling_graph")
-    builder.add_edge("user_modelling_graph", "goal2story_graph")
+    builder.add_edge("user_modelling_graph", "goals_graph")
+    builder.add_edge("goals_graph", "goal2story_graph")
     builder.add_edge("goal2story_graph", END)
     
     return builder.compile(
