@@ -5,14 +5,22 @@ the repository, not a slide deck (the PoC checklist asks for **no slides**).
 
 ## What we demonstrate
 
-1. **Live code** (preferred): from `src/`, with Ollama running:
+1. **Live code** (preferred): from `src/`, with a model configured (local
+   Ollama `qwen2.5:7b` by default, or keys in the repo-root `.env`):
 
    ```sh
-   python -m agentic_flow.goal2story.demo --n 1
-   python -m agentic_flow.goal2story.demo --full --n 1
+   python -m agentic_flow.graph --prd food_bank_prd.txt --out run.json
    ```
 
-2. **Fallback UI**: Wireframe prototype at
+   Optional UI (same pipeline):
+
+   ```sh
+   uvicorn agentic_flow.api.server:app --reload --port 8000
+   # open http://localhost:8000
+   ```
+
+2. **Fallback**: saved `run.json` / printed artifact-graph summary, unit tests
+   under `test/agentic_flow/`, and/or the Wireframe prototype at
    `docs/CDs/Wireframe/prototype/index.html`.
 
 3. **Risks and plan**: documented in

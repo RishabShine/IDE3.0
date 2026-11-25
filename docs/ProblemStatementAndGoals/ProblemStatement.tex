@@ -26,26 +26,14 @@ Sept 22, 26 & Qusay Qadir & problem statement, environments, goals\\
 Sept 27, 26 & Vedant Patel & Custom Documents (CDs)\\
 Nov 16, 26 & Vedant Patel & Corrected CDs to match the course registration (Wireframe Report, Usability Report)\\
 Nov 24, 26 & Tyler Yue & Added PoC risks and planned PoC demonstration sections\\
+Nov 25, 26 & Tyler Yue & Updated PoC risks and planned demo for the PRD dump to artifact-graph flow\\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \section{Problem Statement}
 
-\wss{You should check your problem statement with the
-\href{https://smiths.github.io/capTemplate/Checklists/ProbState-Checklist.pdf}
-{problem statement checklist}}. 
-
-% \wss{You can change the section headings, as long as you include the required
-% information.}
-
 \subsection{Problem}
-
-% \wss{What problem are you trying to solve?  Why is it important? Do not talk
-% about how you will solve the problem, only what the problem is.  AI is rarely
-% part of the problem.  The problem is ``what'' you want to do, not ``how'' you
-% want to do it.  The problem statement should be written in a way that is
-% understandable to a non-technical audience.}
 
 As code and software applications become cheaper to generate by AI assistants, 
 the engineering intent behind the system design, requirements, and quality expectations 
@@ -58,9 +46,6 @@ system's quality, acceptance criteria, and overall goals.
 
 \subsection{Inputs and Outputs}
 
-\wss{Characterize the problem in terms of ``high level'' inputs and outputs.  
-Use abstraction so that you can avoid details.}
-
 The primary input is the developer's natural-language expression of intent, including goals, requirements,  quality priorities, and constraints. 
 Secondary inputs are the AI coding assistant's session transcripts,  the changes it proposes or makes to the code.  These inputs are converted into a defined structure and processed by the system.
 
@@ -71,9 +56,6 @@ The system also outputs verification results indicating whether AI-generated cha
 
 \subsection{Environment}
 
-% \wss{Hardware and Software Environment for the users.  The developer environment
-% is summarized as part of the developer plan.}
-
 Environments is the engineering integrated development environment (IDE), where they choose to edit and write the code for their software applications.
 In the IDE the user must be interacting with an AI assistant, and the hardware environment should be the standard computer (desktop or laptop) that has an
 IDE installed, with AI assistant plugins.
@@ -81,10 +63,6 @@ IDE installed, with AI assistant plugins.
 \section{Goals}
 
 \section{Stretch Goals}
-
-% \wss{Goals you hope to get to, but not necessary.  They are also helpful if the
-% scope of the original project needs to be expanded.}
-
 
 Having a UML diagram sync that is part of the intent model, with round-trip engineering where, based on criteria changes, 
 the UML diagrams evolve accordingly to provide the most accurate class relationships, as well as the structure and function of each class.
@@ -134,68 +112,125 @@ the code evolves. That risk is also recorded in the Development Plan.
 For the PoC milestone specifically, the nearer-term risks are:
 
 \begin{itemize}
-  \item Whether the team can capture engineering intent in a structured,
-    revisable form (Single Statement of Need / PRD context) that is good enough
-    to drive later stakeholder, persona, and user-story work.
-  \item Whether local LLM inference (Ollama) is reliable enough for a live
-    demonstration of the agentic workflow under time constraints.
-  \item Whether the elicited artifacts (stakeholders, personas, Goal2Story
-    impact map) remain coherent enough to show that intent is becoming an
-    inspectable project model, not just chat history.
+  \item Whether a single PRD dump is enough for the agents to derive a coherent
+    set of linked artifacts (intent, stakeholders, personas, goals, use cases)
+    without interactive draft/approve gates.
+  \item Whether the configured LLM path (local Ollama by default, or a cloud
+    provider via \texttt{.env}) is reliable enough for a live demonstration
+    under time constraints.
+  \item Whether the assembled artifact graph (nodes, trace links, and reported
+    gaps) is inspectable enough to show that engineering intent is becoming a
+    project model, not just chat history.
 \end{itemize}
 
-If the live LLM path fails during the demo, the fallback is to show (i)~the
-unit-tested graph behaviour and (ii)~the Wireframe CD clickable prototype under
-\texttt{docs/CDs/Wireframe/prototype/}, then explain how those UI panels map to
-the same workflow stages.
+If the live LLM path fails during the demo, the fallback is to show (i)~a
+previously saved run (\texttt{--out run.json}) and the printed artifact/gap
+summary, (ii)~the unit-tested graph behaviour under
+\texttt{test/agentic\_flow/}, and (iii)~the browser UI or Wireframe CD prototype
+under \texttt{docs/CDs/Wireframe/prototype/}, then explain how those surfaces
+map to the same workflow stages. If the planned demo is still unsuccessful, the
+team can narrow scope to the PRD-to-artifact-graph extraction only and defer
+use-case richness or UI polish.
 
 \subsection{Planned PoC Demonstration}
 
 The PoC demo does \emph{not} yet show full intent-to-implementation
-traceability. It demonstrates the foundation of the intent model: capturing
-and refining engineering intent, then deriving early project artifacts from it.
-The live code lives in the repository at
+traceability (links into design, code, and tests). It demonstrates the
+foundation of the intent model: the engineer pastes a PRD once; the system
+derives artifacts internally; then it presents a connected artifact graph with
+trace links and gaps. The live code lives in the repository at
 \url{https://github.com/RishabShine/IDE3.0} under \texttt{src/agentic\_flow/}.
+The demonstration is live running code with \emph{no slides}, per the PoC
+checklist.
 
-The demonstration covers:
+The demonstration covers the main LangGraph pipeline
+(\texttt{build\_ide3\_chat} in \texttt{src/agentic\_flow/graph.py}):
 
 \begin{itemize}
-  \item \textbf{PRD intake.} Collect raw product/requirements context into
-    agent state (\texttt{src/agentic\_flow/prd\_intake/}).
-  \item \textbf{Intent capture (SSON).} Elicit and evaluate a Single Statement
-    of Need until the evaluation is met
+  \item \textbf{PRD as input.} The engineer supplies a product requirements
+    document (sample: \texttt{src/food\_bank\_prd.txt}). There is no
+    multi-step interview for each artifact type.
+  \item \textbf{Capture intent.} Derive the Single Statement of Need (SSON),
+    problems, benefits, and related context from the PRD
     (\texttt{src/agentic\_flow/capture\_intent/}).
-  \item \textbf{User modelling.} Derive stakeholders and personas from the
-    captured intent (\texttt{src/agentic\_flow/user\_modelling/}).
-  \item \textbf{Goal2Story.} Decompose a confirmed goal into actors, impacts,
-    deliverables, and user stories with human review gates
-    (\texttt{src/agentic\_flow/goal2story/}), including the terminal demo
-    entry point \texttt{python -m agentic\_flow.goal2story.demo}.
-  \item \textbf{UI context.} Optionally show the Wireframe CD prototype as the
-    intended IDE surface for the same stages.
+  \item \textbf{User modelling.} Derive stakeholders and personas and link
+    personas to stakeholders
+    (\texttt{src/agentic\_flow/user\_modelling/}).
+  \item \textbf{Goals.} Extract hard and soft goals with actors and links to
+    earlier artifacts (\texttt{src/agentic\_flow/goals/}).
+  \item \textbf{Use case model.} Build a rough use case model (actors, use
+    cases, include/extend-style links) with reference checks
+    (\texttt{src/agentic\_flow/use\_cases/}).
+  \item \textbf{Artifact graph.} Assemble nodes and trace edges, then report
+    gaps such as missing types or dangling links
+    (\texttt{src/agentic\_flow/artifact\_graph/}). This is the V1 inspectable
+    model shown at the end of the run.
+  \item \textbf{Optional UI.} Show the same stages in the browser UI
+    (\texttt{uvicorn agentic\_flow.api.server:app --reload --port 8000}) or the
+    Wireframe CD prototype as the intended IDE surface.
 \end{itemize}
 
-A short demo path is
-\texttt{python -m agentic\_flow.goal2story.demo --n 1} (sample upstream state).
-The full pipeline path is the same command with \texttt{--full}. Graph behaviour
+Primary live path (from \texttt{src/}):
+
+\begin{verbatim}
+python -m agentic_flow.graph --prd food_bank_prd.txt --out run.json
+\end{verbatim}
+
+Optional UI path: start the FastAPI server and open
+\texttt{http://localhost:8000}, paste the PRD, and run the flow. Graph behaviour
 is also covered by unit tests under \texttt{test/agentic\_flow/} that run
-without a live model.
+without a live model. Goal2Story (user stories per goal) remains available as a
+standalone subgraph but is not part of the main PoC path.
 
 \newpage{}
 
 \section*{Appendix --- Reflection}
 
-\wss{Not required for CAS 741}
-
 \input{../Reflection.text}
 
 \begin{enumerate}
-    \item What went well while writing this deliverable? 
+    \item What went well while writing this deliverable?
+
+    Writing the problem statement forced the team to separate the \emph{what}
+    (lost engineering intent and missing traceability when AI generates code)
+    from the \emph{how} (LangGraph agents, IDE panels, and specific models).
+    That made the project easier to explain to non-technical readers and gave
+    later documents a shared problem framing. Updating the Proof of Concept
+    section for the PoC checklist also went well: once the implementation
+    settled on a PRD-dump pipeline that derives linked artifacts and an
+    artifact graph, it was straightforward to align the documented risks and
+    planned demo with the live path in \texttt{src/agentic\_flow/}.
+
     \item What pain points did you experience during this deliverable, and how
     did you resolve them?
+
+    The main pain point was keeping the Problem Statement in sync with a
+    changing technical direction. Early drafts and the first PoC write-up still
+    described interactive SSON interviews and Goal2Story review gates, while
+    supervisor feedback and implementation moved toward a single PRD dump,
+    internal derivation, and presenting a connected artifact graph. We resolved
+    that by treating the PoC checklist items (risks and planned demo up to date)
+    as a forcing function: we re-read the current main pipeline, replaced the
+    outdated demo steps and commands, and kept full intent-to-code
+    traceability as a later-term risk rather than a PoC claim. Another friction
+    was empty or template-only sections early on (for example Goals); we filled
+    what we could from team agreement and left stretch goals clearly marked so
+    the core problem stayed focused.
+
     \item How did you and your team adjust the scope of your goals to ensure
     they are suitable for a Capstone project (not overly ambitious but also of
     appropriate complexity for a senior design project)?
-\end{enumerate}  
+
+    We narrowed the near-term goal from ``full AI-native IDE with
+    intent-to-implementation sync'' to a Capstone-sized foundation: derive a
+    structured, inspectable intent model from a PRD and show coherent
+    trace links among early artifacts. Full links into design, generated code,
+    tests, UML round-trip, and CI gates remain stretch or later-term goals.
+    That keeps the project complex enough (multi-stage agentic extraction,
+    schemas, gap reporting, human review of the model) without requiring every
+    ambitious feature to work for the PoC or Rev~0 demos. The PoC itself was
+    scoped further to live extraction and the artifact graph, with a documented
+    fallback if the live LLM path fails.
+\end{enumerate}
 
 \end{document}
