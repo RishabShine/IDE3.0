@@ -42,6 +42,29 @@ class PersonaMetadata(TypedDict):
     personas: list[PersonaRecord]
 
 
+class GoalActorRecord(TypedDict):
+    name: str
+    stakeholder_id: str | None
+    role: str
+    involvement: str
+
+
+class GoalRecord(TypedDict):
+    goal_id: str
+    statement: str
+    actors: list[GoalActorRecord]
+    goal_type: Literal["hard", "soft"] | None
+    resources: list[str]
+    plans: str
+    justification: str
+
+
+class GoalMetadata(TypedDict):
+    # Prepared instructions and input context for the initial PRD extraction.
+    instructions: str
+    goals: list[GoalRecord]
+
+
 class Goal2StoryMetadata(TypedDict):
     initialized: bool
     # PRD mode: goal taken from the PRD, every level accepted without review
@@ -85,6 +108,9 @@ class AgentState(TypedDict):
 
     # PRD-extracted personas; unresolved stakeholder links remain null.
     persona_metadata: NotRequired[PersonaMetadata]
+
+    # PRD-extracted goals and their supplied actors, resources, plans, and rationale.
+    goal_metadata: NotRequired[GoalMetadata]
 
     # Goal2Story impact map, review state and approved stories.
     goal2story_metadata: NotRequired[Goal2StoryMetadata]
