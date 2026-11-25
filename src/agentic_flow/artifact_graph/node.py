@@ -4,6 +4,7 @@ No model call: this step only reads what earlier steps saved in the state,
 turns each artifact into a node, turns each recorded relationship into an
 edge, and records gaps (missing artifacts, broken links, unconnected items).
 To add a new artifact type, write a collector and add it to COLLECTORS.
+
 """
 from typing import Any, Callable
 
@@ -14,7 +15,7 @@ from agentic_flow.artifact_graph.schema import (
     ArtifactNode,
 )
 from agentic_flow.goal2story.artifacts import collect_stories
-from agentic_flow.state import AgentState
+
 
 INTENT_ID = "Intent-1"
 
