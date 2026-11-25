@@ -23,42 +23,27 @@ design, code, and verification inside an IDE workflow.
 | `refs/` | BibTeX and reference material |
 | `.github/workflows/` | CI (LaTeX/PDF build and pages deploy) |
 
-## Proof of Concept (live demo)
+## Run it
 
-The PoC shows the intent-capture foundation, not full code traceability yet.
+The flow takes a PRD and produces the intent (SSON, problems, benefits,
+environment), stakeholders, personas, goals, a use case model and a trace graph,
+with impact analysis when you edit. See **[`src/README.md`](src/README.md)** for
+what each step does, model setup, and how to run the backend and frontend.
 
-1. Install dependencies (Python 3.11+):
+Quick start, with Python 3.11+, from this folder:
 
-   ```sh
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r src/requirements.txt
-   ```
+```sh
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r src/requirements.txt
+cd src && uvicorn agentic_flow.api.server:app --reload --port 8000
+# open http://localhost:8000 and paste src/food_bank_prd.txt
+```
 
-2. Install and run [Ollama](https://ollama.com), then pull a model:
+Tests need no model: `PYTHONPATH=src python -m unittest discover -s test/agentic_flow`.
 
-   ```sh
-   ollama pull llama2:7b-chat
-   # optional: IDE3_MODEL=qwen2.5:7b
-   ```
-
-3. From `src/`:
-
-   ```sh
-   cd src
-   python -m agentic_flow.goal2story.demo --n 1      # short Goal2Story demo
-   python -m agentic_flow.goal2story.demo --full --n 1  # full pipeline
-   ```
-
-4. Tests (no Ollama required), from the repo root:
-
-   ```sh
-   PYTHONPATH=src python -m unittest discover -s test/agentic_flow -v
-   ```
-
-5. Wireframe UI mock-up:
-   [prototype](https://raw.githack.com/RishabShine/IDE3.0/main/docs/CDs/Wireframe/prototype/index.html)
-   or open `docs/CDs/Wireframe/prototype/index.html` locally.
+Wireframe mock-up:
+[prototype](https://raw.githack.com/RishabShine/IDE3.0/main/docs/CDs/Wireframe/prototype/index.html)
+(or open `docs/CDs/Wireframe/prototype/index.html` locally).
 
 ## Documentation
 

@@ -15,7 +15,4 @@ def build_capture_sson(checkpointer=None):
     return builder.compile(checkpointer=checkpointer)
 
 
-# To redraw the diagram, from src/:
-# build_capture_sson().get_graph(xray=True).draw_mermaid_png(
-#     output_file_path="agentic_flow/capture_intent/sson/capture_sson_graph.png"
-# )
+# To redraw the diagrams, from src/: python -m agentic_flow.draw_graphs

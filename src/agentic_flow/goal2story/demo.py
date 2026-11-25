@@ -4,9 +4,12 @@ From the `src` directory, with Ollama running:
 
     python -m agentic_flow.goal2story.demo --prd       # PRD mode, sample PRD, no stops
     python -m agentic_flow.goal2story.demo --prd my_prd.txt --n 1
-    python -m agentic_flow.goal2story.demo             # review mode: approve each level
-    python -m agentic_flow.goal2story.demo --n 1       # smaller run: 1 × 1 × 1 = 1 story
-    python -m agentic_flow.goal2story.demo --full      # whole IDE3.0 flow from the PRD
+    python -m agentic_flow.goal2story.demo             # review mode: approve the stories
+    python -m agentic_flow.goal2story.demo --n 1       # at most 1 story per goal
+    python -m agentic_flow.goal2story.demo --full      # whole IDE3.0 flow, then stories
+
+Without --full, the stories are written for the sample goals below (what the
+goals stage would extract for the sample PRD).
 
 Set IDE3_MODEL to try another model, e.g. IDE3_MODEL=qwen2.5:7b.
 """
@@ -45,7 +48,6 @@ SAMPLE_STATE = {
             "Let McMaster students book library group study rooms themselves, "
             "so front-desk staff no longer handle bookings."
         ),
-        "goals": ["Cut library staff time spent on study-room bookings to under 1 hour per week."],
         "scope_exclusions": ["Equipment loans"],
         "constraints": ["Everyone signs in with their MacID."],
     },
@@ -62,22 +64,42 @@ SAMPLE_STATE = {
              "justification": "They set integration and operational constraints."},
         ],
     },
+    # what the goals stage extracts for the sample PRD
+    "goal_metadata": {
+        "instructions": "",
+        "goals": [
+            {"goal_id": "Goal-1",
+             "statement": "Cut front-desk staff time on booking emails to under 1 hour a week.",
+             "source": "Front-desk staff should spend less than one hour a week on booking emails.",
+             "benefit_ids": [], "goal_type": "hard",
+             "actors": [
+                 {"name": "Students", "stakeholder_id": "Stakeholder-1", "role": "Room booker",
+                  "involvement": "Book rooms themselves instead of emailing the front desk."},
+                 {"name": "Front-desk library staff", "stakeholder_id": "Stakeholder-2",
+                  "role": "Booking administrator", "involvement": "Stop handling booking emails."}],
+             "resources": ["room availability", "booking records"],
+             "plans": "Students see available rooms and make their own bookings.",
+             "justification": "Staff spend about six hours a week answering booking emails."},
+            {"goal_id": "Goal-2", "statement": "Never double book a room.",
+             "source": "A room must not be double booked", "benefit_ids": [], "goal_type": "hard",
+             "actors": [{"name": "Students", "stakeholder_id": "Stakeholder-1",
+                         "role": "Room booker", "involvement": "Book only free rooms."}],
+             "resources": ["booking records"], "plans": "",
+             "justification": "Two staff members can book the same room twice."},
+        ],
+    },
 }
 
 
-def run(graph, state, n=None, prd=None):
+def run(graph, state, n=None):
     config = {"configurable": {"thread_id": f"demo-{uuid.uuid4()}"}}
     if n is not None:
-        state = {**state, "goal2story_metadata": {"n_per_parent": n}}
+        state = {**state, "goal2story_metadata": {"stories_per_goal": n}}
     result = graph.invoke(state, config)
     while "__interrupt__" in result:
         print("\n" + "─" * 72)
         print(result["__interrupt__"][0].value["prompt_to_user"])
-        if prd is not None:
-            reply, prd = prd, None  # answer the PRD intake question
-            print("\n> (PRD pasted)")
-        else:
-            reply = input("\n> ")
+        reply = input("\n> ")
         print("(thinking…)")
         result = graph.invoke(Command(resume=reply), config)
     return result
@@ -88,10 +110,10 @@ def main():
     parser.add_argument("--full", action="store_true",
                         help="run the whole IDE3.0 flow instead of the sample input")
     parser.add_argument("--n", type=int, default=None,
-                        help="items per parent at each level (default 2)")
+                        help="at most this many stories per goal (default 3)")
     parser.add_argument("--prd", nargs="?", const="", default=None, metavar="FILE",
                         help="PRD mode: read the PRD from FILE (default: a sample PRD)")
-    parser.add_argument("--out", default=None, help="save the impact map as JSON")
+    parser.add_argument("--out", default=None, help="save the stories as JSON")
     args = parser.parse_args()
 
     prd = None
@@ -102,8 +124,12 @@ def main():
                 prd = f.read()
 
     if args.full:
+        from agentic_flow.goal2story.graph import build_goal2story
         from agentic_flow.graph import build_ide3_chat
-        result = run(build_ide3_chat(), {}, args.n, prd=prd)
+        # the whole flow starts from the PRD alone; Goal2Story is not part of it,
+        # so it runs afterwards on the goals that flow extracted
+        upstream = run(build_ide3_chat(), {"prd": prd or SAMPLE_PRD})
+        result = run(build_goal2story(InMemorySaver()), upstream, args.n)
     else:
         from agentic_flow.goal2story.graph import build_goal2story
         state = SAMPLE_STATE if prd is None else {**SAMPLE_STATE, "prd": prd}
@@ -111,7 +137,7 @@ def main():
 
     meta = result["goal2story_metadata"]
     output = {
-        "goal": meta["goal"],
+        "goals": [{"id": g["id"], "statement": g["statement"]} for g in meta["goals"]],
         "stories": [
             {k: s[k] for k in ("id", "text", "trace", "invest")}
             for s in meta["finalized_stories"]
@@ -121,17 +147,15 @@ def main():
     print("\n" + "═" * 72)
     print(json.dumps(output, ensure_ascii=False, indent=2))
 
-    from agentic_flow.goal2story.artifacts import collect_goal2story
-    nodes, edges = collect_goal2story(result)
-    labels = {n["id"]: n["label"] for n in nodes}
+    from agentic_flow.goal2story.artifacts import collect_stories
+    _nodes, edges = collect_stories(result)
     print("\nArtifact links:")
     for e in edges:
-        print(f"  {e['source']} --{e['relation']}--> {e['target']}"
-              f"  ({labels.get(e['target'], 'upstream')})")
+        print(f"  {e['source']} --{e['relation']}--> {e['target']}")
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
             json.dump(meta, f, ensure_ascii=False, indent=2)
-        print(f"\nSaved the full impact map to {args.out}")
+        print(f"\nSaved the stories to {args.out}")
 
 
 if __name__ == "__main__":

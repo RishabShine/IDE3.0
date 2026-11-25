@@ -80,6 +80,18 @@ class GoalData(BaseModel):
         "problems or benefits it addresses when stated. Use an empty string if "
         "absent. Do not evaluate feasibility or invent a reason for the goal."
     )
+    source: str = Field(
+        default="",
+        description="The exact PRD words this goal comes from, copied character for "
+        "character: the sentence or clause stating the objective. Empty string if "
+        "the PRD states it nowhere."
+    )
+    benefit_ids: list[str] = Field(
+        default_factory=list,
+        description="IDs of the already-extracted benefits (e.g. 'Benefit-2') whose "
+        "outcome shows this goal is reached. Use [] if none clearly matches; do not "
+        "force a link."
+    )
 
 
 class Goal(GoalData):

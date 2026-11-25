@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from agentic_flow.goals import node, prompt
 from agentic_flow.goals.graph import build_goals
+from agentic_flow.state import RED_FLAG
 
 
 def goal(**changes):
@@ -81,10 +82,42 @@ class GoalFlowTests(unittest.TestCase):
         self.assertEqual(messages[0].content, prompt.GOAL_EXTRACTION_INSTRUCTIONS)
         self.assertIsInstance(messages[1], HumanMessage)
         self.assertIn(self.state["prd"], messages[1].content)
-        for value in (self.state["captured_intent"],
+        for value in (node.intent_context(self.state["captured_intent"]),
                       self.state["stakeholder_metadata"]["stakeholders"],
                       self.state["persona_metadata"]["personas"]):
             self.assertIn(json.dumps(value), messages[1].content)
+
+    def test_quotes_are_checked_and_unsupported_goals_red_flagged(self):
+        quote = "Coordinators want to spend less than one hour per week on enquiries."
+        self.extractor.invoke.return_value = {"goals": [
+            goal(source=quote),
+            goal(statement="Delight every coordinator.", source="A sentence the PRD lacks."),
+        ]}
+        records = self.graph.invoke(self.state, self.config)["goal_metadata"]["goals"]
+        self.assertEqual(records[0]["source"], quote)
+        self.assertFalse(records[0]["statement"].startswith(RED_FLAG))
+        self.assertIsNone(records[1]["source"])
+        self.assertEqual(records[1]["statement"], f"{RED_FLAG} Delight every coordinator.")
+
+    def test_benefit_links_are_kept_only_for_extracted_benefits(self):
+        self.state["captured_intent"]["benefits"] = [
+            {"id": "Benefit-1", "description": "Under an hour a week on enquiries.",
+             "addresses": [], "measure": "under an hour", "kind": "hard", "source": None}]
+        self.extractor.invoke.return_value = {"goals": [
+            goal(benefit_ids=["Benefit-1", "Benefit-1", "Benefit-9"])]}
+        result = self.graph.invoke(self.state, self.config)
+        self.assertEqual(result["goal_metadata"]["goals"][0]["benefit_ids"], ["Benefit-1"])
+        request = self.extractor.invoke.call_args.args[0][1].content
+        self.assertIn('"id": "Benefit-1"', request)
+
+    def test_intent_context_keeps_ids_and_drops_evaluation(self):
+        context = node.intent_context({
+            "single_statement_intent": f"{RED_FLAG} Coordinate repairs.",
+            "sson_evaluation": {"score": 90},
+            "problems": [{"id": "Problem-1", "description": f"{RED_FLAG} Slow.", "source": None}],
+        })
+        self.assertEqual(context, {"single_statement_of_need": "Coordinate repairs.",
+                                   "problems": [{"id": "Problem-1", "description": "Slow."}]})
 
     def test_empty_goal_list_is_accepted(self):
         self.extractor.invoke.return_value = {"goals": []}

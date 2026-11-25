@@ -105,7 +105,9 @@ class GoalActorRecord(TypedDict):
 
 class GoalRecord(TypedDict):
     goal_id: str
-    statement: str
+    statement: str  # starts with RED_FLAG when no PRD quote supports it
+    source: str | None  # exact PRD words, or None if not found there
+    benefit_ids: list[str]  # Benefit IDs that show the goal is reached
     actors: list[GoalActorRecord]
     goal_type: Literal["hard", "soft"] | None
     resources: list[str]
@@ -119,27 +121,60 @@ class GoalMetadata(TypedDict):
     goals: list[GoalRecord]
 
 
+class UseCaseActorRecord(TypedDict):
+    actor_id: str  # Actor-n
+    name: str
+    kind: Literal["human", "system", "organization"]
+    stakeholder_id: str | None
+
+
+class UseCaseRecord(TypedDict):
+    use_case_id: str  # UC-n
+    name: str  # infinitive verb phrase
+    description: str
+    primary_actor_id: str | None
+    supporting_actor_ids: list[str]
+    goal_ids: list[str]
+
+
+class UseCaseRelationshipRecord(TypedDict):
+    kind: Literal["include", "extend"]
+    source: str  # include: base use case; extend: the extending use case
+    target: str  # include: included use case; extend: the base use case
+    condition: str  # extend only
+
+
+class UseCaseMetadata(TypedDict):
+    # Prepared instructions and input context for the modelling call.
+    instructions: str
+    system_name: str
+    actors: list[UseCaseActorRecord]
+    use_cases: list[UseCaseRecord]
+    relationships: list[UseCaseRelationshipRecord]
+    issues: list[str]  # rough-model checks from the L13 pitfalls
+
+
 class Goal2StoryMetadata(TypedDict):
     initialized: bool
-    # PRD mode: goal taken from the PRD, every level accepted without review
+    # PRD mode: stories accepted as written, with no review stop
     auto: bool
-    n_per_parent: int
+    stories_per_goal: int
     context: dict[str, Any]
-    proposed_goal: str
-    goal: str
-    goal_confirmed: bool
-    # each item: id, parent_id and its level's fields (see goal2story/schema.py)
-    actors: list[dict[str, Any]]
-    impacts: list[dict[str, Any]]
-    deliverables: list[dict[str, Any]]
+    # the extracted goals the stories are written for (from goal_metadata), each
+    # with id, statement, goal_type, actors, resources, plans, justification
+    # and delivers_benefits
+    goals: list[dict[str, Any]]
+    # each story: id (US-n), parent_id (its goal), actor, action,
+    # expected_outcome, stakeholder_id, text, invest
     stories: list[dict[str, Any]]
-    next_index: dict[str, int]
+    next_index: int
     latest_user_response: str
     response_feedback: str
-    approved_levels: list[str]
+    approved: bool
     edit_log: list[dict[str, Any]]
     open_questions: list[dict[str, str]]
     finalized_stories: list[dict[str, Any]]
+    skipped: bool  # True when there were no goals, so no stories were written
 
 
 # the total agent memory state, which is a dictionary of all the states of the agent
@@ -163,7 +198,15 @@ class AgentState(TypedDict):
     # PRD-extracted goals and their supplied actors, resources, plans, and rationale.
     goal_metadata: NotRequired[GoalMetadata]
 
-    # Goal2Story impact map, review state and approved stories.
+    # Impact analysis: the edits to assess ({"changes": [...]}) and the resulting
+    # report of proposals for linked artifacts (see impact_analysis/node.py).
+    impact_request: NotRequired[dict[str, Any]]
+    impact_report: NotRequired[dict[str, Any]]
+
+    # Rough use case model (L13): actors, use cases, «include»/«extend», checks.
+    use_case_metadata: NotRequired[UseCaseMetadata]
+
+    # Goal2Story: user stories per extracted goal, review state, approved stories.
     goal2story_metadata: NotRequired[Goal2StoryMetadata]
 
     # Every extracted artifact and its links, assembled by the final step.

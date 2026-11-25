@@ -41,6 +41,7 @@ READ THE INPUTS BY PURPOSE
 - Derived intent and personas: supporting context and pointers to objectives.
   These extractions may omit information: check the original PRD, including
   incomplete user profiles, rather than relying on their summaries alone.
+  The derived intent lists benefits with IDs, available for links.
 - Stakeholders: existing identities and IDs for matching actors. Their general
   justifications and direct/indirect classifications are not goal field values.
 
@@ -113,6 +114,15 @@ actor, consulting is an action in plans, and "application record" is a resource.
 The same evidence can populate all three fields; these are complementary views.
 Do not invent tools or list resources unrelated to this objective.
 
+source: the exact PRD words stating this objective, copied character for
+character. Quote the sentence or clause where the objective itself appears, not
+its rationale or approach. Use "" if no PRD text states it.
+
+benefit_ids: copy the IDs of derived benefits whose outcome shows this
+objective is reached, e.g. a goal to shorten waits links to the benefit
+"cut average wait time to under 5 minutes". Copy the actual input IDs. A benefit
+may support more than one goal. Use [] when no benefit clearly matches.
+
 justification: WHY the objective is wanted: its supplied need, problem, or
 benefit. Actions describing the approach belong in plans, even if found in the
 same sentence as a reason. Do not copy generic stakeholder rationale or claim
@@ -121,7 +131,7 @@ that necessity, verifiability, or attainability has been established.
 OUTPUT CONTRACT
 Return one object with a goals list following the response schema. Include all
 fields; use "" for missing text, [] for missing lists, and null for unresolved
-stakeholder_id or unclear goal_type. An empty field is appropriate only when its
+stakeholder_id or unclear goal_type. Never invent a quote or a benefit ID. An empty field is appropriate only when its
 detail is not supplied for that objective. Do not complete gaps, force links,
 create subgoals or dependencies, or propose solutions. The application assigns
 goal IDs: do not return goal_id. If no objectives are expressed, return goals=[].
@@ -139,7 +149,7 @@ Original PRD from the engineer:
 {prd}
 </prd>
 
-Intent already extracted from the same PRD:
+Intent already extracted from the same PRD (SSON, problems, benefits with IDs):
 <derived_intent>
 {intent_context}
 </derived_intent>

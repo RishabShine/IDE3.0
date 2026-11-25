@@ -23,7 +23,4 @@ def build_capture_intent(checkpointer=None):
     return builder.compile(checkpointer=checkpointer)
 
 
-# To redraw the diagram, from src/:
-# build_capture_intent().get_graph(xray=True).draw_mermaid_png(
-#     output_file_path="agentic_flow/capture_intent/capture_intent_graph.png"
-# )
+# To redraw the diagrams, from src/: python -m agentic_flow.draw_graphs

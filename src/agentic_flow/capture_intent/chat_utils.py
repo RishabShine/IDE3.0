@@ -13,7 +13,6 @@ import uuid
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.types import Command
 
 from agentic_flow.core.models import describe_model
 
@@ -150,13 +149,9 @@ def save_stakeholder_input(path: str, result: dict) -> None:
     print(f"\nSaved the stakeholders input (prd + captured_intent) to {path}")
 
 
-def chat(build_graph, title: str, description: str, asks_for_prd: bool = False) -> None:
-    """Run `build_graph` on pasted PRDs until you quit.
-
-    asks_for_prd=True: the graph starts with the PRD intake step, which pauses
-    and asks for the PRD; your paste resumes it. Otherwise the PRD is read
-    here first and passed in as state["prd"].
-    """
+def chat(build_graph, title: str, description: str) -> None:
+    """Run `build_graph` on pasted PRDs until you quit. The PRD is read here and
+    passed in as state["prd"]."""
     parser = argparse.ArgumentParser(description=f"{title}: {description}")
     parser.add_argument("--sample", action="store_true", help="run once on a sample PRD")
     parser.add_argument("--file", help="run once on a PRD read from this file")
@@ -185,20 +180,11 @@ def chat(build_graph, title: str, description: str, asks_for_prd: bool = False) 
         if not args.quiet:
             config["callbacks"] = [PrintModelResponses()]
         try:
-            if asks_for_prd:
-                result = graph.invoke({}, config)  # pauses at the PRD intake step
-                while "__interrupt__" in result:
-                    prd = get_prd(result["__interrupt__"][0].value["prompt_to_user"])
-                    if not prd:
-                        return
-                    print("\n(thinking...)")
-                    result = graph.invoke(Command(resume=prd), config)
-            else:
-                prd = get_prd("Paste your PRD.")
-                if not prd:
-                    return
-                print("\n(thinking...)")
-                result = graph.invoke({"prd": prd}, config)
+            prd = get_prd("Paste your PRD.")
+            if not prd:
+                return
+            print("\n(thinking...)")
+            result = graph.invoke({"prd": prd}, config)
         except Exception as error:  # show model/network errors, keep the chat going
             print(f"\nThe run failed: {type(error).__name__}: {error}", file=sys.stderr)
             if once:

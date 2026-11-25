@@ -18,6 +18,4 @@ def build_user_modelling(checkpointer=None):
 
 
 user_modelling_graph = build_user_modelling(checkpointer=InMemorySaver())
-# user_modelling_graph.get_graph(xray=True).draw_mermaid_png(
-#     output_file_path="agentic_flow/user_modelling/user_modelling_graph.png"
-# )
+# To redraw the diagrams, from src/: python -m agentic_flow.draw_graphs

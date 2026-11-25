@@ -302,3 +302,6 @@ env/
 
 # notebooks
 .ipynb_checkpoints/
+
+# extension UI sessions
+/.ide3/
