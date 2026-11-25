@@ -82,16 +82,12 @@ SPARSE_INTENT = {
 
 
 def run(prd, intent):
-    print("Example PRD:\n")
-    print(prd)
-    print("Extracting stakeholders and personas...", flush=True)
     state = build_user_modelling().invoke({"prd": prd, "captured_intent": intent})
     print("\nExtracted stakeholders:\n")
     print(json.dumps(state["stakeholder_metadata"]["stakeholders"], indent=2))
     print("\nExtracted personas:\n")
     print(json.dumps(state["persona_metadata"]["personas"], indent=2))
 
-    print("\nExtracting goals from the PRD and upstream state...", flush=True)
     result = build_goals().invoke(state)
     print("\nExtracted goals:\n")
     print(json.dumps(result["goal_metadata"]["goals"], indent=2))

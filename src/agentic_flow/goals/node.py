@@ -8,8 +8,11 @@ from agentic_flow.goals.schema import Goal, GoalResponse
 from agentic_flow.state import AgentState
 
 
-goal_extractor = base_model.with_structured_output(
-    GoalResponse, method="json_schema"
+# Allow room for the PRD, upstream context, instructions, and generated goals.
+# Keep the larger context window specific to this extraction stage.
+goal_extractor = (
+    base_model.model_copy(update={"num_ctx": 16384})
+    .with_structured_output(GoalResponse, method="json_schema")
 )
 
 
@@ -35,12 +38,11 @@ def prepare_goal_request(state: AgentState) -> AgentState:
 def extract_goals(state: AgentState) -> AgentState:
     """Extract goals, assign string IDs, and retain actors with unresolved links."""
     metadata = state["goal_metadata"]
-    response = GoalResponse.model_validate(
-        goal_extractor.invoke([
-            SystemMessage(content=prompt.GOAL_EXTRACTION_INSTRUCTIONS),
-            HumanMessage(content=metadata["instructions"]),
-        ])
-    )
+    messages = [
+        SystemMessage(content=prompt.GOAL_EXTRACTION_INSTRUCTIONS),
+        HumanMessage(content=metadata["instructions"]),
+    ]
+    response = GoalResponse.model_validate(goal_extractor.invoke(messages))
     stakeholder_ids = {
         item["stakeholder_id"]
         for item in state.get("stakeholder_metadata", {}).get("stakeholders", [])
