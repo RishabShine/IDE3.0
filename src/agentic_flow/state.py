@@ -44,6 +44,8 @@ class PersonaMetadata(TypedDict):
 
 class Goal2StoryMetadata(TypedDict):
     initialized: bool
+    # PRD mode: goal taken from the PRD, every level accepted without review
+    auto: bool
     n_per_parent: int
     context: dict[str, Any]
     proposed_goal: str

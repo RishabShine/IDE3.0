@@ -30,6 +30,32 @@ per week." """
 GOAL_EMPTY_FEEDBACK = "Please type a goal, or enter APPROVE if one was proposed."
 
 
+# goal extraction: PRD mode, model input
+# -----------------------------------------------------------------------------
+
+GOAL_EXTRACTION_INSTRUCTIONS = """\
+You are a Product Owner reading a product requirements document (PRD).
+Find the single most important business goal the product should achieve.
+
+Guidelines:
+- Use a goal the PRD states, or the one it most clearly implies.
+- A goal is a measurable outcome for the organization, not a feature.
+- Copy any numbers or targets exactly as the PRD gives them. Never add a \
+percentage, deadline or target the PRD does not state.
+- Write one sentence. Do not invent facts the PRD does not support.
+
+Output Format: one JSON object with two fields. "evidence": the PRD sentence \
+that states the goal or its target, copied word for word. "goal": the goal, \
+using only the facts and numbers in that evidence."""
+
+GOAL_EXTRACTION_REQUEST = """\
+<project_context>
+{anchors}
+</project_context>
+
+Task: State the one business goal to break down into user stories."""
+
+
 # review gates: shown to the user
 # -----------------------------------------------------------------------------
 

@@ -11,6 +11,7 @@ from agentic_flow.goal2story.schema import (
     ActorRevision,
     DeliverableList,
     DeliverableRevision,
+    ExtractedGoal,
     GeneratedStory,
     ImpactList,
     ImpactRevision,
@@ -163,27 +164,35 @@ def _proposed_goal(captured_intent) -> str:
 
 
 def initialize_goal2story(state: AgentState) -> AgentState:
-    """Collect the context anchors once, without calling the model."""
+    """Collect the context anchors once, without calling the model.
+
+    With a PRD in the state, Goal2Story runs in PRD mode: the goal is taken
+    from the PRD and every level is accepted as generated, with no review
+    stops. Set goal2story_metadata["auto"] to override this.
+    """
     existing = state.get("goal2story_metadata") or {}
     if existing.get("initialized"):
         return {}
 
-    #! full upstream context (goals, benefits, scope, personas) can be read here
-    # when lanes 1 and 2 provide it; for now, use everything currently available
+    prd = (state.get("prd") or "").strip()
     captured = state.get("captured_intent")
     stakeholders = (state.get("stakeholder_metadata") or {}).get("stakeholders", [])
+    personas = (state.get("persona_metadata") or {}).get("personas", [])
     statement = (state.get("intent_metadata") or {}).get("single_statement_intent", "")
     context = {
+        "prd": prd,
         "statement_of_need": statement,
         "project_context": state.get("project_context", ""),
         "captured_intent": captured,
         "confirmed_stakeholders": stakeholders,
+        "personas": personas,
     }
     context = {k: v for k, v in context.items() if v}
 
     return {
         "goal2story_metadata": {
             "initialized": True,
+            "auto": existing.get("auto", bool(prd)),
             "n_per_parent": existing.get("n_per_parent", DEFAULT_N_PER_PARENT),
             "context": context,
             "proposed_goal": _proposed_goal(captured),
@@ -204,9 +213,30 @@ def initialize_goal2story(state: AgentState) -> AgentState:
     }
 
 
+def _extract_goal(meta) -> str:
+    """PRD mode: take the goal from the PRD and the upstream artifacts."""
+    result = _call(ExtractedGoal, [
+        SystemMessage(content=prompt.GOAL_EXTRACTION_INSTRUCTIONS),
+        HumanMessage(content=prompt.GOAL_EXTRACTION_REQUEST.format(
+            anchors=_json(meta["context"])
+        )),
+    ])
+    return " ".join(result.goal.split())
+
+
 def confirm_goal(state: AgentState) -> AgentState:
-    """Ask the engineer to approve the proposed goal or type their own."""
+    """Ask the engineer to approve the proposed goal or type their own.
+
+    In PRD mode, use the proposed goal or extract one, without asking.
+    """
     meta = state["goal2story_metadata"]
+    if meta.get("auto"):
+        goal = (meta["proposed_goal"] or _extract_goal(meta)
+                or meta["context"].get("statement_of_need", ""))
+        if not goal:
+            raise ValueError("No goal could be found in the PRD.")
+        return {"goal2story_metadata": {**meta, "goal": goal, "goal_confirmed": True}}
+
     if meta["proposed_goal"]:
         message = prompt.GOAL_PROPOSED_PROMPT.format(goal=meta["proposed_goal"])
     else:
@@ -380,6 +410,8 @@ def _render_level(meta, level) -> str:
 
 
 def _review_route(meta, level) -> str:
+    if meta.get("auto"):
+        return "approved"
     response = meta["latest_user_response"]
     if _is_approve(response):
         return "approved" if meta[level] else "retry"
@@ -389,6 +421,11 @@ def _review_route(meta, level) -> str:
 def _make_review(level):
     def review(state: AgentState) -> AgentState:
         meta = state["goal2story_metadata"]
+        if meta.get("auto"):
+            # PRD mode: accept the level as generated, with no review stop
+            return {"goal2story_metadata": {
+                **meta, "approved_levels": [*meta["approved_levels"], level],
+            }}
         info = prompt.LEVEL_INFO[level]
         feedback = f"\n{meta['response_feedback']}\n" if meta["response_feedback"] else ""
         message = prompt.REVIEW_PROMPT.format(
