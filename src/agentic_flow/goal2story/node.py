@@ -178,7 +178,7 @@ def initialize_goal2story(state: AgentState) -> AgentState:
     captured = state.get("captured_intent")
     stakeholders = (state.get("stakeholder_metadata") or {}).get("stakeholders", [])
     personas = (state.get("persona_metadata") or {}).get("personas", [])
-    statement = (state.get("intent_metadata") or {}).get("single_statement_intent", "")
+    statement = (captured or {}).get("single_statement_intent", "")
     context = {
         "prd": prd,
         "statement_of_need": statement,

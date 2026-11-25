@@ -5,11 +5,63 @@ from agentic_flow.artifact_graph.schema import ArtifactGraph
 Verdict = Literal["met", "partially_met", "not_met"]
 
 
-class IntentCapture(TypedDict):
+# Capture intent (PEGS G.1-G.3, E.5-E.6), derived from the PRD
+# -----------------------------------------------------------------------------
+# Anything the PRD does not state but we derived anyway starts with RED_FLAG.
+# A list item whose source quote is not found in the PRD is flagged the same way
+# and keeps source=None.
+
+RED_FLAG = "\U0001F6A9"  # the red flag emoji
+
+
+class SourcedItem(TypedDict):
+    id: str
+    description: str
+    # exact words from the PRD this item comes from, or None if not found there
+    source: str | None
+
+
+class BenefitRecord(SourcedItem):
+    addresses: list[str]  # Problem IDs this benefit fixes
+    measure: str | None  # target copied from the PRD, or None
+    kind: Literal["hard", "soft"]  # hard when it has a measure
+
+
+class SSONCriterionRecord(TypedDict):
+    verdict: Verdict
+    reason: str
+
+
+class SSONEvaluationRecord(TypedDict):
+    # non-blocking quality check; nothing waits on it, it only reports gaps
+    criteria: dict[str, SSONCriterionRecord]
+    score: int
+    passed: bool
+    feedback: str
+
+
+class CapturedIntent(TypedDict, total=False):
+    # G.1 Context and overall objective, with the SSON
     single_statement_intent: str
-    evaluation_of_statement: Verdict
-    evaluation_of_statement_feedback: str
-    attempt_number: int
+    sson_source: Literal["stated", "synthesized"]
+    sson_evidence: list[str]  # PRD sentences the SSON is built from
+    what: str | None
+    how: str | None
+    why: str | None
+    success_measure: str | None
+    context_and_objective: str
+    sson_evaluation: SSONEvaluationRecord
+    # G.2 Current situation
+    current_situation: str
+    problems: list[SourcedItem]  # Problem-n
+    # G.3 Expected benefits
+    benefits: list[BenefitRecord]  # Benefit-n
+    out_of_scope_problems: list[str]
+    # E.5 Effects, E.6 Invariants, plus constraints and scope exclusions
+    effects: list[SourcedItem]  # Effect-n
+    invariants: list[SourcedItem]  # Invariant-n
+    constraints: list[SourcedItem]  # Constraint-n
+    scope_exclusions: list[SourcedItem]  # Exclusion-n
 
 
 class StakeHolderRecord(TypedDict):
@@ -71,16 +123,13 @@ class Goal2StoryMetadata(TypedDict):
 class AgentState(TypedDict):
 
     #! older from the iterative process, can remove once we fix functionality got PRD
-    project_context: str
+    project_context: NotRequired[str]
 
     # Raw PRD text, before any artifact extraction.
     prd: NotRequired[str]
 
-    # Capture Intent State
-    intent_metadata: IntentCapture
-
-    # Full upstream intent snapshot, once the capture phase provides it.
-    captured_intent: NotRequired[dict[str, Any]]
+    # Intent derived from the PRD by the capture-intent graph (see CapturedIntent).
+    captured_intent: NotRequired[CapturedIntent]
 
     # Initial stakeholder extraction from the PRD, saved by the checkpointer.
     stakeholder_metadata: NotRequired[StakeHolderMetadata]

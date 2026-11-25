@@ -40,13 +40,11 @@ SAMPLE_STATE = {
         "and at the front desk. Staff spend about 10 hours a week on bookings; "
         "double bookings and no-shows are common."
     ),
-    "intent_metadata": {
+    "captured_intent": {
         "single_statement_intent": (
             "Let McMaster students book library group study rooms themselves, "
             "so front-desk staff no longer handle bookings."
         ),
-    },
-    "captured_intent": {
         "goals": ["Cut library staff time spent on study-room bookings to under 1 hour per week."],
         "scope_exclusions": ["Equipment loans"],
         "constraints": ["Everyone signs in with their MacID."],
