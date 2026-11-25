@@ -1,5 +1,7 @@
 from typing import Any, Literal, NotRequired, TypedDict
 
+from agentic_flow.artifact_graph.schema import ArtifactGraph
+
 Verdict = Literal["met", "partially_met", "not_met"]
 
 
@@ -88,3 +90,6 @@ class AgentState(TypedDict):
 
     # Goal2Story impact map, review state and approved stories.
     goal2story_metadata: NotRequired[Goal2StoryMetadata]
+
+    # Every extracted artifact and its links, assembled by the final step.
+    artifact_graph: NotRequired[ArtifactGraph]
