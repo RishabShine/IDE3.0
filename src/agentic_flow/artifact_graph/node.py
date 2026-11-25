@@ -15,6 +15,7 @@ from agentic_flow.artifact_graph.schema import (
     ArtifactNode,
 )
 from agentic_flow.goal2story.artifacts import collect_stories
+from agentic_flow.state import AgentState
 
 
 INTENT_ID = "Intent-1"
