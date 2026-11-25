@@ -1,40 +1,20 @@
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.graph import (
-    START,
-    END,
-    StateGraph
-)
+from langgraph.graph import END, START, StateGraph
 
+from agentic_flow.capture_intent.node import extract_intent, prepare_intent_request
 from agentic_flow.state import AgentState
-from agentic_flow.capture_intent.node import (
-    capture_intent,
-    evaluate_SSON,
-)
 
 
 def build_capture_intent(checkpointer=None):
-
+    """Derive intent artifacts from the PRD in one pass without user interaction."""
     builder = StateGraph(AgentState)
-
-    builder.add_node("capture_intent", capture_intent)
-
-    builder.add_node("evaluate_SSON", evaluate_SSON)
-
-    builder.add_edge(START, "capture_intent")
-
-    builder.add_edge("capture_intent", "evaluate_SSON")
-
-    builder.add_conditional_edges(
-        "evaluate_SSON",
-        lambda state: state["intent_metadata"]["evaluation_of_statement"],
-        {
-            "met": END,
-            "partially_met": "capture_intent",
-            "not_met": "capture_intent",
-        }
-    )
-
+    builder.add_node("prepare_intent_request", prepare_intent_request)
+    builder.add_node("extract_intent", extract_intent)
+    builder.add_edge(START, "prepare_intent_request")
+    builder.add_edge("prepare_intent_request", "extract_intent")
+    builder.add_edge("extract_intent", END)
     return builder.compile(checkpointer=checkpointer)
+
 
 # Standalone use keeps its own memory; embedded use inherits the parent's.
 capture_intent_graph = build_capture_intent(checkpointer=InMemorySaver())

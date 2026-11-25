@@ -1,6 +1,5 @@
 import unittest
 from collections import deque
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from langgraph.checkpoint.memory import InMemorySaver
@@ -344,22 +343,29 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
 
     def test_parent_graph_runs_user_modelling_then_goals_then_goal2story(self):
         from agentic_flow.capture_intent import node as capture_node
-        from agentic_flow.capture_intent.schema import IntentSSONEvaluation
         from agentic_flow.goals import node as goal_node
         from agentic_flow.graph import build_ide3_chat
         from agentic_flow.user_modelling.stakeholders import node as stakeholder_node
         from agentic_flow.user_modelling.personas import node as persona_node
         from agentic_flow.user_modelling.stakeholders.schema import StakeHolderResponse
 
-        sson_evaluator, extractor = StubModel(), StubModel()
+        intent_extractor = StubModel(default=lambda messages: {
+            "intent": {
+                "single_statement_intent": "Let students book rooms without staff.",
+                "what": "book rooms without staff",
+                "how": "self-service booking",
+                "why": "staff spend too long on bookings",
+                "problems": [],
+                "benefits": [],
+                "goals": ["Cut staff time"],
+            }
+        })
+        extractor = StubModel()
         persona_extractor = StubModel(default=lambda messages: {"personas": []})
         goal_extractor = StubModel(default=lambda messages: {"goals": [{
             "statement": "Cut staff time", "actors": [], "goal_type": "hard",
             "resources": [], "plans": "", "justification": "",
         }]})
-        sson_evaluator.responses.append(IntentSSONEvaluation(
-            evaluation_of_statement="met", evaluation_of_statement_feedback="Clear."
-        ))
         extractor.responses.append(StakeHolderResponse(stakeholders=[{
             "name": "Front-desk library staff", "involvement": "direct",
             "summary": "Handle bookings and know the rules.",
@@ -370,16 +376,16 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
         )
         self.graph = build_ide3_chat(self.checkpointer)
 
-        with patch.object(capture_node, "base_model", SimpleNamespace(
-            with_structured_output=lambda schema: sson_evaluator
-        )), patch.object(stakeholder_node, "stakeholder_extractor", extractor), \
+        with patch.object(capture_node, "intent_extractor", intent_extractor), \
+                patch.object(stakeholder_node, "stakeholder_extractor", extractor), \
                 patch.object(persona_node, "persona_extractor", persona_extractor), \
                 patch.object(goal_node, "goal_extractor", goal_extractor):
+            # Only human step for the PoC path: dump the PRD once.
             self.graph.invoke({}, self.config)
-            self.resume("Front-desk staff handle bookings and know the rules.")
-            self.stubs[ExtractedGoal].responses.append(ExtractedGoal(goal="Cut staff time"))
-            # the PRD puts Goal2Story in PRD mode: no goal question, no review stops
-            result = self.resume("Students book rooms without staff help.")
+            result = self.resume(
+                "Students book rooms without staff help.\n"
+                "Front-desk staff handle bookings and know the rules."
+            )
 
         self.assertNotIn("__interrupt__", result)
         meta = result["goal2story_metadata"]
@@ -388,7 +394,12 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
         self.assertIn("Front-desk staff handle bookings", meta["context"]["prd"])
         self.assertEqual(meta["context"]["confirmed_stakeholders"][0]["name"],
                          "Front-desk library staff")
+        self.assertEqual(
+            result["captured_intent"]["single_statement_intent"],
+            "Let students book rooms without staff.",
+        )
         self.assertEqual(len(meta["finalized_stories"]), 4)
+        self.assertEqual(len(intent_extractor.calls), 1)
         self.assertEqual(len(persona_extractor.calls), 1)
         self.assertEqual(len(goal_extractor.calls), 1)
         self.assertIn('"stakeholder_id": "Stakeholder-1"', goal_extractor.calls[0][1].content)
