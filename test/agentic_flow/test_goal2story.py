@@ -14,6 +14,7 @@ from agentic_flow.goal2story.schema import (
     ActorUpdate,
     DeliverableList,
     DeliverableRevision,
+    ExtractedGoal,
     GeneratedActor,
     GeneratedDeliverable,
     GeneratedImpact,
@@ -96,9 +97,10 @@ STAKEHOLDERS = [
 ]
 
 
-class Goal2StoryFlowTests(unittest.TestCase):
+class Goal2StoryTestCase(unittest.TestCase):
     def setUp(self):
         self.stubs = {
+            ExtractedGoal: StubModel(),
             ActorList: StubModel(),
             ImpactList: StubModel(impacts_for),
             DeliverableList: StubModel(deliverables_for),
@@ -146,6 +148,8 @@ class Goal2StoryFlowTests(unittest.TestCase):
             result = self.resume("APPROVE")
         return result
 
+
+class Goal2StoryFlowTests(Goal2StoryTestCase):
     def test_goal_is_proposed_from_context_without_a_model_call(self):
         result = self.start()
         self.assertIn("Proposed goal: Cut staff time", self.message(result))
@@ -367,18 +371,90 @@ class Goal2StoryFlowTests(unittest.TestCase):
                 patch.object(persona_node, "persona_extractor", persona_extractor):
             self.graph.invoke({}, self.config)
             self.resume("Front-desk staff handle bookings and know the rules.")
+            self.stubs[ExtractedGoal].responses.append(ExtractedGoal(goal="Cut staff time"))
+            # the PRD puts Goal2Story in PRD mode: no goal question, no review stops
             result = self.resume("Students book rooms without staff help.")
-            self.assertIn("What goal should we break down?", self.message(result))
-            self.resume("Cut staff time on bookings")
-            result = self.approve_all()
 
         self.assertNotIn("__interrupt__", result)
         meta = result["goal2story_metadata"]
+        self.assertTrue(meta["auto"])
+        self.assertEqual(meta["goal"], "Cut staff time")
+        self.assertIn("Front-desk staff handle bookings", meta["context"]["prd"])
         self.assertEqual(meta["context"]["confirmed_stakeholders"][0]["name"],
                          "Front-desk library staff")
         self.assertEqual(len(meta["finalized_stories"]), 4)
         self.assertEqual(len(persona_extractor.calls), 1)
         self.assertEqual(self.graph.get_state(self.config).next, ())
+
+
+
+class Goal2StoryPrdModeTests(Goal2StoryTestCase):
+    """PRD mode: the goal comes from the PRD and no level stops for review."""
+
+    PRD = "Students email the front desk to book study rooms. Staff spend 6 h a week on it."
+
+    def test_prd_runs_straight_through_using_the_proposed_goal(self):
+        result = self.start(prd=self.PRD)
+        self.assertNotIn("__interrupt__", result)
+        meta = result["goal2story_metadata"]
+        self.assertEqual(meta["goal"], "Cut staff time on bookings to under 1 h/week")
+        self.assertEqual(meta["approved_levels"], list(node.LEVELS))
+        self.assertEqual(len(meta["finalized_stories"]), 8)
+        self.assertEqual(meta["context"]["prd"], self.PRD)
+        self.assertFalse(self.stubs[ExtractedGoal].calls)
+
+    def test_goal_is_extracted_from_the_prd_when_none_is_given(self):
+        self.stubs[ExtractedGoal].responses.append(
+            ExtractedGoal(goal="  Cut   booking emails  ")
+        )
+        personas = [{"persona_id": "Persona-1", "name": "Sam", "stakeholder_id": 1}]
+        result = self.start(prd=self.PRD, captured_intent=None,
+                            persona_metadata={"instructions": "", "personas": personas})
+        meta = result["goal2story_metadata"]
+        self.assertEqual(meta["goal"], "Cut booking emails")
+        self.assertEqual(meta["context"]["personas"], personas)
+        self.assertIn(self.PRD, self.stubs[ExtractedGoal].calls[0][-1].content)
+
+    def test_empty_levels_do_not_stop_prd_mode(self):
+        self.stubs[ActorList].default = lambda m: ActorList(actors=[])
+        result = self.start(prd=self.PRD)
+        self.assertNotIn("__interrupt__", result)
+        self.assertEqual(result["goal2story_metadata"]["finalized_stories"], [])
+
+    def test_auto_can_be_turned_off_with_a_prd(self):
+        result = self.start(prd=self.PRD, goal2story_metadata={"auto": False})
+        self.assertIn("Proposed goal:", result["__interrupt__"][0].value["prompt_to_user"])
+
+    def test_collector_links_every_level_to_its_parent(self):
+        from agentic_flow.goal2story.artifacts import GOAL_ID, collect_goal2story
+
+        stakeholders = [{**s, "stakeholder_id": f"Stakeholder-{s['stakeholder_id']}"}
+                        for s in STAKEHOLDERS]
+        state = self.start(
+            prd=self.PRD,
+            stakeholder_metadata={"instructions": "", "stakeholders": stakeholders},
+            captured_intent={"goals": ["Cut staff time"],
+                             "single_statement_intent": "Let students book rooms."},
+        )
+        nodes, edges = collect_goal2story(state)
+        types = [n["type"] for n in nodes]
+        self.assertEqual([types.count(t) for t in
+                          ("goal", "actor", "impact", "deliverable", "story")], [1, 2, 4, 8, 8])
+        edge_set = {(e["source"], e["relation"], e["target"]) for e in edges}
+        self.assertIn((GOAL_ID, "achieves", "Intent-1"), edge_set)
+        self.assertIn(("A-1", "helps_reach", GOAL_ID), edge_set)
+        self.assertIn(("A-1", "drawn_from", "Stakeholder-1"), edge_set)
+        self.assertIn(("A-2", "drawn_from", "Stakeholder-2"), edge_set)
+        self.assertIn(("I-1.1", "impact_of", "A-1"), edge_set)
+        self.assertIn(("D-1.1.1", "supports", "I-1.1"), edge_set)
+        self.assertIn(("US-1", "implements", "D-1.1.1"), edge_set)
+        self.assertEqual(len(edges), 1 + 2 * 2 + 4 + 8 + 8)
+        ids = {n["id"] for n in nodes}
+        self.assertTrue(all(e["source"] in ids for e in edges))
+
+    def test_collector_is_empty_before_a_goal_exists(self):
+        from agentic_flow.goal2story.artifacts import collect_goal2story
+        self.assertEqual(collect_goal2story({}), ([], []))
 
 
 if __name__ == "__main__":

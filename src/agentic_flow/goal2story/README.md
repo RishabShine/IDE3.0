@@ -2,8 +2,18 @@
 
 Breaks one confirmed goal into user stories through automated impact mapping,
 following Goal2Story (arXiv:2503.13279, §3), with IDE3.0 review gates added.
-The outer IDE3.0 graph runs SSON capture, then user modelling, then this
-graph, then END. It can also run on its own for testing.
+The outer IDE3.0 graph runs PRD intake, SSON capture, user modelling, then
+this graph, then END. It can also run on its own for testing.
+
+## Two modes
+
+- **PRD mode** (default when `state["prd"]` is set). The goal is taken from
+  the PRD, every level is accepted as generated, and the graph runs straight
+  through with no questions. This is the PoC flow.
+- **Review mode** (no PRD). The engineer confirms the goal and approves or
+  edits each level, as described below.
+
+Set `goal2story_metadata["auto"]` to `True` or `False` to force a mode.
 
 | Level | Agent (paper profile) | Question | IDs |
 |---|---|---|---|
@@ -12,7 +22,7 @@ graph, then END. It can also run on its own for testing.
 | Deliverables | Delivery Coordinator (Scrum Master) | **How** does the software support each impact? | `D-1.1.1` |
 | Stories | Tactical Officer (Product Owner) | One user story per deliverable | `US-1` … |
 
-## Flow
+## Flow (review mode)
 
 ```text
 initialize → confirm goal → generate actors → review ⇄ revise
@@ -62,8 +72,25 @@ After approval, `result["goal2story_metadata"]` contains:
 - `actors`, `impacts`, `deliverables`, `stories`: the full approved impact map.
 
 Persistent artifact IDs and saving to the project remain to be connected.
-Personas are not used yet; when lane 2 provides them, add them to `context`
-in `initialize_goal2story` and the stories can use the persona's name.
+The PRD and personas are passed to every agent in `context`.
+
+## Artifact graph
+
+`artifacts.collect_goal2story(state)` returns the goal, actors, impacts,
+deliverables and stories as artifact graph nodes and edges. Each edge points
+to the higher-level artifact:
+
+| Edge | Meaning |
+|---|---|
+| `Goal-1 --achieves--> Intent-1` | the goal serves the statement of need |
+| `A-1 --helps_reach--> Goal-1` | the actor can help reach the goal |
+| `A-1 --drawn_from--> Stakeholder-1` | the actor comes from that stakeholder |
+| `I-1.1 --impact_of--> A-1` | the behaviour change belongs to that actor |
+| `D-1.1.1 --supports--> I-1.1` | the deliverable supports that impact |
+| `US-1 --implements--> D-1.1.1` | the story implements that deliverable |
+
+To include it, add `("goal", collect_goal2story)` to `COLLECTORS` in
+`artifact_graph/node.py`.
 
 ## Run it
 
@@ -84,9 +111,11 @@ result = goal2story_graph.invoke(Command(resume=user_reply), config)
 To try it in the terminal with the study-room example (from `src`):
 
 ```sh
-python -m agentic_flow.goal2story.demo          # sample lane 1 and 2 output
-python -m agentic_flow.goal2story.demo --n 1    # quick run: one story
-python -m agentic_flow.goal2story.demo --full   # whole IDE3.0 flow
+python -m agentic_flow.goal2story.demo --prd             # PRD mode, sample PRD
+python -m agentic_flow.goal2story.demo --prd my_prd.txt  # PRD mode, your PRD
+python -m agentic_flow.goal2story.demo                   # review mode
+python -m agentic_flow.goal2story.demo --n 1             # quick run: one story
+python -m agentic_flow.goal2story.demo --full --prd      # whole IDE3.0 flow
 IDE3_MODEL=qwen2.5:7b python -m agentic_flow.goal2story.demo
 ```
 
@@ -103,6 +132,6 @@ PYTHONPATH=src python -m unittest discover -s test/agentic_flow -v
 
 `test/agentic_flow/test_goal2story.py` uses stub models, so it runs without
 Ollama while exercising real graph transitions, interrupts and checkpoints.
-It covers the full 2 × 2 × 2 run, IDs and traces, revisions, invalid
+It covers PRD mode, the artifact graph collector, the full 2 × 2 × 2 run, IDs and traces, revisions, invalid
 operations, INVEST hand-off, the Format Doctor and the full IDE3.0 flow.
 The repository needs Python 3.11 or newer (`typing.NotRequired`).

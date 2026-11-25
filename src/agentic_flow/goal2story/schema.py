@@ -7,6 +7,16 @@ InvestCriterion = Literal[
 ]
 
 
+# goal extraction: PRD mode only (an IDE3.0 addition)
+# -----------------------------------------------------------------------------
+
+class ExtractedGoal(BaseModel):
+    evidence: str = Field(
+        default="", description="The PRD sentence the goal comes from, copied word for word."
+    )
+    goal: str = Field(description="One measurable business goal stated or implied by the PRD.")
+
+
 # generation: one call per parent, following Goal2Story (arXiv:2503.13279, §3)
 # -----------------------------------------------------------------------------
 
