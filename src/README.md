@@ -8,7 +8,7 @@ Python implementation of the IDE3.0 agentic requirements workflow.
 |------|------|
 | `agentic_flow/` | LangGraph pipeline (outer graph + subgraphs) |
 | `agentic_flow/prd_intake/` | Collect raw PRD / product context text |
-| `agentic_flow/capture_intent/` | Single Statement of Need capture + evaluation |
+| `agentic_flow/capture_intent/` | Derive SSON / intent artifacts from the PRD |
 | `agentic_flow/user_modelling/` | Stakeholders and personas |
 | `agentic_flow/goal2story/` | Goal → actors → impacts → deliverables → stories |
 | `agentic_flow/core/` | Shared model helpers and nodes |

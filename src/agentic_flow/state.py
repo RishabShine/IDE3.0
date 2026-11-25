@@ -7,9 +7,26 @@ Verdict = Literal["met", "partially_met", "not_met"]
 
 class IntentCapture(TypedDict):
     single_statement_intent: str
+    # Kept for compatibility; PRD-derived intent is stored as "met" after extraction.
     evaluation_of_statement: Verdict
     evaluation_of_statement_feedback: str
     attempt_number: int
+    # Temporary prompt text used between prepare and extract; cleared after extract.
+    instructions: NotRequired[str]
+
+
+class CapturedIntent(TypedDict):
+    """Structured intent derived from the PRD for downstream extraction and the artifact graph."""
+
+    single_statement_intent: str
+    what: NotRequired[str]
+    how: NotRequired[str]
+    why: NotRequired[str]
+    success_measure: NotRequired[str]
+    current_process: NotRequired[str]
+    problems: NotRequired[list[dict[str, Any]]]
+    benefits: NotRequired[list[dict[str, Any]]]
+    goals: NotRequired[list[Any]]
 
 
 class StakeHolderRecord(TypedDict):
@@ -102,8 +119,8 @@ class AgentState(TypedDict):
     # Capture Intent State
     intent_metadata: IntentCapture
 
-    # Full upstream intent snapshot, once the capture phase provides it.
-    captured_intent: NotRequired[dict[str, Any]]
+    # Full intent snapshot derived from the PRD (SSON, problems, benefits, goals).
+    captured_intent: NotRequired[CapturedIntent]
 
     # Initial stakeholder extraction from the PRD, saved by the checkpointer.
     stakeholder_metadata: NotRequired[StakeHolderMetadata]
