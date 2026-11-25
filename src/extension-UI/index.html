@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDE3.0 Requirements</title>
+<!--
+  IDE3.0 extension UI. Served by the FastAPI backend (agentic_flow/api/server.py);
+  no build step and no external scripts. Each page has its own hash:
+  #welcome, #intent, #situation, #stakeholders, #personas, #trace.
+-->
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <span id="title">IDE3.0</span>
+    <div class="tag" id="titleTag">Extension UI</div>
+  </div>
+  <div class="body">
+    <nav class="activity" id="activity" aria-label="Pages"></nav>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="editor">
+      <div class="tabs" id="tabs"></div>
+      <div class="view" id="view"></div>
+    </main>
+  </div>
+  <footer class="status" id="status"></footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div id="modal"></div>
+<script src="app.js"></script>
+</body>
+</html>

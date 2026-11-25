@@ -52,7 +52,25 @@ def library_state():
             persona(1, "Stakeholder-1", name="Priya"),
             persona(2, "Stakeholder-2", role="Front-desk staff"),
         ]},
+        "goal_metadata": {"instructions": "", "goals": [
+            goal(1, benefit_ids=["Benefit-1", "Benefit-2"],
+                 actors=[{"name": "Front-desk staff", "stakeholder_id": "Stakeholder-2",
+                          "role": "Booking admin", "involvement": "Stop handling emails."}]),
+        ]},
+        "use_case_metadata": {"instructions": "", "system_name": "Room booking", "issues": [],
+            "actors": [{"actor_id": "Actor-1", "name": "Front-desk staff", "kind": "human",
+                        "stakeholder_id": "Stakeholder-2"}],
+            "use_cases": [{"use_case_id": "UC-1", "name": "Review bookings", "description": "",
+                           "primary_actor_id": "Actor-1", "supporting_actor_ids": [],
+                           "goal_ids": ["Goal-1"]}],
+            "relationships": []},
     }
+
+
+def goal(number, **changes):
+    return {"goal_id": f"Goal-{number}", "statement": "Cut staff booking time.",
+            "source": None, "benefit_ids": [], "actors": [], "goal_type": "hard",
+            "resources": [], "plans": "", "justification": "", **changes}
 
 
 def edge_set(graph):
@@ -73,7 +91,8 @@ class BuildArtifactGraphTests(unittest.TestCase):
              ("Benefit-1", "benefit"), ("Benefit-2", "benefit"),
              ("Stakeholder-1", "stakeholder"), ("Stakeholder-2", "stakeholder"),
              ("Stakeholder-3", "stakeholder"),
-             ("Persona-1", "persona"), ("Persona-2", "persona")],
+             ("Persona-1", "persona"), ("Persona-2", "persona"), ("Goal-1", "goal"),
+             ("UC-1", "use_case")],
         )
         self.assertEqual(edge_set(graph), {
             ("Problem-1", "motivates", "Intent-1"),
@@ -87,6 +106,12 @@ class BuildArtifactGraphTests(unittest.TestCase):
             ("Stakeholder-3", "concerned_with", "Intent-1"),
             ("Persona-1", "represents", "Stakeholder-1"),
             ("Persona-2", "represents", "Stakeholder-2"),
+            ("Goal-1", "refines", "Intent-1"),
+            ("Goal-1", "delivers", "Benefit-1"),
+            ("Goal-1", "delivers", "Benefit-2"),
+            ("Goal-1", "involves", "Stakeholder-2"),
+            ("UC-1", "achieves", "Goal-1"),
+            ("UC-1", "serves", "Stakeholder-2"),
         })
         self.assertEqual(len(graph["edges"]), len(edge_set(graph)), "no duplicate edges")
         self.assertEqual(graph["gaps"], [])
@@ -119,7 +144,9 @@ class BuildArtifactGraphTests(unittest.TestCase):
             [g["detail"] for g in graph["gaps"]],
             ["No intent artifacts were extracted.",
              "No stakeholder artifacts were extracted.",
-             "No persona artifacts were extracted."],
+             "No persona artifacts were extracted.",
+             "No goal artifacts were extracted.",
+             "No use_case artifacts were extracted."],
         )
 
     def test_blank_intent_counts_as_missing_and_stakeholders_stay_unlinked_to_it(self):
@@ -143,6 +170,7 @@ class BuildArtifactGraphTests(unittest.TestCase):
             ("stakeholder_without_persona", "Stakeholder-2"),
             ("unaddressed_problem", "Problem-1"),
             ("unaddressed_problem", "Problem-2"),
+            ("dangling_link", "Goal-1"),  # its benefits are gone
         })
         # indirect stakeholders are not expected to have personas
         self.assertNotIn(("stakeholder_without_persona", "Stakeholder-3"), gap_set(graph))
@@ -160,6 +188,32 @@ class BuildArtifactGraphTests(unittest.TestCase):
                          ("unlinked_persona", "Persona-2")} <= gap_set(graph))
         dangling = [g["detail"] for g in graph["gaps"] if g["kind"] == "dangling_link"]
         self.assertIn("Problem-9 does not exist", dangling[0])
+
+    def test_goal_gaps_unlinked_goal_and_benefit_without_goal(self):
+        state = library_state()
+        state["goal_metadata"]["goals"] = [
+            goal(1, benefit_ids=["Benefit-1"]),
+            goal(2, statement="Make booking pleasant.", goal_type="soft",
+                 actors=[{"name": "A booking bot", "stakeholder_id": None,
+                          "role": "", "involvement": ""}]),
+        ]
+        graph = build_artifact_graph(state)
+
+        self.assertIn(("Goal-1", "delivers", "Benefit-1"), edge_set(graph))
+        self.assertIn(("Goal-2", "refines", "Intent-1"), edge_set(graph))
+        self.assertFalse(any(e["source"] == "Goal-2" and e["relation"] == "involves"
+                             for e in graph["edges"]))
+        self.assertEqual({g for g in gap_set(graph) if g[1] and g[1].startswith(("Goal", "Benefit"))},
+                         {("unlinked_goal", "Goal-2"), ("benefit_without_goal", "Benefit-2"),
+                          # one artifact can have several gaps
+                          ("goal_without_use_case", "Goal-2")})
+
+    def test_benefits_need_no_goal_until_goals_are_extracted(self):
+        state = library_state()
+        del state["goal_metadata"]
+        graph = build_artifact_graph(state)
+        self.assertNotIn("benefit_without_goal", {g["kind"] for g in graph["gaps"]})
+        self.assertIn("No goal artifacts were extracted.", [g["detail"] for g in graph["gaps"]])
 
     def test_duplicate_id_keeps_first_artifact(self):
         state = library_state()

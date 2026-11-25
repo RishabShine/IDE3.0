@@ -1,6 +1,6 @@
 from typing import Any, Literal, TypedDict
 
-ArtifactType = Literal["intent", "problem", "benefit", "stakeholder", "persona"]
+ArtifactType = Literal["intent", "problem", "benefit", "stakeholder", "persona", "goal", "use_case", "story"]
 
 # Edges point from the lower-level artifact to the higher-level one it traces to.
 Relation = Literal[
@@ -9,6 +9,13 @@ Relation = Literal[
     "addresses",       # Benefit -> Problem
     "concerned_with",  # Stakeholder -> Intent
     "represents",      # Persona -> Stakeholder
+    "refines",         # Goal -> Intent
+    "delivers",        # Goal -> Benefit
+    "involves",        # Goal -> Stakeholder (through a goal actor)
+    "achieves",        # Use case -> Goal
+    "serves",          # Use case -> Stakeholder (its primary actor)
+    "implements",      # Story -> Goal
+    "performed_by",    # Story -> Stakeholder (through the goal actor it names)
 ]
 
 GapKind = Literal[
@@ -18,6 +25,11 @@ GapKind = Literal[
     "unlinked_persona",             # persona with no stakeholder
     "stakeholder_without_persona",  # direct stakeholder no persona represents
     "unaddressed_problem",          # problem no benefit addresses
+    "unlinked_goal",                # goal with no benefit and no stakeholder actor
+    "benefit_without_goal",         # benefit no goal delivers (only once goals exist)
+    "goal_without_use_case",        # goal no use case achieves (once use cases exist)
+    "use_case_without_goal",        # use case that achieves no goal
+    "goal_without_story",           # goal with no user story (only once stories exist)
 ]
 
 

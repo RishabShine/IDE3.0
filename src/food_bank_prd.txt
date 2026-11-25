@@ -1,0 +1,38 @@
+Campus Food Bank Pickup Scheduler
+
+The McMaster Student Union food bank needs students to book a pickup time slot
+online, so that the food bank can serve more students each week without long
+lines, and so that it wastes less perishable food.
+
+Today, the food bank runs on walk-ins. Students line up outside the room in the
+student centre during its open hours, Tuesday and Thursday from 12 to 3 pm.
+Volunteers check each student's ID by hand and pack a hamper while the student
+waits. Volunteers track inventory on paper sheets taped to the shelves.
+
+Lines often reach 40 minutes, and some students leave before they are served.
+Volunteers cannot predict how many students will come, so they over-pack fresh
+produce, and about 30 kg of produce is thrown out every week. Students with
+classes during open hours cannot use the food bank at all. Some students say
+they feel embarrassed waiting in a visible line.
+
+The scheduler should let students book a 15-minute pickup slot from their phone
+and receive a reminder an hour before. Volunteers should see the next day's
+bookings so they can pack hampers in advance. The food bank wants to cut average
+wait time to under 5 minutes, reduce produce waste to under 10 kg a week, and
+serve at least 25% more students per week within one term.
+
+We expect more students to use the food bank and fewer to skip meals before
+exams. Volunteer shifts will move from packing on demand to packing in batches.
+
+The food bank must stay anonymous: no record may link a student's name to their
+visits. It will always operate only from its room in the student centre, and it
+will always serve walk-ins who did not book.
+
+Everyone signs in with their MacID. The system must run on the MSU's existing
+web hosting, and it must be ready before the January term starts. Food
+donations, delivery to residences, and the volunteer sign-up process are
+outside the scope of this project.
+
+Volunteers are mostly first-year students who work one 3-hour shift a week and
+are not comfortable with technical tools. The MSU vice-president of services
+approves the food bank's budget and wants a usage report each term.

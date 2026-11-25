@@ -1,31 +1,22 @@
+import re
 import unittest
 from collections import deque
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
 from agentic_flow.goal2story import node, prompt
+from agentic_flow.goal2story.artifacts import collect_stories
 from agentic_flow.goal2story.graph import build_goal2story
 from agentic_flow.goal2story.schema import (
-    ActorList,
-    ActorRevision,
-    ActorUpdate,
-    DeliverableList,
-    DeliverableRevision,
-    ExtractedGoal,
-    GeneratedActor,
-    GeneratedDeliverable,
-    GeneratedImpact,
     GeneratedStory,
-    ImpactList,
-    ImpactRevision,
-    ImpactUpdate,
     InvestCheck,
+    StoryList,
     StoryRevision,
     StoryUpdate,
 )
+from agentic_flow.state import RED_FLAG
 
 
 class StubModel:
@@ -49,36 +40,23 @@ class StubModel:
         return response
 
 
-def task(messages) -> str:
-    return messages[-1].content
+def goal_of(messages) -> str:
+    task = next(m.content for m in reversed(messages) if "Write the user stories" in m.content)
+    return re.search(r"for (Goal-\d+)", task).group(1)
 
 
-def actors(*names):
-    return ActorList(actors=[
-        GeneratedActor(name=n, description=f"{n} affect bookings.", stakeholder=s)
-        for n, s in names
+def stories_for(messages):
+    goal_id = goal_of(messages)
+    return StoryList(stories=[
+        GeneratedStory(actor="Students", action=f"book a room for {goal_id}",
+                       expected_outcome="my group has a place to study"),
+        GeneratedStory(actor="Front-desk staff", action=f"see bookings for {goal_id}",
+                       expected_outcome="I stop answering emails"),
+        GeneratedStory(actor="Students", action=f"cancel a booking for {goal_id}",
+                       expected_outcome="others can use the room"),
+        GeneratedStory(actor="Students", action=f"extra story for {goal_id}",
+                       expected_outcome="this one is over the cap"),
     ])
-
-
-def impacts_for(messages):
-    parent = task(messages).rsplit(" ", 1)[1].rstrip(".")
-    return ImpactList(impacts=[
-        GeneratedImpact(description=f"impact {k} of {parent}") for k in (1, 2, 3)
-    ])
-
-
-def deliverables_for(messages):
-    parent = task(messages).rsplit(" ", 1)[1].rstrip(".")
-    return DeliverableList(deliverables=[
-        GeneratedDeliverable(description=f"deliverable {k} of {parent}") for k in (1, 2)
-    ])
-
-
-def story_for(messages):
-    parent = task(messages).rsplit(" ", 1)[1].rstrip(".")
-    return GeneratedStory(
-        actor="Student", action=f"use {parent}", expected_outcome="my group has a room"
-    )
 
 
 def passes(messages):
@@ -90,30 +68,39 @@ def no_changes(**fields):
 
 
 STAKEHOLDERS = [
-    {"stakeholder_id": 1, "name": "Students", "involvement": "direct",
+    {"stakeholder_id": "Stakeholder-1", "name": "Students", "involvement": "direct",
      "summary": "Book rooms.", "justification": "Main users."},
-    {"stakeholder_id": 2, "name": "Front-desk staff", "involvement": "direct",
+    {"stakeholder_id": "Stakeholder-2", "name": "Front-desk staff", "involvement": "direct",
      "summary": "Handle bookings today.", "justification": "Know the rules."},
+]
+
+
+def goal(goal_id, statement, actors, **changes):
+    return {"goal_id": goal_id, "statement": statement, "source": None, "benefit_ids": [],
+            "actors": actors, "goal_type": "hard", "resources": [], "plans": "",
+            "justification": "", **changes}
+
+
+def actor(name, stakeholder_id):
+    return {"name": name, "stakeholder_id": stakeholder_id, "role": "", "involvement": ""}
+
+
+GOALS = [
+    goal("Goal-1", f"{RED_FLAG} Cut staff time on bookings to under 1 h/week",
+         [actor("Students", "Stakeholder-1"), actor("Front-desk staff", "Stakeholder-2")],
+         benefit_ids=["Benefit-1"], plans="Students book rooms themselves.",
+         resources=["room calendar"]),
+    goal("Goal-2", "Never double book a room", [actor("Students", "Stakeholder-1")]),
 ]
 
 
 class Goal2StoryTestCase(unittest.TestCase):
     def setUp(self):
         self.stubs = {
-            ExtractedGoal: StubModel(),
-            ActorList: StubModel(),
-            ImpactList: StubModel(impacts_for),
-            DeliverableList: StubModel(deliverables_for),
-            GeneratedStory: StubModel(story_for),
+            StoryList: StubModel(stories_for),
             InvestCheck: StubModel(passes),
-            ActorRevision: StubModel(),
-            ImpactRevision: StubModel(),
-            DeliverableRevision: StubModel(),
             StoryRevision: StubModel(),
         }
-        self.stubs[ActorList].default = lambda m: actors(
-            ("Students", "Students"), ("Front-desk staff", "Front-desk staff"), ("Extra", "Students")
-        )
         patcher = patch.object(node, "_model", lambda schema: self.stubs[schema])
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -121,10 +108,14 @@ class Goal2StoryTestCase(unittest.TestCase):
         self.graph = build_goal2story(self.checkpointer)
         self.config = {"configurable": {"thread_id": self.id()}}
         self.state = {
-            "project_context": "Mills Library has 20 study rooms.",
-            "intent_metadata": {"single_statement_intent": "Let students book rooms without staff."},
-            "captured_intent": {"goals": ["Cut staff time on bookings to under 1 h/week"]},
+            "captured_intent": {
+                "single_statement_intent": f"{RED_FLAG} Let students book rooms without staff.",
+                "benefits": [{"id": "Benefit-1", "description": "Under 1 hour a week on emails.",
+                              "addresses": [], "measure": "under 1 hour", "kind": "hard",
+                              "source": None}],
+            },
             "stakeholder_metadata": {"instructions": "", "stakeholders": STAKEHOLDERS},
+            "goal_metadata": {"instructions": "", "goals": GOALS},
         }
 
     def start(self, **changes):
@@ -139,172 +130,122 @@ class Goal2StoryTestCase(unittest.TestCase):
     def meta(self):
         return self.graph.get_state(self.config).values["goal2story_metadata"]
 
-    def ids(self, level):
-        return [i["id"] for i in self.meta()[level]]
-
-    def approve_all(self):
-        result = None
-        for _ in node.LEVELS:
-            result = self.resume("APPROVE")
-        return result
+    def ids(self):
+        return [s["id"] for s in self.meta()["stories"]]
 
 
 class Goal2StoryFlowTests(Goal2StoryTestCase):
-    def test_goal_is_proposed_from_context_without_a_model_call(self):
+    def test_takes_every_extracted_goal_and_generates_nothing_else(self):
         result = self.start()
-        self.assertIn("Proposed goal: Cut staff time", self.message(result))
-        self.assertFalse(any(stub.calls for stub in self.stubs.values()))
-        context = self.meta()["context"]
-        self.assertEqual(context["confirmed_stakeholders"], STAKEHOLDERS)
-        self.assertIn("Let students book", context["statement_of_need"])
+        meta = self.meta()
+        self.assertEqual([g["id"] for g in meta["goals"]], ["Goal-1", "Goal-2"])
+        first = meta["goals"][0]
+        self.assertEqual(first["statement"], "Cut staff time on bookings to under 1 h/week")
+        self.assertEqual(first["delivers_benefits"], [
+            {"id": "Benefit-1", "description": "Under 1 hour a week on emails.",
+             "measure": "under 1 hour"}])
+        self.assertEqual(meta["context"]["stakeholders"], STAKEHOLDERS)
+        self.assertEqual(meta["context"]["statement_of_need"],
+                         "Let students book rooms without staff.")
+        # only stories and their INVEST checks call the model
+        self.assertEqual(set(self.stubs), {StoryList, InvestCheck, StoryRevision})
+        self.assertEqual(len(self.stubs[StoryList].calls), 2)
+        self.assertIn("review the user stories", self.message(result))
 
-    def test_typed_goal_replaces_the_proposal_and_empty_reply_asks_again(self):
-        self.start(captured_intent=None)
-        result = self.resume("APPROVE")  # nothing proposed, so nothing to approve
-        self.assertIn(prompt.GOAL_EMPTY_FEEDBACK, self.message(result))
-        result = self.resume("  Halve   double bookings  ")
-        self.assertEqual(self.meta()["goal"], "Halve double bookings")
-        self.assertIn("review the actors", self.message(result))
-
-    def test_full_run_builds_the_impact_map_with_stable_ids_and_traces(self):
+    def test_one_story_call_per_goal_and_each_story_traces_to_its_goal(self):
         self.start()
-        result = self.resume("APPROVE")
-        # n = 2 caps the model's three actors and three impacts per actor
-        self.assertEqual(self.ids("actors"), ["A-1", "A-2"])
-        self.assertIn("A-2 Front-desk staff", self.message(result))
-        result = self.resume("APPROVE")
-        self.assertEqual(self.ids("impacts"), ["I-1.1", "I-1.2", "I-2.1", "I-2.2"])
-        self.assertIn("Under A-1 (Students):", self.message(result))
-        result = self.resume("APPROVE")
-        self.assertEqual(len(self.ids("deliverables")), 8)
-        self.assertIn("D-1.1.2", self.ids("deliverables"))
-        self.assertIn("Under I-2.1 (Front-desk staff → impact 1 of A-2):", self.message(result))
-        result = self.resume("APPROVE")
-        self.assertEqual(self.ids("stories"), [f"US-{k}" for k in range(1, 9)])
-        self.assertIn("As a Student, I want to use D-1.1.2, so that my group has a room.",
-                      self.message(result))
-        result = self.resume("APPROVE")
+        stories = self.meta()["stories"]
+        self.assertEqual(self.ids(), ["US-1", "US-2", "US-3", "US-4", "US-5", "US-6"])
+        self.assertEqual([s["parent_id"] for s in stories], ["Goal-1"] * 3 + ["Goal-2"] * 3)
+        self.assertEqual(stories[0]["text"],
+                         "As Students, I want to book a room for Goal-1, so that my group "
+                         "has a place to study.")
+        # the actor's stakeholder comes from the goal's own actor list
+        self.assertEqual([s["stakeholder_id"] for s in stories],
+                         ["Stakeholder-1", "Stakeholder-2", "Stakeholder-1",
+                          "Stakeholder-1", None, "Stakeholder-1"])
+        request = self.stubs[StoryList].calls[0][1].content
+        self.assertIn('"plans": "Students book rooms themselves."', request)
+        self.assertIn('"room calendar"', request)
+        self.assertIn("Write the user stories for Goal-1, at most 3", request)
 
-        self.assertNotIn("__interrupt__", result)
-        meta = result["goal2story_metadata"]
-        story = next(s for s in meta["finalized_stories"] if s["id"] == "US-2")
-        self.assertEqual(story["trace"], ["A-1", "I-1.1", "D-1.1.2"])
-        self.assertEqual(story["goal"], "Cut staff time on bookings to under 1 h/week")
-        self.assertEqual(meta["approved_levels"], list(node.LEVELS))
-        self.assertEqual(len(self.stubs[InvestCheck].calls), 8)
-        # each agent sees the anchors and its own branch (Ref Info)
-        impact_call = task(self.stubs[ImpactList].calls[0])
-        self.assertIn("Mills Library has 20 study rooms", impact_call)
-        self.assertIn('"id": "A-1"', impact_call)
-        story_call = task(self.stubs[GeneratedStory].calls[1])
-        for item_id in ("A-1", "I-1.1", "D-1.1.2"):
-            self.assertIn(f'"id": "{item_id}"', story_call)
+    def test_stories_per_goal_is_configurable(self):
+        self.start(goal2story_metadata={"stories_per_goal": 1})
+        self.assertEqual(self.ids(), ["US-1", "US-2"])
 
-    def test_n_per_parent_is_configurable(self):
-        self.start(goal2story_metadata={"n_per_parent": 3})
-        self.resume("APPROVE")
-        self.assertEqual(self.ids("actors"), ["A-1", "A-2", "A-3"])
-        self.resume("APPROVE")
-        self.assertEqual(len(self.ids("impacts")), 9)
+    def test_no_goals_skips_goal2story_without_a_model_call(self):
+        for state in ({"goal_metadata": {"instructions": "", "goals": []}},
+                      {"goal_metadata": None}):
+            with self.subTest(state=state):
+                self.config = {"configurable": {"thread_id": f"{self.id()}-{len(state)}{state}"}}
+                result = self.start(**state)
+                self.assertNotIn("__interrupt__", result)
+                meta = result["goal2story_metadata"]
+                self.assertTrue(meta["skipped"])
+                self.assertEqual(meta["stories"], [])
+        self.assertFalse(any(stub.calls for stub in self.stubs.values()))
 
     def test_revision_edits_removes_and_adds_with_new_ids(self):
-        self.stubs[ImpactRevision].responses.append(ImpactRevision(**no_changes(
+        self.stubs[StoryRevision].responses.append(StoryRevision(**no_changes(
             updates=[
-                ImpactUpdate(id="I-1.1", parent_id="A-1", description="books without staff"),
-                ImpactUpdate(id=None, parent_id="A-2", description="stops answering emails"),
+                StoryUpdate(id="US-1", parent_id="Goal-1", actor="Students",
+                            action="reserve a room", expected_outcome="we can study"),
+                StoryUpdate(id=None, parent_id="Goal-2", actor="Front-desk staff",
+                            action="see clashes", expected_outcome="no room is booked twice"),
             ],
-            removed_ids=["I-1.2"],
+            removed_ids=["US-3"],
         )))
         self.start()
-        self.resume("APPROVE")
-        self.resume("APPROVE")
-        result = self.resume("Reword I-1.1, drop I-1.2, and add one for staff about emails.")
-        self.assertEqual(self.ids("impacts"), ["I-1.1", "I-2.1", "I-2.2", "I-2.3"])
-        self.assertIn("I-1.1** books without staff", self.message(result))
-        self.assertNotIn("I-1.2", self.message(result))
-        log = self.meta()["edit_log"][-1]
-        self.assertEqual((log["updated"], log["added"], log["removed"]),
-                         (["I-1.1"], ["I-2.3"], ["I-1.2"]))
-        self.resume("APPROVE")
-        # deliverables are only generated for the impacts that were approved
-        parents = {d["parent_id"] for d in self.meta()["deliverables"]}
-        self.assertEqual(parents, {"I-1.1", "I-2.1", "I-2.2", "I-2.3"})
+        result = self.resume("US-1: reserving; remove US-3; add a staff story for Goal-2")
+        self.assertEqual(self.ids(), ["US-1", "US-2", "US-4", "US-5", "US-6", "US-7"])
+        story = self.meta()["stories"][-1]
+        self.assertEqual((story["parent_id"], story["stakeholder_id"]), ("Goal-2", None))
+        self.assertIn("US-1** As Students, I want to reserve a room", self.message(result))
+        self.assertEqual(self.meta()["edit_log"][0]["removed"], ["US-3"])
 
     def test_invalid_revision_operations_are_skipped_and_reported(self):
-        self.stubs[ImpactRevision].responses.append(ImpactRevision(**no_changes(
+        self.stubs[StoryRevision].responses.append(StoryRevision(**no_changes(
             updates=[
-                ImpactUpdate(id="I-9.9", parent_id="A-1", description="x"),
-                ImpactUpdate(id=None, parent_id="A-7", description="y"),
+                StoryUpdate(id=None, parent_id="Goal-9", actor="A", action="b",
+                            expected_outcome="c"),
+                StoryUpdate(id="US-99", parent_id="Goal-1", actor="A", action="b",
+                            expected_outcome="c"),
+                StoryUpdate(id="US-1", parent_id="Goal-1", actor=" ", action="b",
+                            expected_outcome="c"),
             ],
-            removed_ids=["I-5.5"],
+            removed_ids=["US-42"],
         )))
         self.start()
-        self.resume("APPROVE")
-        self.resume("APPROVE")
-        result = self.resume("Change some things.")
-        message = self.message(result)
-        for expected in ("Could not change I-9.9", "no such parent", "Could not remove I-5.5"):
-            self.assertIn(expected, message)
-        self.assertEqual(self.ids("impacts"), ["I-1.1", "I-1.2", "I-2.1", "I-2.2"])
+        message = self.message(self.resume("do things"))
+        for note in ("no such goal", "Could not change US-99", "a field was empty",
+                     "Could not remove US-42"):
+            self.assertIn(note, message)
+        self.assertEqual(len(self.ids()), 6)
 
     def test_unclear_request_shows_the_models_question(self):
-        self.stubs[ActorRevision].responses.append(ActorRevision(**no_changes(
-            clarification_feedback="Which actor should be renamed?"
-        )))
+        self.stubs[StoryRevision].responses.append(StoryRevision(**no_changes(
+            clarification_feedback="Which story should change?")))
         self.start()
-        self.resume("APPROVE")
-        result = self.resume("rename it")
-        self.assertIn("Which actor should be renamed?", self.message(result))
-        # the question is shown once, not on every later review
-        self.stubs[ActorRevision].responses.append(ActorRevision(**no_changes(
-            updates=[ActorUpdate(id="A-2", name="Library staff", description="d",
-                                 stakeholder="Front-desk staff")]
-        )))
-        result = self.resume("Rename A-2 to Library staff")
-        self.assertNotIn("Which actor", self.message(result))
-        self.assertIn("A-2 Library staff", self.message(result))
+        self.assertIn("Which story should change?", self.message(self.resume("fix it")))
 
-    def test_approve_with_no_items_asks_for_one(self):
-        self.stubs[ActorList].responses.append(ActorList(actors=[]))
+    def test_approve_with_no_stories_asks_for_one(self):
+        self.stubs[StoryList].default = lambda m: StoryList(stories=[])
         self.start()
         result = self.resume("APPROVE")
-        self.assertIn("(none)", self.message(result))
-        result = self.resume("APPROVE")
-        self.assertIn("There are no actors yet", self.message(result))
-        self.assertEqual(self.meta()["approved_levels"], [])
-
-    def test_actor_outside_the_confirmed_stakeholders_is_flagged(self):
-        self.stubs[ActorList].responses.append(actors(("Students", "Students"),
-                                                      ("Janitors", "Cleaning staff")))
-        self.start()
-        result = self.resume("APPROVE")
-        self.assertIn("Janitors", self.message(result))
-        self.assertEqual(self.message(result).count(prompt.UNKNOWN_STAKEHOLDER_NOTE), 1)
-
-    def test_stakeholder_id_from_the_model_is_mapped_to_its_name(self):
-        self.stubs[ActorList].responses.append(actors(("Students", "1"), ("Staff", " 2 ")))
-        self.start()
-        result = self.resume("APPROVE")
-        self.assertEqual([a["stakeholder"] for a in self.meta()["actors"]],
-                         ["Students", "Front-desk staff"])
-        self.assertNotIn(prompt.UNKNOWN_STAKEHOLDER_NOTE, self.message(result))
+        self.assertIn(prompt.EMPTY_STORIES_FEEDBACK, self.message(result))
 
     def test_format_doctor_repairs_invalid_json_once(self):
-        self.stubs[ActorList].responses.append(ValueError("Invalid JSON: unquoted key"))
+        self.stubs[StoryList].responses.append(ValueError("Invalid JSON: unquoted key"))
         self.start()
-        result = self.resume("APPROVE")
-        calls = self.stubs[ActorList].calls
-        self.assertEqual(len(calls), 2)
+        calls = self.stubs[StoryList].calls
+        self.assertEqual(len(calls), 3)  # Goal-1 twice (repair), Goal-2 once
         self.assertIn("could not be read as valid JSON", calls[1][-1].content)
         self.assertIn("unquoted key", calls[1][-1].content)
-        self.assertIn("A-1 Students", self.message(result))
 
     def test_format_doctor_gives_up_after_one_repair(self):
-        self.stubs[ActorList].responses.extend([ValueError("bad"), ValueError("still bad")])
-        self.start()
+        self.stubs[StoryList].responses.extend([ValueError("bad"), ValueError("still bad")])
         with self.assertRaisesRegex(ValueError, "still bad"):
-            self.resume("APPROVE")
-        self.assertEqual(self.meta()["actors"], [])
+            self.start()
 
     def test_invest_warnings_are_shown_and_open_questions_are_handed_off(self):
         self.stubs[InvestCheck].responses.append(InvestCheck(
@@ -313,158 +254,90 @@ class Goal2StoryFlowTests(Goal2StoryTestCase):
             open_questions=["How long can a booking be?", " "],
         ))
         self.stubs[StoryRevision].responses.append(StoryRevision(**no_changes(
-            updates=[StoryUpdate(id="US-2", parent_id="D-1.1.2", actor="Student",
+            updates=[StoryUpdate(id="US-2", parent_id="Goal-1", actor="Students",
                                  action="reserve a room", expected_outcome="we can study")]
         )))
-        self.start()
-        for _ in range(3):
-            self.resume("APPROVE")
-        result = self.resume("APPROVE")
-        message = self.message(result)
+        message = self.message(self.start())
         self.assertIn("⚠ INVEST: small, testable. No booking rules yet.", message)
         self.assertIn("? How long can a booking be?", message)
+        request = self.stubs[InvestCheck].calls[0][1].content
+        self.assertIn('"id": "Goal-1"', request)
 
         # only the changed story is checked again
-        result = self.resume("US-2: make it about reserving a room")
-        self.assertEqual(len(self.stubs[InvestCheck].calls), 9)
-        self.assertIn("US-2** As a Student, I want to reserve a room", self.message(result))
+        self.resume("US-2: make it about reserving a room")
+        self.assertEqual(len(self.stubs[InvestCheck].calls), 7)
         result = self.resume("APPROVE")
         meta = result["goal2story_metadata"]
         self.assertEqual(meta["open_questions"], [
             {"id": "Q-1", "story_id": "US-1", "question": "How long can a booking be?"}
         ])
+        first = meta["finalized_stories"][0]
+        self.assertEqual(first["goal"], "Cut staff time on bookings to under 1 h/week")
+        self.assertEqual(first["trace"], ["Goal-1", "Benefit-1"])
 
     def test_history_survives_rebuilding_with_the_same_checkpointer(self):
         self.start()
-        self.resume("APPROVE")
         self.graph = build_goal2story(self.checkpointer)
         result = self.resume("APPROVE")
-        self.assertIn("review the impacts", self.message(result))
-        self.assertEqual(len(self.stubs[ActorList].calls), 1)
-
-    def test_parent_graph_runs_user_modelling_then_goals_then_goal2story(self):
-        from agentic_flow.capture_intent import node as capture_node
-        from agentic_flow.capture_intent.schema import IntentSSONEvaluation
-        from agentic_flow.goals import node as goal_node
-        from agentic_flow.graph import build_ide3_chat
-        from agentic_flow.user_modelling.stakeholders import node as stakeholder_node
-        from agentic_flow.user_modelling.personas import node as persona_node
-        from agentic_flow.user_modelling.stakeholders.schema import StakeHolderResponse
-
-        sson_evaluator, extractor = StubModel(), StubModel()
-        persona_extractor = StubModel(default=lambda messages: {"personas": []})
-        goal_extractor = StubModel(default=lambda messages: {"goals": [{
-            "statement": "Cut staff time", "actors": [], "goal_type": "hard",
-            "resources": [], "plans": "", "justification": "",
-        }]})
-        sson_evaluator.responses.append(IntentSSONEvaluation(
-            evaluation_of_statement="met", evaluation_of_statement_feedback="Clear."
-        ))
-        extractor.responses.append(StakeHolderResponse(stakeholders=[{
-            "name": "Front-desk library staff", "involvement": "direct",
-            "summary": "Handle bookings and know the rules.",
-            "justification": "Inform the booking workflow.",
-        }]))
-        self.stubs[ActorList].default = lambda m: actors(
-            ("Front-desk staff", "Front-desk library staff")
-        )
-        self.graph = build_ide3_chat(self.checkpointer)
-
-        with patch.object(capture_node, "base_model", SimpleNamespace(
-            with_structured_output=lambda schema: sson_evaluator
-        )), patch.object(stakeholder_node, "stakeholder_extractor", extractor), \
-                patch.object(persona_node, "persona_extractor", persona_extractor), \
-                patch.object(goal_node, "goal_extractor", goal_extractor):
-            self.graph.invoke({}, self.config)
-            self.resume("Front-desk staff handle bookings and know the rules.")
-            self.stubs[ExtractedGoal].responses.append(ExtractedGoal(goal="Cut staff time"))
-            # the PRD puts Goal2Story in PRD mode: no goal question, no review stops
-            result = self.resume("Students book rooms without staff help.")
-
         self.assertNotIn("__interrupt__", result)
-        meta = result["goal2story_metadata"]
-        self.assertTrue(meta["auto"])
-        self.assertEqual(meta["goal"], "Cut staff time")
-        self.assertIn("Front-desk staff handle bookings", meta["context"]["prd"])
-        self.assertEqual(meta["context"]["confirmed_stakeholders"][0]["name"],
-                         "Front-desk library staff")
-        self.assertEqual(len(meta["finalized_stories"]), 4)
-        self.assertEqual(len(persona_extractor.calls), 1)
-        self.assertEqual(len(goal_extractor.calls), 1)
-        self.assertIn('"stakeholder_id": "Stakeholder-1"', goal_extractor.calls[0][1].content)
-        self.assertEqual(result["goal_metadata"]["goals"][0]["goal_id"], "Goal-1")
-        self.assertEqual(result["goal_metadata"]["goals"][0]["statement"], "Cut staff time")
-        self.assertEqual(self.graph.get_state(self.config).next, ())
+        self.assertEqual(len(result["goal2story_metadata"]["finalized_stories"]), 6)
+        self.assertEqual(len(self.stubs[StoryList].calls), 2)
 
+    def test_runs_on_the_goals_stage_output(self):
+        """Goal2Story is outside the main flow; it runs after the goals stage."""
+        from agentic_flow.goals import node as goal_node
+        from agentic_flow.goals.graph import build_goals
+
+        goal_extractor = StubModel(default=lambda messages: {"goals": [{
+            "statement": "Cut staff time", "goal_type": "hard", "resources": [],
+            "plans": "", "justification": "", "benefit_ids": ["Benefit-1"],
+            "actors": [{"name": "Students", "stakeholder_id": "Stakeholder-1",
+                        "role": "", "involvement": ""}],
+        }]})
+        state = {**self.state, "prd": "Students email the front desk to book rooms."}
+        del state["goal_metadata"]
+        with patch.object(goal_node, "goal_extractor", goal_extractor):
+            state = build_goals().invoke(state)
+        result = self.graph.invoke(state, self.config)
+        meta = result["goal2story_metadata"]
+        self.assertEqual([g["id"] for g in meta["goals"]], ["Goal-1"])
+        self.assertEqual(meta["goals"][0]["statement"], "Cut staff time")
+        self.assertEqual(len(meta["finalized_stories"]), 3)
+        self.assertEqual(meta["finalized_stories"][0]["trace"], ["Goal-1", "Benefit-1"])
 
 
 class Goal2StoryPrdModeTests(Goal2StoryTestCase):
-    """PRD mode: the goal comes from the PRD and no level stops for review."""
+    """PRD mode: stories are written for every goal and accepted without a stop."""
 
-    PRD = "Students email the front desk to book study rooms. Staff spend 6 h a week on it."
+    def setUp(self):
+        super().setUp()
+        self.state["prd"] = "Students email the front desk to book rooms."
 
-    def test_prd_runs_straight_through_using_the_proposed_goal(self):
-        result = self.start(prd=self.PRD)
+    def test_prd_runs_straight_through(self):
+        result = self.start()
         self.assertNotIn("__interrupt__", result)
         meta = result["goal2story_metadata"]
-        self.assertEqual(meta["goal"], "Cut staff time on bookings to under 1 h/week")
-        self.assertEqual(meta["approved_levels"], list(node.LEVELS))
-        self.assertEqual(len(meta["finalized_stories"]), 8)
-        self.assertEqual(meta["context"]["prd"], self.PRD)
-        self.assertFalse(self.stubs[ExtractedGoal].calls)
-
-    def test_goal_is_extracted_from_the_prd_when_none_is_given(self):
-        self.stubs[ExtractedGoal].responses.append(
-            ExtractedGoal(goal="  Cut   booking emails  ")
-        )
-        personas = [{"persona_id": "Persona-1", "name": "Sam", "stakeholder_id": 1}]
-        result = self.start(prd=self.PRD, captured_intent=None,
-                            persona_metadata={"instructions": "", "personas": personas})
-        meta = result["goal2story_metadata"]
-        self.assertEqual(meta["goal"], "Cut booking emails")
-        self.assertEqual(meta["context"]["personas"], personas)
-        self.assertIn(self.PRD, self.stubs[ExtractedGoal].calls[0][-1].content)
-
-    def test_empty_levels_do_not_stop_prd_mode(self):
-        self.stubs[ActorList].default = lambda m: ActorList(actors=[])
-        result = self.start(prd=self.PRD)
-        self.assertNotIn("__interrupt__", result)
-        self.assertEqual(result["goal2story_metadata"]["finalized_stories"], [])
+        self.assertTrue(meta["approved"])
+        self.assertEqual(len(meta["finalized_stories"]), 6)
+        self.assertIn("Students email", meta["context"]["prd"])
 
     def test_auto_can_be_turned_off_with_a_prd(self):
-        result = self.start(prd=self.PRD, goal2story_metadata={"auto": False})
-        self.assertIn("Proposed goal:", result["__interrupt__"][0].value["prompt_to_user"])
+        result = self.start(goal2story_metadata={"auto": False})
+        self.assertIn("review the user stories", self.message(result))
 
-    def test_collector_links_every_level_to_its_parent(self):
-        from agentic_flow.goal2story.artifacts import GOAL_ID, collect_goal2story
+    def test_collector_links_every_story_to_its_goal_and_stakeholder(self):
+        result = self.start()
+        nodes, edges = collect_stories(result)
+        self.assertEqual([n["type"] for n in nodes], ["story"] * 6)
+        self.assertIn({"source": "US-2", "target": "Goal-1", "relation": "implements"}, edges)
+        self.assertIn({"source": "US-2", "target": "Stakeholder-2",
+                       "relation": "performed_by"}, edges)
+        # US-5's actor is not one of Goal-2's actors, so it has no stakeholder link
+        self.assertFalse(any(e["source"] == "US-5" and e["relation"] == "performed_by"
+                             for e in edges))
 
-        stakeholders = [{**s, "stakeholder_id": f"Stakeholder-{s['stakeholder_id']}"}
-                        for s in STAKEHOLDERS]
-        state = self.start(
-            prd=self.PRD,
-            stakeholder_metadata={"instructions": "", "stakeholders": stakeholders},
-            captured_intent={"goals": ["Cut staff time"],
-                             "single_statement_intent": "Let students book rooms."},
-        )
-        nodes, edges = collect_goal2story(state)
-        types = [n["type"] for n in nodes]
-        self.assertEqual([types.count(t) for t in
-                          ("goal", "actor", "impact", "deliverable", "story")], [1, 2, 4, 8, 8])
-        edge_set = {(e["source"], e["relation"], e["target"]) for e in edges}
-        self.assertIn((GOAL_ID, "achieves", "Intent-1"), edge_set)
-        self.assertIn(("A-1", "helps_reach", GOAL_ID), edge_set)
-        self.assertIn(("A-1", "drawn_from", "Stakeholder-1"), edge_set)
-        self.assertIn(("A-2", "drawn_from", "Stakeholder-2"), edge_set)
-        self.assertIn(("I-1.1", "impact_of", "A-1"), edge_set)
-        self.assertIn(("D-1.1.1", "supports", "I-1.1"), edge_set)
-        self.assertIn(("US-1", "implements", "D-1.1.1"), edge_set)
-        self.assertEqual(len(edges), 1 + 2 * 2 + 4 + 8 + 8)
-        ids = {n["id"] for n in nodes}
-        self.assertTrue(all(e["source"] in ids for e in edges))
-
-    def test_collector_is_empty_before_a_goal_exists(self):
-        from agentic_flow.goal2story.artifacts import collect_goal2story
-        self.assertEqual(collect_goal2story({}), ([], []))
+    def test_collector_is_empty_before_goal2story_runs(self):
+        self.assertEqual(collect_stories(self.state), ([], []))
 
 
 if __name__ == "__main__":

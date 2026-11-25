@@ -1,4 +1,13 @@
+"""Goal2Story: user stories for every goal the goals stage extracted.
+
+The goals, their actors, resources and plans come from state["goal_metadata"];
+nothing is generated here except the stories. One model call per goal writes
+its stories, each story gets an INVEST check, and in review mode the engineer
+approves or revises them. With a PRD in the state (PRD mode) it runs straight
+through.
+"""
 import json
+import re
 from functools import cache
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -6,37 +15,11 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from agentic_flow.core.models import base_model
 from agentic_flow.core.shared_nodes import get_user_input
 from agentic_flow.goal2story import prompt
-from agentic_flow.goal2story.schema import (
-    ActorList,
-    ActorRevision,
-    DeliverableList,
-    DeliverableRevision,
-    ExtractedGoal,
-    GeneratedStory,
-    ImpactList,
-    ImpactRevision,
-    InvestCheck,
-    StoryRevision,
-)
-from agentic_flow.state import AgentState
+from agentic_flow.goal2story.schema import InvestCheck, StoryList, StoryRevision
+from agentic_flow.state import RED_FLAG, AgentState
 
-DEFAULT_N_PER_PARENT = 2  # the paper's default: 2 × 2 × 2 = 8 stories per goal
-
-LEVELS = ("actors", "impacts", "deliverables", "stories")
-PARENT = {"actors": None, "impacts": "actors", "deliverables": "impacts", "stories": "deliverables"}
-PREFIX = {"actors": "A", "impacts": "I", "deliverables": "D", "stories": "US"}
-FIELDS = {
-    "actors": ("name", "description", "stakeholder"),
-    "impacts": ("description",),
-    "deliverables": ("description",),
-    "stories": ("actor", "action", "expected_outcome"),
-}
-REVISION_SCHEMA = {
-    "actors": ActorRevision,
-    "impacts": ImpactRevision,
-    "deliverables": DeliverableRevision,
-    "stories": StoryRevision,
-}
+DEFAULT_STORIES_PER_GOAL = 3
+FIELDS = ("actor", "action", "expected_outcome")
 INVEST_ORDER = ("independent", "negotiable", "valuable", "estimable", "small", "testable")
 
 
@@ -47,8 +30,12 @@ def _json(value) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2)
 
 
-def _name(value: str) -> str:
-    return " ".join(value.split()).casefold()
+def _name(value: str | None) -> str:
+    return " ".join((value or "").split()).casefold()
+
+
+def _unflag(text: str | None) -> str:
+    return re.sub(rf"^{RED_FLAG}\s*", "", (text or "").strip())
 
 
 def _is_approve(text: str) -> bool:
@@ -76,47 +63,6 @@ def _call(schema, messages):
         return schema.model_validate(model.invoke([*messages, repair]))
 
 
-def _items_by_id(meta) -> dict[str, dict]:
-    return {item["id"]: item for level in LEVELS for item in meta[level]}
-
-
-def _chain(meta, item) -> list[dict]:
-    """The item's ancestors, top-down (actor → impact → deliverable)."""
-    lookup = _items_by_id(meta)
-    chain = []
-    parent_id = item.get("parent_id")
-    while parent_id is not None:
-        parent = lookup[parent_id]
-        chain.insert(0, parent)
-        parent_id = parent.get("parent_id")
-    return chain
-
-
-def _public(item) -> dict:
-    """The fields the model sees for an item (no internal bookkeeping)."""
-    return {k: v for k, v in item.items() if k not in ("invest", "text")}
-
-
-def _ref_info(meta, trace=()) -> dict[str, str]:
-    return {
-        "anchors": _json(meta["context"]),
-        "goal": meta["goal"],
-        "trace": _json([_public(i) for i in trace]) if trace else "(none)",
-    }
-
-
-def _new_id(meta, level, parent_id) -> str:
-    """Stable IDs that show the parent: A-1, I-1.2, D-1.2.1. Stories: US-1, US-2."""
-    if level in ("actors", "stories"):
-        key, suffix = PREFIX[level], ""
-    else:
-        key = parent_id
-        suffix = parent_id.split("-", 1)[1] + "."
-    number = meta["next_index"].get(key, 1)
-    meta["next_index"][key] = number + 1
-    return f"{PREFIX[level]}-{suffix}{number}"
-
-
 def _article(noun: str) -> str:
     lower = noun.lower()
     # "As Students, ..." reads better than "As a Students, ..."
@@ -133,213 +79,129 @@ def _story_text(story) -> str:
     return f"As {_article(story['actor'].strip())}, I want to {action}, so that {outcome}."
 
 
-def _make_item(meta, level, parent_id, fields: dict) -> dict:
-    item = {"id": _new_id(meta, level, parent_id), "parent_id": parent_id}
-    item.update({f: fields[f].strip() for f in FIELDS[level]})
-    if level == "stories":
-        item["text"] = _story_text(item)
-        item["invest"] = None
-    return item
+def _public(story) -> dict:
+    """The fields the model sees for a story (no internal bookkeeping)."""
+    return {k: v for k, v in story.items() if k not in ("invest", "text", "stakeholder_id")}
+
+
+def _goals_by_id(meta) -> dict[str, dict]:
+    return {goal["id"]: goal for goal in meta["goals"]}
+
+
+def _stakeholder_of(goal: dict, actor: str) -> str | None:
+    """The stakeholder behind the story's actor, through the goal's actor list."""
+    for goal_actor in goal.get("actors") or []:
+        if _name(goal_actor.get("name")) == _name(actor):
+            return goal_actor.get("stakeholder_id")
+    return None
+
+
+def _make_story(meta, goal_id: str, fields: dict) -> dict:
+    number = meta["next_index"]
+    meta["next_index"] = number + 1
+    story = {"id": f"US-{number}", "parent_id": goal_id}
+    story.update({f: fields[f].strip() for f in FIELDS})
+    story["stakeholder_id"] = _stakeholder_of(_goals_by_id(meta)[goal_id], story["actor"])
+    story["text"] = _story_text(story)
+    story["invest"] = None
+    return story
 
 
 def _copy_meta(state) -> dict:
     meta = state["goal2story_metadata"]
-    copied = {**meta, "next_index": dict(meta["next_index"])}
-    for level in LEVELS:
-        copied[level] = [dict(i) for i in meta[level]]
-    return copied
+    return {**meta, "stories": [dict(s) for s in meta["stories"]]}
 
 
-# initialization and goal confirmation
+def _goal_view(goal: dict, benefits: list[dict]) -> dict:
+    """A goal as the story agent sees it, with the benefits it delivers spelled out."""
+    delivered = [
+        {"id": b["id"], "description": _unflag(b.get("description")), "measure": b.get("measure")}
+        for b in benefits if b["id"] in (goal.get("benefit_ids") or [])
+    ]
+    return {
+        "id": goal["goal_id"],
+        "statement": _unflag(goal.get("statement")),
+        "goal_type": goal.get("goal_type"),
+        "actors": goal.get("actors") or [],
+        "resources": goal.get("resources") or [],
+        "plans": goal.get("plans") or "",
+        "justification": goal.get("justification") or "",
+        "delivers_benefits": delivered,
+    }
+
+
+# initialization
 # -----------------------------------------------------------------------------
 
-def _proposed_goal(captured_intent) -> str:
-    goals = (captured_intent or {}).get("goals") or []
-    if not goals:
-        return ""
-    goal = goals[0]
-    if isinstance(goal, dict):
-        goal = goal.get("text") or goal.get("statement") or goal.get("goal") or ""
-    return str(goal).strip()
-
-
 def initialize_goal2story(state: AgentState) -> AgentState:
-    """Collect the context anchors once, without calling the model.
+    """Take the extracted goals and the context anchors, without calling the model.
 
-    With a PRD in the state, Goal2Story runs in PRD mode: the goal is taken
-    from the PRD and every level is accepted as generated, with no review
-    stops. Set goal2story_metadata["auto"] to override this.
+    With a PRD in the state, Goal2Story runs in PRD mode: the stories are
+    accepted as written, with no review stop. Set goal2story_metadata["auto"]
+    to override this.
     """
     existing = state.get("goal2story_metadata") or {}
     if existing.get("initialized"):
         return {}
 
+    goals = (state.get("goal_metadata") or {}).get("goals") or []
+
     prd = (state.get("prd") or "").strip()
-    captured = state.get("captured_intent")
-    stakeholders = (state.get("stakeholder_metadata") or {}).get("stakeholders", [])
-    personas = (state.get("persona_metadata") or {}).get("personas", [])
-    statement = (state.get("intent_metadata") or {}).get("single_statement_intent", "")
+    captured = state.get("captured_intent") or {}
     context = {
         "prd": prd,
-        "statement_of_need": statement,
-        "project_context": state.get("project_context", ""),
-        "captured_intent": captured,
-        "confirmed_stakeholders": stakeholders,
-        "personas": personas,
+        "statement_of_need": _unflag(captured.get("single_statement_intent")),
+        "stakeholders": (state.get("stakeholder_metadata") or {}).get("stakeholders", []),
+        "personas": (state.get("persona_metadata") or {}).get("personas", []),
     }
-    context = {k: v for k, v in context.items() if v}
+    benefits = captured.get("benefits") or []
 
     return {
         "goal2story_metadata": {
             "initialized": True,
             "auto": existing.get("auto", bool(prd)),
-            "n_per_parent": existing.get("n_per_parent", DEFAULT_N_PER_PARENT),
-            "context": context,
-            "proposed_goal": _proposed_goal(captured),
-            "goal": "",
-            "goal_confirmed": False,
-            "actors": [],
-            "impacts": [],
-            "deliverables": [],
+            "stories_per_goal": existing.get("stories_per_goal", DEFAULT_STORIES_PER_GOAL),
+            "context": {k: v for k, v in context.items() if v},
+            "goals": [_goal_view(goal, benefits) for goal in goals],
             "stories": [],
-            "next_index": {},
+            "next_index": 1,
             "latest_user_response": "",
             "response_feedback": "",
-            "approved_levels": [],
+            "approved": False,
             "edit_log": [],
             "open_questions": [],
             "finalized_stories": [],
+            # nothing to write stories for: the graph ends here (see has_goals)
+            "skipped": not goals,
         }
     }
 
 
-def _extract_goal(meta) -> str:
-    """PRD mode: take the goal from the PRD and the upstream artifacts."""
-    result = _call(ExtractedGoal, [
-        SystemMessage(content=prompt.GOAL_EXTRACTION_INSTRUCTIONS),
-        HumanMessage(content=prompt.GOAL_EXTRACTION_REQUEST.format(
-            anchors=_json(meta["context"])
-        )),
-    ])
-    return " ".join(result.goal.split())
+def has_goals(state: AgentState) -> bool:
+    """Route after initialize: no extracted goals means no stories, not an error."""
+    return bool(state["goal2story_metadata"]["goals"])
 
 
-def confirm_goal(state: AgentState) -> AgentState:
-    """Ask the engineer to approve the proposed goal or type their own.
-
-    In PRD mode, use the proposed goal or extract one, without asking.
-    """
-    meta = state["goal2story_metadata"]
-    if meta.get("auto"):
-        goal = (meta["proposed_goal"] or _extract_goal(meta)
-                or meta["context"].get("statement_of_need", ""))
-        if not goal:
-            raise ValueError("No goal could be found in the PRD.")
-        return {"goal2story_metadata": {**meta, "goal": goal, "goal_confirmed": True}}
-
-    if meta["proposed_goal"]:
-        message = prompt.GOAL_PROPOSED_PROMPT.format(goal=meta["proposed_goal"])
-    else:
-        message = prompt.GOAL_MISSING_PROMPT.format(
-            statement=meta["context"].get("statement_of_need", "(not captured yet)")
-        )
-    if meta["response_feedback"]:
-        message = meta["response_feedback"] + "\n\n" + message
-
-    # do not mutate state before interrupt(): this node restarts when resumed
-    response = get_user_input(prompt=message)
-    if not isinstance(response, str):
-        raise ValueError("The goal response must be text.")
-
-    goal, feedback = "", ""
-    if _is_approve(response) and meta["proposed_goal"]:
-        goal = meta["proposed_goal"]
-    elif response.strip() and not _is_approve(response):
-        goal = " ".join(response.split())
-    else:
-        feedback = prompt.GOAL_EMPTY_FEEDBACK
-    return {
-        "goal2story_metadata": {
-            **meta,
-            "goal": goal,
-            "goal_confirmed": bool(goal),
-            "latest_user_response": response,
-            "response_feedback": feedback,
-        }
-    }
-
-
-def goal_confirmed(state: AgentState) -> bool:
-    return state["goal2story_metadata"]["goal_confirmed"]
-
-
-# generation: the four Goal2Story agents
+# generation: one story agent call per goal
 # -----------------------------------------------------------------------------
 
-def _generation_messages(meta, level, task, trace=()):
-    return [
-        SystemMessage(content=prompt.GENERATE_INSTRUCTIONS[level]),
-        HumanMessage(content=prompt.GENERATE_TASK_TEMPLATE.format(
-            **_ref_info(meta, trace), task=task
-        )),
-    ]
-
-
-def generate_actors(state: AgentState) -> AgentState:
-    """Alpha Captain (Product Owner): who can help reach the goal."""
-    meta = _copy_meta(state)
-    n = meta["n_per_parent"]
-    task = prompt.ACTORS_TASK.format(n=n)
-    result = _call(ActorList, _generation_messages(meta, "actors", task))
-    meta["actors"] = [
-        _make_item(meta, "actors", None, _with_stakeholder_name(meta, a.model_dump()))
-        for a in result.actors[:n]
-    ]
-    return {"goal2story_metadata": meta}
-
-
-def _with_stakeholder_name(meta, actor) -> dict:
-    """Small models sometimes return the stakeholder's ID instead of its name."""
-    by_id = {
-        str(s.get("stakeholder_id")): s["name"]
-        for s in meta["context"].get("confirmed_stakeholders", [])
-    }
-    reference = actor["stakeholder"].strip()
-    return {**actor, "stakeholder": by_id.get(reference, reference)}
-
-
-def _generate_children(state, level, schema, task_template, list_field):
-    """Run one agent per approved parent, as the paper does, one branch at a time."""
-    meta = _copy_meta(state)
-    n = meta["n_per_parent"]
-    children = []
-    for parent in meta[PARENT[level]]:
-        trace = [*_chain(meta, parent), parent]
-        task = task_template.format(n=n, parent_id=parent["id"])
-        result = _call(schema, _generation_messages(meta, level, task, trace))
-        generated = getattr(result, list_field)[:n] if list_field else [result]
-        children.extend(
-            _make_item(meta, level, parent["id"], g.model_dump()) for g in generated
-        )
-    meta[level] = children
-    return {"goal2story_metadata": meta}
-
-
-def generate_impacts(state: AgentState) -> AgentState:
-    """Intelligence Officer (Business Analyst): what each actor should do differently."""
-    return _generate_children(state, "impacts", ImpactList, prompt.IMPACTS_TASK, "impacts")
-
-
-def generate_deliverables(state: AgentState) -> AgentState:
-    """Delivery Coordinator (Scrum Master): how the software supports each impact."""
-    return _generate_children(
-        state, "deliverables", DeliverableList, prompt.DELIVERABLES_TASK, "deliverables"
-    )
-
-
 def generate_stories(state: AgentState) -> AgentState:
-    """Tactical Officer (Product Owner): one user story per deliverable."""
-    return _generate_children(state, "stories", GeneratedStory, prompt.STORY_TASK, None)
+    """Tactical Officer (Product Owner): the user stories that achieve each goal."""
+    meta = _copy_meta(state)
+    n = meta["stories_per_goal"]
+    for goal in meta["goals"]:
+        task = prompt.STORY_TASK.format(goal_id=goal["id"], n=n)
+        result = _call(StoryList, [
+            SystemMessage(content=prompt.STORY_INSTRUCTIONS),
+            HumanMessage(content=prompt.GENERATE_TASK_TEMPLATE.format(
+                anchors=_json(meta["context"]), goal=_json(goal), task=task,
+            )),
+        ])
+        for generated in result.stories[:n]:
+            fields = generated.model_dump()
+            if all(fields[f].strip() for f in FIELDS):
+                meta["stories"].append(_make_story(meta, goal["id"], fields))
+    return {"goal2story_metadata": meta}
 
 
 # INVEST check
@@ -348,11 +210,13 @@ def generate_stories(state: AgentState) -> AgentState:
 def check_invest(state: AgentState) -> AgentState:
     """Check each new or changed story against INVEST. Warnings do not block approval."""
     meta = _copy_meta(state)
+    goals = _goals_by_id(meta)
     for story in meta["stories"]:
         if story["invest"] is not None:
             continue
         request = prompt.INVEST_REQUEST_TEMPLATE.format(
-            **_ref_info(meta, _chain(meta, story)), story=_json(_public(story))
+            anchors=_json(meta["context"]), goal=_json(goals[story["parent_id"]]),
+            story=_json(_public(story)),
         )
         result = _call(InvestCheck, [
             SystemMessage(content=prompt.INVEST_INSTRUCTIONS),
@@ -368,190 +232,140 @@ def check_invest(state: AgentState) -> AgentState:
     return {"goal2story_metadata": meta}
 
 
-# review gates
+# review gate
 # -----------------------------------------------------------------------------
 
-def _render_item(meta, level, item) -> str:
-    if level == "actors":
-        known = {_name(s["name"]) for s in meta["context"].get("confirmed_stakeholders", [])}
-        note = ""
-        if known and _name(item["stakeholder"]) not in known:
-            note = prompt.UNKNOWN_STAKEHOLDER_NOTE
-        return (f"- **{item['id']} {item['name']}**: {item['description']} "
-                f"(stakeholder: {item['stakeholder']}){note}")
-    if level == "stories":
-        lines = [f"- **{item['id']}** {item['text']}"]
-        invest = item.get("invest")
-        if invest and invest["failed_criteria"]:
-            lines.append(f"  ⚠ INVEST: {', '.join(invest['failed_criteria'])}. {invest['feedback']}")
-        for question in (invest or {}).get("open_questions", []):
-            lines.append(f"  ? {question}")
-        return "\n".join(lines)
-    return f"- **{item['id']}** {item['description']}"
+def _render_story(story) -> str:
+    lines = [f"- **{story['id']}** {story['text']}"]
+    invest = story.get("invest")
+    if invest and invest["failed_criteria"]:
+        lines.append(f"  ⚠ INVEST: {', '.join(invest['failed_criteria'])}. {invest['feedback']}")
+    for question in (invest or {}).get("open_questions", []):
+        lines.append(f"  ? {question}")
+    return "\n".join(lines)
 
 
-def _parent_heading(meta, parent) -> str:
-    chain = [*_chain(meta, parent), parent]
-    parts = [p.get("name") or p.get("description") for p in chain]
-    return f"Under {parent['id']} ({' → '.join(parts)}):"
-
-
-def _render_level(meta, level) -> str:
-    if not meta[level]:
-        return prompt.NO_CHILDREN_NOTE
-    if PARENT[level] is None:
-        return "\n".join(_render_item(meta, level, i) for i in meta[level])
+def _render_stories(meta) -> str:
     sections = []
-    for parent in meta[PARENT[level]]:
-        children = [i for i in meta[level] if i["parent_id"] == parent["id"]]
-        body = "\n".join(_render_item(meta, level, i) for i in children) or prompt.NO_CHILDREN_NOTE
-        sections.append(f"{_parent_heading(meta, parent)}\n{body}")
+    for goal in meta["goals"]:
+        stories = [s for s in meta["stories"] if s["parent_id"] == goal["id"]]
+        body = "\n".join(_render_story(s) for s in stories) or prompt.NO_STORIES_NOTE
+        sections.append(f"{goal['id']}: {goal['statement']}\n{body}")
     return "\n\n".join(sections)
 
 
-def _review_route(meta, level) -> str:
+def _review_route(meta) -> str:
     if meta.get("auto"):
         return "approved"
     response = meta["latest_user_response"]
     if _is_approve(response):
-        return "approved" if meta[level] else "retry"
+        return "approved" if meta["stories"] else "retry"
     return "revise" if response.strip() else "retry"
 
 
-def _make_review(level):
-    def review(state: AgentState) -> AgentState:
-        meta = state["goal2story_metadata"]
-        if meta.get("auto"):
-            # PRD mode: accept the level as generated, with no review stop
-            return {"goal2story_metadata": {
-                **meta, "approved_levels": [*meta["approved_levels"], level],
-            }}
-        info = prompt.LEVEL_INFO[level]
-        feedback = f"\n{meta['response_feedback']}\n" if meta["response_feedback"] else ""
-        message = prompt.REVIEW_PROMPT.format(
-            title=info["title"], goal=meta["goal"], explanation=info["explanation"],
-            items=_render_level(meta, level), feedback=feedback, example=info["example"],
-        )
-        # do not mutate state before interrupt(): this node restarts when resumed
-        response = get_user_input(prompt=message)
-        if not isinstance(response, str):
-            raise ValueError("The review response must be text.")
+def review_stories(state: AgentState) -> AgentState:
+    """Review gate: the engineer approves the stories or asks for changes."""
+    meta = state["goal2story_metadata"]
+    if meta.get("auto"):
+        # PRD mode: accept the stories as written, with no review stop
+        return {"goal2story_metadata": {**meta, "approved": True}}
+    feedback = f"\n{meta['response_feedback']}\n" if meta["response_feedback"] else ""
+    message = prompt.REVIEW_PROMPT.format(items=_render_stories(meta), feedback=feedback)
+    # do not mutate state before interrupt(): this node restarts when resumed
+    response = get_user_input(prompt=message)
+    if not isinstance(response, str):
+        raise ValueError("The review response must be text.")
 
-        updated = {**meta, "latest_user_response": response, "response_feedback": ""}
-        route = _review_route(updated, level)
-        if route == "retry":
-            updated["response_feedback"] = prompt.EMPTY_LEVEL_FEEDBACK.format(level=level)
-        elif route == "approved":
-            updated["approved_levels"] = [*meta["approved_levels"], level]
-        return {"goal2story_metadata": updated}
-
-    review.__name__ = f"review_{level}"
-    review.__doc__ = f"Review gate: the engineer approves or asks for changes to the {level}."
-    return review
+    updated = {**meta, "latest_user_response": response, "response_feedback": ""}
+    route = _review_route(updated)
+    if route == "retry":
+        updated["response_feedback"] = prompt.EMPTY_STORIES_FEEDBACK
+    elif route == "approved":
+        updated["approved"] = True
+    return {"goal2story_metadata": updated}
 
 
-def make_review_router(level):
-    def route(state: AgentState) -> str:
-        return _review_route(state["goal2story_metadata"], level)
-    return route
-
-
-review_actors = _make_review("actors")
-review_impacts = _make_review("impacts")
-review_deliverables = _make_review("deliverables")
-review_stories = _make_review("stories")
+def route_review(state: AgentState) -> str:
+    return _review_route(state["goal2story_metadata"])
 
 
 # revision: apply the engineer's requested changes
 # -----------------------------------------------------------------------------
 
-def _apply_revision(meta, level, result) -> tuple[list[str], dict]:
+def _apply_revision(meta, result) -> tuple[list[str], dict]:
     """Apply explicit operations. Invalid ones are skipped and reported, not fatal."""
-    items = {i["id"]: i for i in meta[level]}
-    parents = {p["id"] for p in meta[PARENT[level]]} if PARENT[level] else set()
+    stories = {s["id"]: s for s in meta["stories"]}
+    goals = _goals_by_id(meta)
     problems, changes = [], {"updated": [], "added": [], "removed": []}
 
-    for item_id in dict.fromkeys(result.removed_ids):
-        if items.pop(item_id, None) is None:
-            problems.append(f"Could not remove {item_id}: no such item.")
+    for story_id in dict.fromkeys(result.removed_ids):
+        if stories.pop(story_id, None) is None:
+            problems.append(f"Could not remove {story_id}: no such story.")
         else:
-            changes["removed"].append(item_id)
+            changes["removed"].append(story_id)
 
     for update in result.updates:
         fields = update.model_dump()
-        if any(not str(fields[f]).strip() for f in FIELDS[level]):
-            problems.append(f"Skipped a change to {update.id or 'a new item'}: a field was empty.")
+        if any(not str(fields[f]).strip() for f in FIELDS):
+            problems.append(f"Skipped a change to {update.id or 'a new story'}: a field was empty.")
             continue
         if update.id is None:
-            parent_id = fields.get("parent_id")
-            if PARENT[level] and parent_id not in parents:
-                problems.append(f"Could not add an item under {parent_id}: no such parent.")
+            if fields["parent_id"] not in goals:
+                problems.append(f"Could not add a story under {fields['parent_id']}: no such goal.")
                 continue
-            item = _make_item(meta, level, parent_id, fields)
-            items[item["id"]] = item
-            changes["added"].append(item["id"])
-        elif update.id in items:
-            # an item keeps its parent: its ID shows where it came from
-            item = {**items[update.id], **{f: fields[f].strip() for f in FIELDS[level]}}
-            if level == "stories":
-                item["text"] = _story_text(item)
-                item["invest"] = None  # changed stories are checked again
-            items[update.id] = item
+            story = _make_story(meta, fields["parent_id"], fields)
+            stories[story["id"]] = story
+            changes["added"].append(story["id"])
+        elif update.id in stories:
+            # a story keeps its goal: its trace starts there
+            story = {**stories[update.id], **{f: fields[f].strip() for f in FIELDS}}
+            story["stakeholder_id"] = _stakeholder_of(goals[story["parent_id"]], story["actor"])
+            story["text"] = _story_text(story)
+            story["invest"] = None  # changed stories are checked again
+            stories[update.id] = story
             changes["updated"].append(update.id)
         else:
-            problems.append(f"Could not change {update.id}: no such item.")
+            problems.append(f"Could not change {update.id}: no such story.")
 
-    meta[level] = list(items.values())
+    meta["stories"] = list(stories.values())
     return problems, changes
 
 
-def _make_revise(level):
-    def revise(state: AgentState) -> AgentState:
-        meta = _copy_meta(state)
-        parents = [_public(p) for p in meta[PARENT[level]]] if PARENT[level] else []
-        request = prompt.REVISION_REQUEST_TEMPLATE.format(
-            **_ref_info(meta),
-            parents=_json(parents) if parents else "(none: actors are the top level)",
-            level=level,
-            items=_json([_public(i) for i in meta[level]]),
-            request=meta["latest_user_response"],
-        )
-        result = _call(REVISION_SCHEMA[level], [
-            SystemMessage(content=prompt.REVISION_INSTRUCTIONS[level]),
-            HumanMessage(content=request),
-        ])
-        problems, changes = _apply_revision(meta, level, result)
-        notes = [result.clarification_feedback.strip(), *problems]
-        meta["response_feedback"] = "\n".join(n for n in notes if n)
-        meta["edit_log"] = [*meta["edit_log"], {
-            "level": level, "request": meta["latest_user_response"], **changes,
-        }]
-        return {"goal2story_metadata": meta}
-
-    revise.__name__ = f"revise_{level}"
-    revise.__doc__ = f"Apply the engineer's requested changes to the {level}."
-    return revise
-
-
-revise_actors = _make_revise("actors")
-revise_impacts = _make_revise("impacts")
-revise_deliverables = _make_revise("deliverables")
-revise_stories = _make_revise("stories")
+def revise_stories(state: AgentState) -> AgentState:
+    """Apply the engineer's requested changes to the stories."""
+    meta = _copy_meta(state)
+    request = prompt.REVISION_REQUEST_TEMPLATE.format(
+        anchors=_json(meta["context"]),
+        goals=_json([{"id": g["id"], "statement": g["statement"]} for g in meta["goals"]]),
+        stories=_json([_public(s) for s in meta["stories"]]),
+        request=meta["latest_user_response"],
+    )
+    result = _call(StoryRevision, [
+        SystemMessage(content=prompt.REVISION_INSTRUCTIONS),
+        HumanMessage(content=request),
+    ])
+    problems, changes = _apply_revision(meta, result)
+    notes = [result.clarification_feedback.strip(), *problems]
+    meta["response_feedback"] = "\n".join(n for n in notes if n)
+    meta["edit_log"] = [*meta["edit_log"], {"request": meta["latest_user_response"], **changes}]
+    return {"goal2story_metadata": meta}
 
 
 # hand-off to lane 4 (clarify & model)
 # -----------------------------------------------------------------------------
 
 def finalize_goal2story(state: AgentState) -> AgentState:
-    """Expose approved stories with their full trace; storage is deferred."""
+    """Expose approved stories with their goal; storage is deferred."""
     meta = _copy_meta(state)
-    if meta["approved_levels"] != list(LEVELS):
-        raise ValueError("Every Goal2Story level requires explicit approval.")
+    if not meta["approved"]:
+        raise ValueError("The user stories require explicit approval.")
 
+    goals = _goals_by_id(meta)
     stories, questions = [], []
     for story in meta["stories"]:
-        chain = _chain(meta, story)
-        stories.append({**story, "goal": meta["goal"], "trace": [i["id"] for i in chain]})
+        goal = goals[story["parent_id"]]
+        stories.append({**story, "goal": goal["statement"],
+                        "trace": [goal["id"], *[b["id"] for b in goal["delivers_benefits"]]]})
         for question in story["invest"]["open_questions"]:
             questions.append({
                 "id": f"Q-{len(questions) + 1}", "story_id": story["id"], "question": question,

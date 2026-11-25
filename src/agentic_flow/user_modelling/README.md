@@ -73,16 +73,10 @@ interrupts, and checkpoints without contacting Ollama.
 
 ## Generate a graph image
 
-Use LangGraph's built-in drawing method, matching the capture-intent graph.
-From the `src` directory, run this with the project dependencies installed:
+Every graph diagram, this one included, is drawn with subgraphs expanded by one
+script. From the `src` directory:
 
-```python
-from agentic_flow.user_modelling.graph import user_modelling_graph
-
-user_modelling_graph.get_graph(xray=True).draw_mermaid_png(
-    output_file_path="agentic_flow/user_modelling/user_modelling_graph.png"
-)
+```sh
+python -m agentic_flow.draw_graphs        # local headless Chrome
+python -m agentic_flow.draw_graphs --api  # mermaid.ink (sends the graph text out)
 ```
-
-The same optional call is commented at the bottom of the graph file. With its
-usual defaults, this renderer uses the external Mermaid rendering service.

@@ -1,137 +1,69 @@
 # Goal2Story (lane 3)
 
-Breaks one confirmed goal into user stories through automated impact mapping,
-following Goal2Story (arXiv:2503.13279, §3), with IDE3.0 review gates added.
-The outer IDE3.0 graph runs PRD intake, SSON capture, user modelling, then
-this graph, then END. It can also run on its own for testing.
+Writes the user stories for every goal the goals stage extracted. The goals,
+their actors, resources, plans and delivered benefits come from
+`state["goal_metadata"]`; Goal2Story generates nothing but the stories.
+
+The outer IDE3.0 graph starts from `{"prd": ...}` and runs capture intent, user
+modelling, goals, then this graph, then the artifact graph. It can also run on
+its own for testing, given a state that already holds `goal_metadata`.
+
+```text
+initialize → generate stories (one call per goal) → INVEST check
+           → review ⇄ revise (→ INVEST check) → finalize → END
+```
 
 ## Two modes
 
-- **PRD mode** (default when `state["prd"]` is set). The goal is taken from
-  the PRD, every level is accepted as generated, and the graph runs straight
-  through with no questions. This is the PoC flow.
-- **Review mode** (no PRD). The engineer confirms the goal and approves or
-  edits each level, as described below.
+- **PRD mode** (default when `state["prd"]` is set). The stories are accepted
+  as written and the graph runs straight through with no questions.
+- **Review mode** (no PRD). The engineer enters APPROVE or describes changes
+  ("remove US-3", "add a story for Goal-2: ..."). A model call turns that into
+  explicit operations. Untouched stories keep their IDs, new stories get new
+  IDs, and invalid operations are skipped and shown rather than crashing the
+  run. Every change is recorded in `edit_log`.
 
-Set `goal2story_metadata["auto"]` to `True` or `False` to force a mode.
+Set `goal2story_metadata["auto"]` to `True` or `False` to force a mode, and
+`goal2story_metadata["stories_per_goal"]` (default 3) to cap the stories per goal.
 
-| Level | Agent (paper profile) | Question | IDs |
-|---|---|---|---|
-| Actors | Alpha Captain (Product Owner) | **Who** can help or block the goal? | `A-1`, `A-2` |
-| Impacts | Intelligence Officer (Business Analyst) | **What** should each actor do differently? | `I-1.1`, `I-1.2` |
-| Deliverables | Delivery Coordinator (Scrum Master) | **How** does the software support each impact? | `D-1.1.1` |
-| Stories | Tactical Officer (Product Owner) | One user story per deliverable | `US-1` … |
+## What each step does
 
-## Flow (review mode)
-
-```text
-initialize → confirm goal → generate actors → review ⇄ revise
-                          → generate impacts → review ⇄ revise
-                          → generate deliverables → review ⇄ revise
-                          → generate stories → INVEST check → review ⇄ revise (→ INVEST check)
-                          → finalize → END
-```
-
-- **Goal confirmation.** The first goal in `captured_intent["goals"]` is
-  proposed; the engineer enters APPROVE or types a different goal. Lane 1
-  does not capture goals yet, so without one the engineer is asked for it.
-- **Generation.** As in the paper, each agent runs once per approved parent
-  and sees the Ref Info: the context anchors (SSON, project context, captured
-  intent, confirmed stakeholders), the goal, and the items above it on its
-  branch. `n_per_parent` (default 2, the paper's value) caps each call, so the
-  default run gives 2 × 2 × 2 = 8 stories.
-- **Review gates (ours).** After each level the engineer enters APPROVE or
-  describes changes in plain language ("remove I-1.2", "add an impact for
-  A-2: ..."). A model call turns that into explicit operations (updates,
-  additions, removals). Untouched items keep their IDs, new items get new IDs,
-  and invalid operations are skipped and shown to the engineer rather than
-  crashing the run. Every change is recorded in `edit_log`. A level with no
-  items cannot be approved.
-- **Actors from stakeholders.** The Alpha Captain picks actors from
-  `stakeholder_metadata["finalized_stakeholders"]`. An actor that does not
-  match a confirmed stakeholder is flagged in the review.
+- **Initialize.** Takes every goal from `goal_metadata` with the benefits it
+  delivers spelled out, plus the context anchors (PRD, SSON, stakeholders,
+  personas). No model call. With no extracted goals it sets `skipped` and
+  the graph ends without writing stories.
+- **Generate stories.** The Tactical Officer (Product Owner) writes the stories
+  that achieve one goal, one call per goal. Each story's actor is one of the
+  goal's actors; its stakeholder link (`stakeholder_id`) comes from that
+  actor, not from the model.
 - **INVEST check (3RA3 L24).** Each new or changed story is checked once.
   Failures are shown as warnings and do not block approval. When a story is
   not testable, the questions needed to make it testable become
   `open_questions` for lane 4.
-- **Format Doctor.** Every model call uses Ollama's JSON schema mode. If the
-  reply still fails to parse or validate, the call is retried once with a
-  repair prompt. A second failure raises, and the last checkpoint is kept.
+- **Format Doctor.** Every model call uses JSON schema mode. If the reply still
+  fails to parse or validate, the call is retried once with a repair prompt. A
+  second failure raises, and the last checkpoint is kept.
+- **Finalize.** `finalized_stories` holds each approved story with its goal
+  statement and `trace`: the goal ID, then the benefits that goal delivers.
 
-Each level is generated only after the one above is approved, so editing an
-earlier level after approval (with "needs review" marking) is not supported yet.
+## IDs and trace
 
-## Output for lane 4
+| Item | ID | Links |
+|---|---|---|
+| Story | `US-1`, `US-2`, … | `parent_id` = its goal (`Goal-n`); `stakeholder_id` through the goal actor |
 
-After approval, `result["goal2story_metadata"]` contains:
-
-- `finalized_stories`: each story has `id`, `parent_id`, `actor`, `action`,
-  `expected_outcome`, `text` ("As a …, I want to …, so that …"), `invest`,
-  `goal` and `trace` (e.g. `["A-1", "I-1.1", "D-1.1.2"]`).
-- `open_questions`: `[{"id": "Q-1", "story_id": "US-2", "question": "..."}]`.
-- `actors`, `impacts`, `deliverables`, `stories`: the full approved impact map.
-
-Persistent artifact IDs and saving to the project remain to be connected.
-The PRD and personas are passed to every agent in `context`.
-
-## Artifact graph
-
-`artifacts.collect_goal2story(state)` returns the goal, actors, impacts,
-deliverables and stories as artifact graph nodes and edges. Each edge points
-to the higher-level artifact:
-
-| Edge | Meaning |
-|---|---|
-| `Goal-1 --achieves--> Intent-1` | the goal serves the statement of need |
-| `A-1 --helps_reach--> Goal-1` | the actor can help reach the goal |
-| `A-1 --drawn_from--> Stakeholder-1` | the actor comes from that stakeholder |
-| `I-1.1 --impact_of--> A-1` | the behaviour change belongs to that actor |
-| `D-1.1.1 --supports--> I-1.1` | the deliverable supports that impact |
-| `US-1 --implements--> D-1.1.1` | the story implements that deliverable |
-
-To include it, add `("goal", collect_goal2story)` to `COLLECTORS` in
-`artifact_graph/node.py`.
+`artifacts.py` adds the stories to the artifact graph: *story implements goal*
+and *story performed by stakeholder*. Stories are optional there, so a run
+without Goal2Story reports no missing-story gap; once stories exist, a goal
+with none is reported as `goal_without_story`.
 
 ## Run it
 
-With `src` on the Python import path and Ollama running the configured model:
-
-```python
-from langgraph.types import Command
-from agentic_flow.goal2story.graph import goal2story_graph
-
-config = {"configurable": {"thread_id": "project-1-goal2story"}}
-result = goal2story_graph.invoke(upstream_state, config)
-
-# The UI displays result["__interrupt__"][0].value["prompt_to_user"].
-# Resume the same graph and thread with the user's text, repeating as needed.
-result = goal2story_graph.invoke(Command(resume=user_reply), config)
-```
-
-To try it in the terminal with the study-room example (from `src`):
-
 ```sh
-python -m agentic_flow.goal2story.demo --prd             # PRD mode, sample PRD
-python -m agentic_flow.goal2story.demo --prd my_prd.txt  # PRD mode, your PRD
-python -m agentic_flow.goal2story.demo                   # review mode
-python -m agentic_flow.goal2story.demo --n 1             # quick run: one story
-python -m agentic_flow.goal2story.demo --full --prd      # whole IDE3.0 flow
-IDE3_MODEL=qwen2.5:7b python -m agentic_flow.goal2story.demo
+cd src
+python -m agentic_flow.goal2story.demo --prd       # PRD mode on the sample goals
+python -m agentic_flow.goal2story.demo             # review mode
+python -m agentic_flow.goal2story.demo --full      # whole IDE3.0 flow from the PRD
 ```
 
-`IDE3_MODEL` overrides the default model in `core/models.py`. In the paper,
-Qwen2.5-7B scored much higher on story quality than Llama2-7B (97% vs 54%).
-
-## Tests
-
-From the repository root:
-
-```sh
-PYTHONPATH=src python -m unittest discover -s test/agentic_flow -v
-```
-
-`test/agentic_flow/test_goal2story.py` uses stub models, so it runs without
-Ollama while exercising real graph transitions, interrupts and checkpoints.
-It covers PRD mode, the artifact graph collector, the full 2 × 2 × 2 run, IDs and traces, revisions, invalid
-operations, INVEST hand-off, the Format Doctor and the full IDE3.0 flow.
-The repository needs Python 3.11 or newer (`typing.NotRequired`).
+Tests stub the model: `PYTHONPATH=src python -m unittest test.agentic_flow.test_goal2story`.
